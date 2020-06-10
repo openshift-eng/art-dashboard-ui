@@ -32,6 +32,7 @@ export default class Attribute_transfer_filter_fields_modal extends Component{
     render() {
         return(
         <Modal
+            width={800}
             title="Filter Attributes"
             visible={this.props.visible}
             onOk={() => this.handleOk()}

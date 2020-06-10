@@ -1,8 +1,9 @@
 import React, { useState, Component } from 'react';
-import { Form, Row, Col, Input, Button } from 'antd';
+import {Form, Row, Col, Input, Button, Select, AutoComplete} from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import {FormInstance} from "antd/lib/form";
 import {DatePicker} from "antd";
+const { Option } = Select;
 
 export default class AdvancedSearchForm extends Component{
 
@@ -64,7 +65,7 @@ export default class AdvancedSearchForm extends Component{
                 </Col>,);
             }
         }
-        
+
         return children;
     };
 

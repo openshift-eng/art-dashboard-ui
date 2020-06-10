@@ -86,57 +86,9 @@ export default class App extends Component{
 
                     </Layout>
                 </Layout>
-                {/*<Router>*/}
-                {/*    <Route path="/foo" component={BuildsTable}/>*/}
-                {/*    <Route path="/bar" component={Bar}/>*/}
-                {/*</Router>*/}
             </div>
         );
 
     }
 
 }
-
-// function App() {
-//     const { Header, Footer, Sider, Content } = Layout;
-//
-//   return (
-//     // <div className="App">
-//     //     <NavbarHeader></NavbarHeader>
-//     // </div>
-//       //{/*onClick={()=>{this.setState(prevState => this.set_selected_tab(prevState, "build"))}}*/}
-//       //{/*onClick={()=>{this.setState(prevState => this.set_selected_tab(prevState, "bugzilla"))}}*/}
-//       <div>
-//           <Layout>
-//               <Header>
-//                   {/*<NavbarHeader></NavbarHeader>*/}
-//                   <div className="center">
-//                       <h1 style={{color: "white"}}>ART Dashboard</h1>
-//                   </div>
-//               </Header>
-//               <Layout>
-//                   <Sider>
-//                       <ul className="left hide-on-med-and-down">
-//                           <li><a href="/foo">Build</a></li>
-//                           <li><a href="/bar">Bugzilla</a></li>
-//                       </ul>
-//                   </Sider>
-//                   <Content>
-//                       <BuildsTable>
-//                       </BuildsTable>
-//                       <Bar></Bar>
-//                   </Content>
-//               </Layout>
-//               <Footer>
-//
-//               </Footer>
-//           </Layout>
-//           <Router>
-//               <Route path="/foo" component={BuildsTable}/>
-//               <Route path="/bar" component={Bar}/>
-//           </Router>
-//       </div>
-//   );
-// }
-
-//export default App;
