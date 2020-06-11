@@ -3,4 +3,4 @@ WORKDIR /opt/app-root/src
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD ["npm start > output.txt"]
+CMD [ "./node_modules/serve/bin/serve.js", "-s", "build", "-l", "8080"]
