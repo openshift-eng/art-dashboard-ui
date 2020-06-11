@@ -44,6 +44,5 @@
   },
   "devDependencies": {
     "webpack-cli": "^3.3.11"
-  },
-  "proxy": "http://127.0.0.1:8000"
+  }
 }
