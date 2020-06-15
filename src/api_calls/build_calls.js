@@ -31,6 +31,27 @@ export async function get_build_data_witt_filters(filters) {
     }
      */
 
+    /*
+    Latest Followed Format:
+
+    {
+	"where": {
+		"brew.build_ids": {
+			"value": "1206338",
+			"like_or_where": "where"
+		},
+		"build.0.package_id": {
+			"value": "67164",
+			"like_or_where": "where"
+		}
+	},
+	"limit": 100,
+	"next_token": ""
+}
+
+     */
+
+
 
     let where_str = []
 
@@ -39,8 +60,14 @@ export async function get_build_data_witt_filters(filters) {
             if (key === "where"){
                 for( let wherekey in filters[key]){
                     if(filters[key].hasOwnProperty(wherekey)){
-                        if(filters[key][wherekey] !== undefined)
-                            where_str.push(`\`${wherekey}\`=\"${filters[key][wherekey]}\"`)
+                        if(filters[key][wherekey] !== undefined){
+                            if(filters[key][wherekey]["like_or_where"] === "where"){
+                                where_str.push(`\`${wherekey}\`=\"${filters[key][wherekey]["value"]}\"`)
+                            }else if(filters[key][wherekey]["like_or_where"] === "like"){
+                                where_str.push(`\`${wherekey}\` like \"%${filters[key][wherekey]["value"]}%\"`)
+                            }
+                        }
+                            //where_str.push(`\`${wherekey}\`=\"${filters[key][wherekey]}\"`)
                     }
                 }
             }

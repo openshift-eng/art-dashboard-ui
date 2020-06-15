@@ -52,29 +52,29 @@ export default class App extends Component{
 
             <div>
                 <Layout>
-                    <Sider collapsible collapsed={this.state.collapsed_sider}>
+                    <Sider collapsed={this.state.collapsed_sider}>
                         <div>
                             <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
                                 <Menu.Item key="build_menu_item" icon={<SettingOutlined />} onClick={()=>this.handle_menu_item_click("build")}>
                                     Build
                                 </Menu.Item>
-                                <Menu.Item key="bugzilla_menu_item" icon={<VideoCameraOutlined />} onClick={()=>this.handle_menu_item_click("bugzilla")}>
-                                    Bugzilla
-                                </Menu.Item>
+                                {/*<Menu.Item key="bugzilla_menu_item" icon={<VideoCameraOutlined />} onClick={()=>this.handle_menu_item_click("bugzilla")}>*/}
+                                {/*    Bugzilla*/}
+                                {/*</Menu.Item>*/}
                             </Menu>
                         </div>
                     </Sider>
                     <Layout>
-                        <Header style={{background: "white", height: "100px"}}>
-                            <Layout>
-                                {React.createElement(this.state.collapsed_sider ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                                    className: 'trigger',
-                                    onClick: this.toggle_side,
-                                })}
+                        <Header style={{background: "white", height: "100px", float: "left"}}>
+                                <div className="left">
+                                    {React.createElement(this.state.collapsed_sider ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                                        className: 'trigger',
+                                        onClick: this.toggle_side,
+                                    })}
+                                </div>
                                 <div className="center">
                                     <h1 style={{color: "#316DC1"}}>ART Dashboard</h1>
                                 </div>
-                            </Layout>
                         </Header>
                         <Content>
                             {content}
