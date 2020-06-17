@@ -7,6 +7,7 @@ import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_
 import {CheckOutlined, CloseOutlined, FilterFilled, FilterOutlined, FilterTwoTone} from "@ant-design/icons";
 import {SyncOutlined} from "@ant-design/icons";
 import {EyeOutlined} from "@ant-design/icons";
+import Search_filters_popover from "./search_filters_popover";
 
 require('dotenv').config();
 
@@ -177,14 +178,10 @@ export default class BuildsTable extends Component{
             this.setState({filter_load_more: true})
         }
 
-        console.log(where_cond)
-        console.log(JSON.stringify(filter))
-
         this.setState({loading_build_table_skeleton_property: true})
         this.setState({state_data: get_build_data_witt_filters(filter)})
 
         this.state.state_data.then(data => {
-            console.log(JSON.stringify(data));
             this.setState({table_data: data["Items"]});
             if(data.hasOwnProperty("NextToken")){
                 if(for_search_filter === false)
@@ -367,19 +364,21 @@ export default class BuildsTable extends Component{
                     visible={this.state.filter_attribute_selection_modal_visisble}
                     handler={this.handleFilterBuildParamsButton}
                     handler_to_update_build_table_data={this.handle_for_update_build_table_data}/>
-                <Button
-                    size="large"
-                    className="right"
+                {/*    <Button*/}
+                {/*        size="large"*/}
+                {/*        className="right"*/}
 
-                    style={{padding: "10px",
-                            marginBottom: "20px",
-                            background: "#316DC1",
-                            color: "white"}}
+                {/*        style={{padding: "10px",*/}
+                {/*            marginBottom: "20px",*/}
+                {/*            background: "#316DC1",*/}
+                {/*            color: "white"}}*/}
 
-                    onClick={this.handleFilterBuildParamsButton.bind(this)}
-                    icon={<FilterTwoTone/>}>Filter
-                </Button>
+                {/*        onClick={this.handleFilterBuildParamsButton.bind(this)}*/}
+                {/*        icon={<FilterTwoTone/>}>Filter*/}
+                {/*    </Button>*/}
+                {/*<Button></Button>*/}
                 <Button></Button>
+                <Search_filters_popover handleFilterBuildParamsButton={this.handleFilterBuildParamsButton} data={this.state.build_filter_where_cond}/>
 
                 {!loading_build_table && <Table dataSource={this.renderTableDataAntd()}
                        columns={table_columns}

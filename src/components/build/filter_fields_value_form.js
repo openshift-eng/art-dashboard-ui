@@ -236,6 +236,7 @@ export default class AdvancedSearchForm extends Component{
                             output_value["value"] = values[ele_count.toString() + "####" +key_split[0]]
                         }
                         output_value["like_or_where"] = values[key]
+                        output_value["name"] = this.search_fields_to_show[key_split[0]][ele_count]["name"];
                         output_values[key_split[0]].push(output_value)
                     }else{
                         // else for now ignore, since like.or.where is selected but its key value is not defined.
