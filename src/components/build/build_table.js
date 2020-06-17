@@ -6,7 +6,7 @@ import 'antd/dist/antd.css';
 import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_fields_modal";
 import {CheckOutlined, CloseOutlined, FilterFilled, FilterOutlined, FilterTwoTone} from "@ant-design/icons";
 import {SyncOutlined} from "@ant-design/icons";
-import {Skeleton} from "antd";
+import {EyeOutlined} from "@ant-design/icons";
 
 require('dotenv').config();
 
@@ -27,6 +27,7 @@ export default class BuildsTable extends Component{
             filter_attribute_selection_modal_visisble: false,
             state_data: undefined,
             nextToken: undefined,
+            nextTokenSearchFilter: undefined,
             loading_build_table_skeleton_property: true
         }
 
@@ -52,8 +53,18 @@ export default class BuildsTable extends Component{
     }
 
     loadMoreClick(){
+
         if(this.state.nextToken !== undefined){
-            this.handle_for_update_build_table_data("");
+            if("filter_load_more" in this.state){
+                if (this.state.filter_load_more === true){
+                    this.handle_for_update_build_table_data(this.state.build_filter_where_cond, true)
+                }else{
+                    this.handle_for_update_build_table_data("");
+                }
+            }else{
+                this.handle_for_update_build_table_data("");
+            }
+
         }
     }
 
@@ -69,6 +80,8 @@ export default class BuildsTable extends Component{
             "build.0.source": true,
             "build.time.iso": true,
             "build.0.nvr": true,
+            "dg.name": true,
+            "label.io.openshift.build.commit.url": true,
         }
 
         const required_expanded_columns = {
@@ -130,32 +143,60 @@ export default class BuildsTable extends Component{
         }
     }
 
-    handle_for_update_build_table_data(where_cond, for_search_filter=false){
+    handle_for_update_build_table_data(where_cond, for_search_filter=false, search_clicked=false){
 
         let filter = {
             where: where_cond,
             limit: 100
         }
 
+        if(search_clicked){
+            this.setState({nextTokenSearchFilter: undefined})
+        }
+
+        console.log(for_search_filter)
+
         if ( for_search_filter === false){
+
             if (this.state.nextToken !== undefined){
                 filter["next_token"] = this.state.nextToken;
             }else{
                 filter["next_token"] = "";
             }
+
+            this.setState({build_filter_where_cond: ""})
+            this.setState({filter_load_more: false})
+
         }else{
-            filter["next_token"] = "";
+            if (this.state.nextTokenSearchFilter !== undefined){
+                filter["next_token"] = this.state.nextTokenSearchFilter;
+            }else{
+                filter["next_token"] = "";
+            }
+            this.setState({build_filter_where_cond: where_cond})
+            this.setState({filter_load_more: true})
         }
+
+        console.log(where_cond)
+        console.log(JSON.stringify(filter))
 
         this.setState({loading_build_table_skeleton_property: true})
         this.setState({state_data: get_build_data_witt_filters(filter)})
 
         this.state.state_data.then(data => {
+            console.log(JSON.stringify(data));
             this.setState({table_data: data["Items"]});
             if(data.hasOwnProperty("NextToken")){
-                this.setState({nextToken: data["NextToken"]});
+                if(for_search_filter === false)
+                    this.setState({nextToken: data["NextToken"]});
+                else
+                    this.setState({nextTokenSearchFilter: data["NextToken"]})
             }else{
-                this.setState({nextToken: undefined})
+                if(for_search_filter === false)
+                    this.setState({nextToken: undefined})
+                else
+                    this.setState({nextTokenSearchFilter: undefined})
+
             }
             this.setState({loading_build_table_skeleton_property: false})
         }).then(() => {
@@ -197,7 +238,6 @@ export default class BuildsTable extends Component{
                         >
 
                             <p>{"Image SHAs: " + record.expanded["brew.image_shas"]}</p>
-                            <p>{"Build NVR: " + record.expanded["build.0.nvr"]}</p>
                             <p>{"Build package ID: " + record.expanded["build.0.package_id"]}</p>
                             <p><a href={record.expanded["jenkins.build_url"]}>{"Jenkins Build Url"}</a></p>
                             <p>{"Jenkins Build Number: " + record.expanded["jenkins.build_number"]}</p>
@@ -238,7 +278,8 @@ export default class BuildsTable extends Component{
                 render: (data, record) => {
                     return(
                         <div>
-                            <a href={process.env.REACT_APP_BREW_TASK_LINK+record["brew.task_id"]}>{record["brew.task_id"]}</a>
+                            <a href={process.env.REACT_APP_BREW_TASK_LINK+record["brew.task_id"]}
+                               target="_blank" rel="noopener noreferrer">{record["brew.task_id"]}</a>
                         </div>
                         )
 
@@ -263,8 +304,10 @@ export default class BuildsTable extends Component{
                     if(source !== undefined){
                         const split_pieces = source.split("#")
                         return (
-                            <a href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}>
-                                {split_pieces[split_pieces.length-1]}
+                            <a href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
+                               target="_blank" rel="noopener noreferrer">
+                                {/*{split_pieces[split_pieces.length-1]}*/}
+                                {record["dg.name"]}
                             </a>
                         );
                     }else{
@@ -273,6 +316,16 @@ export default class BuildsTable extends Component{
                         );
                     }
 
+                }
+            },
+            {
+                title: "Source Commit",
+                dataIndex: "label.io.openshift.build.commit.url",
+                key: "label.io.openshift.build.commit.url",
+                render: (data, record) => {
+                    return(
+                        <a href={record["label.io.openshift.build.commit.url"]} target="_blank" rel="noopener noreferrer"><EyeOutlined/></a>
+                    )
                 }
             },
             {
@@ -319,7 +372,7 @@ export default class BuildsTable extends Component{
                     className="right"
 
                     style={{padding: "10px",
-                            margin: "20px",
+                            marginBottom: "20px",
                             background: "#316DC1",
                             color: "white"}}
 

@@ -36,14 +36,14 @@ export async function get_build_data_witt_filters(filters) {
 
     {
 	"where": {
-		"brew.build_ids": {
+		"brew.build_ids": [{
 			"value": "1206338",
 			"like_or_where": "where"
-		},
-		"build.0.package_id": {
+		}],
+		"build.0.package_id": [{
 			"value": "67164",
 			"like_or_where": "where"
-		}
+		}]
 	},
 	"limit": 100,
 	"next_token": ""
@@ -51,7 +51,7 @@ export async function get_build_data_witt_filters(filters) {
 
      */
 
-
+    console.log(JSON.stringify(filters));
 
     let where_str = []
 
@@ -61,13 +61,19 @@ export async function get_build_data_witt_filters(filters) {
                 for( let wherekey in filters[key]){
                     if(filters[key].hasOwnProperty(wherekey)){
                         if(filters[key][wherekey] !== undefined){
-                            if(filters[key][wherekey]["like_or_where"] === "where"){
-                                where_str.push(`\`${wherekey}\`=\"${filters[key][wherekey]["value"]}\"`)
-                            }else if(filters[key][wherekey]["like_or_where"] === "like"){
-                                where_str.push(`\`${wherekey}\` like \"%${filters[key][wherekey]["value"]}%\"`)
-                            }
+                            filters[key][wherekey].forEach((value, index) =>{
+                                if(value["like_or_where"] === "where"){
+                                    if( "cond" in value){
+                                        where_str.push(`\`${wherekey}\`${value["cond"]}\"${value["value"]}\"`);
+                                    }else{
+                                        where_str.push(`\`${wherekey}\`=\"${value["value"]}\"`);
+                                    }
+                                }else if(value["like_or_where"] === "like"){
+                                    where_str.push(`\`${wherekey}\` like \"%${value["value"]}%\"`)
+                                }
+                            })
+
                         }
-                            //where_str.push(`\`${wherekey}\`=\"${filters[key][wherekey]}\"`)
                     }
                 }
             }

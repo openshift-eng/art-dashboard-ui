@@ -8,8 +8,6 @@ export default class Attribute_transfer_filter_fields_modal extends Component{
 
     constructor(props) {
         super(props);
-        console.log("HIHIHIHIHI")
-        console.log(props)
         this.state = {
             visible: props.visible,
             selected_filter_attributes_build: []
