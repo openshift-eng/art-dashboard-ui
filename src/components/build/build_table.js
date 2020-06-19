@@ -7,7 +7,9 @@ import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_
 import {CheckOutlined, CloseOutlined, FilterFilled, FilterOutlined, FilterTwoTone} from "@ant-design/icons";
 import {SyncOutlined} from "@ant-design/icons";
 import {EyeOutlined} from "@ant-design/icons";
+import {PlusOutlined} from "@ant-design/icons";
 import Search_filters_popover from "./search_filters_popover";
+import {Tooltip} from "antd";
 
 require('dotenv').config();
 
@@ -219,30 +221,15 @@ export default class BuildsTable extends Component{
 
         const table_columns = [
             {
-                title: 'Build Id',
+                title: 'Brew Build',
                 dataIndex: "brew.build_ids",
                 key: "brew.build_ids",
                 render: (text, record) => (
                     <div>
-                        <a>
-                        <p onClick={() => this.showBuildDescriptionModal(record)}>{record["brew.build_ids"]}</p>
+                        <a href={process.env.REACT_APP_BREW_BUILD_LINK+record["brew.build_ids"]}
+                           target="_blank" rel="noopener noreferrer">
+                            {record["brew.build_ids"]}
                         </a>
-                        <Modal
-                            title= {"Build Description Detail: [" + record["brew.build_ids"] + "]"}
-                            visible= {this.state["visible_modal_"+record["brew.build_ids"]]}
-                            onOk={() => this.handleOkBuildDescriptionModal(record)}
-                            onCancel={() => this.handleOkBuildDescriptionModal(record)}
-                        >
-
-                            <p>{"Image SHAs: " + record.expanded["brew.image_shas"]}</p>
-                            <p>{"Build package ID: " + record.expanded["build.0.package_id"]}</p>
-                            <p><a href={record.expanded["jenkins.build_url"]}>{"Jenkins Build Url"}</a></p>
-                            <p>{"Jenkins Build Number: " + record.expanded["jenkins.build_number"]}</p>
-                            <p>{"Jenkins Job Name: " + record.expanded["jenkins.job_name"]}</p>
-                            <p>{"Build Name: " + record.expanded["build.0.name"]}</p>
-                            <p>{"Build Version: " + record.expanded["build.0.version"]}</p>
-
-                        </Modal>
                     </div>
                 )
             },
@@ -262,7 +249,9 @@ export default class BuildsTable extends Component{
                     else{
                         return(
                             <div>
-                                <CloseOutlined style = {{color: "#f55d42"}}></CloseOutlined>
+                                <Tooltip title={"Fault Code is " + record["brew.faultCode"]}>
+                                    <CloseOutlined style = {{color: "#f55d42"}}></CloseOutlined>
+                                </Tooltip>
                             </div>
                             )
                     }
@@ -300,9 +289,14 @@ export default class BuildsTable extends Component{
                     const source = record["build.0.source"]
                     if(source !== undefined){
                         const split_pieces = source.split("#")
+                        const git_link = split_pieces.slice(0,-1).join("")
+                        let  http_link = "http://" + git_link.split("//").slice(1,).join() + "/tree/?id="+split_pieces[split_pieces.length-1]
+                        http_link = http_link.replace(/.com\//g, ".com/cgit/")
                         return (
-                            <a href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
-                               target="_blank" rel="noopener noreferrer">
+                            <a  href={http_link}
+                                //href={split_pieces.slice(0,-1).join("") + "/tree/?id="+split_pieces[split_pieces.length-1]}
+                                // href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
+                                target="_blank" rel="noopener noreferrer">
                                 {/*{split_pieces[split_pieces.length-1]}*/}
                                 {record["dg.name"]}
                             </a>
@@ -335,6 +329,34 @@ export default class BuildsTable extends Component{
                         <p>{date.getFullYear()+'-' + this.render_single_digit_to_double_datetime((date.getMonth()+1)) + '-'+this.render_single_digit_to_double_datetime(date.getDate()) + ' ' + this.render_single_digit_to_double_datetime(date.getHours()) + ':' + this.render_single_digit_to_double_datetime(date.getMinutes()) + ":" + this.render_single_digit_to_double_datetime(date.getSeconds())}</p>
                     )
                 }
+            },
+            {
+                title: 'More Details',
+                dataIndex: "more.details",
+                key: "more.details",
+                render: (text, record) => (
+                    <div>
+                        <a>
+                            <PlusOutlined  onClick={() => this.showBuildDescriptionModal(record)}/>
+                        </a>
+                        <Modal
+                            title= {"Build Details"}
+                            visible= {this.state["visible_modal_"+record["brew.build_ids"]]}
+                            onOk={() => this.handleOkBuildDescriptionModal(record)}
+                            onCancel={() => this.handleOkBuildDescriptionModal(record)}
+                        >
+
+                            <p>{"Image SHAs: " + ("brew.image_shas" in record.expanded && record.expanded["brew.image_shas"] !== "" ? record.expanded["brew.image_shas"] : "Not Available")}</p>
+                            <p>{"Build package ID: " + ("build.0.package_id" in record.expanded ? record.expanded["build.0.package_id"] : "Not Available")}</p>
+                            <p><a href={record.expanded["jenkins.build_url"]}>{"Jenkins Build Url"}</a></p>
+                            <p>{"Jenkins Build Number: " + record.expanded["jenkins.build_number"]}</p>
+                            <p>{"Jenkins Job Name: " + record.expanded["jenkins.job_name"]}</p>
+                            <p>{"Build Name: " + ("build.0.name" in record.expanded && record.expanded["build.0.name"] !== "" ? record.expanded["build.0.name"] : "Not Available")}</p>
+                            <p>{"Build Version: " + ("build.0.version" in record.expanded && record.expanded["build.0.version"] !== "" ? record.expanded["build.0.version"] : "Not Available")}</p>
+
+                        </Modal>
+                    </div>
+                )
             }
         ]
 

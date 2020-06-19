@@ -195,6 +195,7 @@ export default class AdvancedSearchForm extends Component{
         return children;
     };
 
+
     validateFormInput = values => {
         console.log(JSON.stringify(values))
         let output_values = {}
@@ -255,12 +256,11 @@ export default class AdvancedSearchForm extends Component{
 
         const form_validation_result = this.validateFormInput(values);
 
-        console.log(JSON.stringify(form_validation_result));
-
         if(form_validation_result !== false){
             this.props.handler_to_update_build_table_data(form_validation_result, true, true);
-            this.formRef.current.resetFields();
+            //this.formRef.current.resetFields();
             this.setState({error_alert_show: false})
+            this.props.handle_close()
         }else{
             this.setState({error_alert_show: true});
         }
@@ -275,7 +275,7 @@ export default class AdvancedSearchForm extends Component{
         let error_alert_message = null;
 
         if(this.state.error_alert_show){
-            error_alert_message = <Row><BuildAlert message="Filter fields are not filled properly.Make sure where/like is selected for all filled values." type="error" close_func={this.error_alert_close}/></Row>;
+            error_alert_message = <Row><BuildAlert message="Filter fields are not filled properly. Make sure respective Exact/Like is selected for all filled values." type="error" close_func={this.error_alert_close}/></Row>;
         }
 
 
@@ -287,18 +287,21 @@ export default class AdvancedSearchForm extends Component{
                 onFinish={this.onFinish}
             >
                 {error_alert_message}
+                <br/>
                 <Row gutter={72}>{this.getFields()}</Row>
                 <Row>
                     <Col
-                        span={72}
+                        span={24}
                         style={{
                             textAlign: 'right',
+                            float: 'right'
                         }}
                     >
-                        <Button type="primary" htmlType="submit">
+                        <Button className="right" type="primary" htmlType="submit">
                             Search
                         </Button>
                         <Button
+                            className="right"
                             style={{
                                 margin: '0 8px',
                             }}
@@ -308,16 +311,16 @@ export default class AdvancedSearchForm extends Component{
                         >
                             Clear
                         </Button>
-                        <a
-                            style={{
-                                fontSize: 12,
-                            }}
-                            onClick={() => {
-                                this.state.setExpand(!this.state.expand);
-                            }}
-                        >
-                            {this.state.expand ? <UpOutlined /> : <DownOutlined />} Collapse
-                        </a>
+                        {/*<a*/}
+                        {/*    style={{*/}
+                        {/*        fontSize: 12,*/}
+                        {/*    }}*/}
+                        {/*    onClick={() => {*/}
+                        {/*        this.state.setExpand(!this.state.expand);*/}
+                        {/*    }}*/}
+                        {/*>*/}
+                        {/*    {this.state.expand ? <UpOutlined /> : <DownOutlined />} Collapse*/}
+                        {/*</a>*/}
                     </Col>
                 </Row>
             </Form>

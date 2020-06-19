@@ -13,6 +13,7 @@ export default class Attribute_transfer_filter_fields_modal extends Component{
             selected_filter_attributes_build: []
         }
         this.handler_for_ok_on_transfer_element = this.handler_for_ok_on_transfer_element.bind(this);
+        this.handleOk = this.handleOk.bind(this);
     }
 
     handler_for_ok_on_transfer_element(selected_attributed){
@@ -31,13 +32,14 @@ export default class Attribute_transfer_filter_fields_modal extends Component{
         return(
         <Modal
             width={800}
-            title="Filter Attributes"
+            title="Filter Build Results"
             visible={this.props.visible}
             onOk={() => this.handleOk()}
             onCancel={() => this.handleOk()}
+            footer={null}
         >
             {/*<Filter_field_transfer okHandler={this.handler_for_ok_on_transfer_element}></Filter_field_transfer>*/}
-            <AdvancedSearchForm handler_to_update_build_table_data={this.props.handler_to_update_build_table_data}>
+            <AdvancedSearchForm handler_to_update_build_table_data={this.props.handler_to_update_build_table_data} handle_close={this.handleOk}>
             </AdvancedSearchForm>
         </Modal>
         )
