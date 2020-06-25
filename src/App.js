@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 import 'antd/dist/antd.css';
 import { Layout, Menu } from 'antd';
-import {BrowserRouter as Router, Link, Route, Switch, Redirect} from "react-router-dom";
+import {BrowserRouter as Router, Link, Route, Switch, Redirect, withRouter} from "react-router-dom";
 import BuildsTable from "./components/build/build_table";
-import Build_health_tabs from "./components/build_health/build_health_tabs";
+import Build_health_home from "./components/build_health/build_health_home";
 import {
     MenuUnfoldOutlined,
     MenuFoldOutlined,
@@ -103,9 +103,9 @@ export default class App extends Component{
                             </Header>
                             <Content>
                                 <Switch>
-                                    <Route path="/build/health"  exact component={Build_health_tabs} name="build_health"/>
+                                    <Route path="/build/health/overview" exact component={Build_health_home} name="build_health"/>
                                     <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
-                                    <Redirect exact from="" to="/build/history"/>
+                                    <Redirect exact from="" to="/build/health/overview"/>
                                 </Switch>
                             </Content>
 

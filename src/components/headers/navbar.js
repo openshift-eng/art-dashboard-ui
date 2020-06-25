@@ -49,10 +49,10 @@ export default class NavbarHeader extends Component{
                         </ul>
                     </div>
                 </nav>
-                <Router>
+                <>
                     <Route path="/foo" component={BuildsTable}/>
                     <Route path="/bar" component={Bar}/>
-                </Router>
+                </>
 
             </div>
         );

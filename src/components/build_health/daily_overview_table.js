@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {get_daily_overview_data} from "../../api_calls/build_health_calls";
 import {Pagination, Table} from "antd";
+import {BrowserRouter as Router, Link, Route, Switch, Redirect} from "react-router-dom";
 
 
 export default class Daily_overview_table extends Component{
@@ -22,7 +23,16 @@ export default class Daily_overview_table extends Component{
             {
                 title: "Date",
                 dataIndex: "date",
-                key: "date"
+                key: "date",
+                render: (data, record) => {
+                    return (
+                            <div>
+                                <Link to={`/health/daily/detail/${record["date"]}`}>
+                                    <p>{record["date"]}</p>
+                                </Link>
+                            </div>
+                    )
+                }
             },{
                 title: "Total Builds",
                 dataIndex: "total",
@@ -43,12 +53,12 @@ export default class Daily_overview_table extends Component{
         ]
 
         return(
-            <div>
-                <Table dataSource={this.state.table_data}
-                       columns={table_columns}
-                       pagination={<Pagination defaultCurrent={0}/>}
+                <div>
+                    <Table dataSource={this.state.table_data}
+                           columns={table_columns}
+                           pagination={<Pagination defaultCurrent={0}/>}
                     />
-            </div>
+                </div>
         )
     }
 
