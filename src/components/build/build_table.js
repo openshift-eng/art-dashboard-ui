@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {get_build_data_without_filters} from "../../api_calls/build_calls";
 import {get_build_data_witt_filters} from "../../api_calls/build_calls";
-import {Table, Pagination, Modal, Button, Space, Spin} from "antd";
+import {Table, Pagination, Modal, Button, Space, Spin, Row, Col} from "antd";
 import 'antd/dist/antd.css';
 import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_fields_modal";
 import {CheckOutlined, CloseOutlined, FilterFilled, FilterOutlined, FilterTwoTone} from "@ant-design/icons";
@@ -10,6 +10,9 @@ import {EyeOutlined} from "@ant-design/icons";
 import {PlusOutlined} from "@ant-design/icons";
 import Search_filters_popover from "./search_filters_popover";
 import {Tooltip} from "antd";
+import Autocomplete_filter from "./autocomplete_filter";
+import Datepicker_filter from "./datepicker_filter";
+import Run_status_filter from "./run_status_filter";
 
 require('dotenv').config();
 
@@ -34,13 +37,6 @@ export default class BuildsTable extends Component{
             loading_build_table_skeleton_property: true
         }
 
-        // const state_data = get_build_data_witt_filters({
-        //     where: {
-        //         "brew.build_ids": "1206338",
-        //         "build.0.package_id": "67164"
-        //     }
-        // });
-
         this.state.state_data = get_build_data_without_filters();
 
         this.state.state_data.then(data =>{
@@ -52,6 +48,7 @@ export default class BuildsTable extends Component{
         this.handleFilterBuildParamsButton = this.handleFilterBuildParamsButton.bind(this);
         this.handle_for_update_build_table_data = this.handle_for_update_build_table_data.bind(this);
         this.loadMoreClick = this.loadMoreClick.bind(this);
+        this.handle_for_update_build_table_data_simple_filters = this.handle_for_update_build_table_data_simple_filters.bind(this);
 
     }
 
@@ -68,10 +65,14 @@ export default class BuildsTable extends Component{
                 this.handle_for_update_build_table_data("");
             }
 
+        }else{
+            this.handle_for_update_build_table_data_simple_filters(this.state.build_filter_where_cond);
         }
     }
 
     renderTableDataAntd(){
+
+        console.log("Render table called.")
 
         let table_object = []
 
@@ -103,6 +104,7 @@ export default class BuildsTable extends Component{
                 let table_row = {
                     "expanded":{}
                 }
+
                 item["Attributes"].forEach(attr => {
 
                     if(required_columns[attr["Name"]]){
@@ -146,6 +148,55 @@ export default class BuildsTable extends Component{
         }
     }
 
+    unset_nextTokenSearchFilter(){
+
+    }
+
+    handle_for_update_build_table_data_simple_filters(where_cond){
+
+        this.setState({loading_build_table_skeleton_property: true})
+
+        this.setState({nextToken: undefined})
+        this.setState({nextTokenSearchFilter: undefined})
+        this.setState({nextTokenSearchFilterSimple: undefined})
+
+        let filter = {
+            where: where_cond,
+            limit: 100
+        }
+
+        if (this.state.nextTokenSearchFilterSimple !== undefined) {
+            filter["next_token"] = this.state.nextTokenSearchFilterSimple;
+        }else{
+            filter["next_token"] = "";
+        }
+
+        this.setState({build_filter_where_cond: where_cond})
+
+
+        this.setState({state_data: get_build_data_witt_filters(filter)}, this.update_table);
+
+
+
+
+    }
+
+    update_table(){
+
+        this.state.state_data.then(data => {
+            this.setState({table_data: data["Items"]}, this.renderTableDataAntd);
+            if(data.hasOwnProperty("NextToken")){
+                this.setState({nextTokenSearchFilterSimple: data["NextToken"]})
+            }else{
+                this.setState({nextTokenSearchFilterSimple: undefined})
+            }
+            this.setState({loading_build_table_skeleton_property: false})
+        });
+
+
+
+    }
+
     handle_for_update_build_table_data(where_cond, for_search_filter=false, search_clicked=false){
 
         let filter = {
@@ -156,8 +207,6 @@ export default class BuildsTable extends Component{
         if(search_clicked){
             this.setState({nextTokenSearchFilter: undefined})
         }
-
-        console.log(for_search_filter)
 
         if ( for_search_filter === false){
 
@@ -180,7 +229,6 @@ export default class BuildsTable extends Component{
             this.setState({filter_load_more: true})
         }
 
-        this.setState({loading_build_table_skeleton_property: true})
         this.setState({state_data: get_build_data_witt_filters(filter)})
 
         this.state.state_data.then(data => {
@@ -234,7 +282,18 @@ export default class BuildsTable extends Component{
                 )
             },
             {
-                title: "Build Status",
+                title:()=>{
+                    return (
+                        <Row>
+                            <Col span={24} className="left">
+                                Build Status
+                            </Col>
+                            <Col span={24}>
+                                <Run_status_filter search_callback={this.handle_for_update_build_table_data_simple_filters}/>
+                            </Col>
+                        </Row>
+                    )
+                },
                 dataIndex: "brew.faultCode",
                 key: "brew.faultCode",
                 render: (text, record) =>{
@@ -250,7 +309,7 @@ export default class BuildsTable extends Component{
                         return(
                             <div>
                                 <Tooltip title={"Fault Code is " + record["brew.faultCode"]}>
-                                    <CloseOutlined style = {{color: "#f55d42"}}></CloseOutlined>
+                                    <CloseOutlined style = {{color: "#f55d42"}}/>
                                 </Tooltip>
                             </div>
                             )
@@ -277,7 +336,18 @@ export default class BuildsTable extends Component{
             //     key: "brew.task_state"
             // }
             {
-                title: "NVR",
+                title:()=>{
+                    return (
+                        <Row>
+                            <Col span={24} className="left">
+                                NVR
+                            </Col>
+                            <Col span={24}>
+                                <Autocomplete_filter placeholder={"Package Name"} type={"nvr"} search_callback={this.handle_for_update_build_table_data_simple_filters}/>
+                            </Col>
+                        </Row>
+                    )
+                },
                 dataIndex: "build.0.nvr",
                 key: "build.0.nvr"
             },
@@ -320,7 +390,18 @@ export default class BuildsTable extends Component{
                 }
             },
             {
-                title: "Build Time ISO",
+                title: ()=>{
+                    return (
+                        <Row>
+                            <Col span={24} className="left">
+                                Build Time ISO
+                            </Col>
+                            <Col span={24}>
+                                <Datepicker_filter placeholder={"Build Date"} search_callback={this.handle_for_update_build_table_data_simple_filters}/>
+                            </Col>
+                        </Row>
+                    )
+                },
                 dataIndex: "build.time.iso",
                 key: "build.time.iso",
                 render: (data, record) => {
@@ -386,20 +467,7 @@ export default class BuildsTable extends Component{
                     visible={this.state.filter_attribute_selection_modal_visisble}
                     handler={this.handleFilterBuildParamsButton}
                     handler_to_update_build_table_data={this.handle_for_update_build_table_data}/>
-                {/*    <Button*/}
-                {/*        size="large"*/}
-                {/*        className="right"*/}
-
-                {/*        style={{padding: "10px",*/}
-                {/*            marginBottom: "20px",*/}
-                {/*            background: "#316DC1",*/}
-                {/*            color: "white"}}*/}
-
-                {/*        onClick={this.handleFilterBuildParamsButton.bind(this)}*/}
-                {/*        icon={<FilterTwoTone/>}>Filter*/}
-                {/*    </Button>*/}
-                {/*<Button></Button>*/}
-                <Button></Button>
+                <Button/>
                 <Search_filters_popover handleFilterBuildParamsButton={this.handleFilterBuildParamsButton} data={this.state.build_filter_where_cond}/>
 
                 {!loading_build_table && <Table dataSource={this.renderTableDataAntd()}

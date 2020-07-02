@@ -103,4 +103,19 @@ export async function get_build_data_witt_filters(filters) {
     });
 
     return await response.json();
+
+}
+
+export async function auto_complete_nvr() {
+
+    const response = await fetch(process.env.REACT_APP_AUTOCOMPLETE_FOR_NVR, {
+        method: "GET",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json",
+        }
+    });
+
+    return await response.json();
+
 }

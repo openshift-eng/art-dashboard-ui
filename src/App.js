@@ -9,8 +9,11 @@ import {
     MenuFoldOutlined,
     HistoryOutlined,
     SmileOutlined,
-    SettingOutlined
+    SettingOutlined,
+    ForkOutlined
 } from '@ant-design/icons';
+import Release_status_table from "./components/release/status/release_status_table";
+import Release_home_page from "./components/release/release_home_page";
 require('dotenv').config();
 
 const {SubMenu} = Menu;
@@ -74,12 +77,30 @@ export default class App extends Component{
 
 
                                             <Menu.Item key="build_health_item" icon={<SmileOutlined/>} >
-                                                <Link to="/build/health">
+                                                <Link to="/build/health/overview">
                                                 Health
                                                 </Link>
                                             </Menu.Item>
 
 
+
+                                    </SubMenu>
+
+                                    <SubMenu
+                                        key="sub2"
+                                        title={
+                                            <span>
+                                            <ForkOutlined />
+                                            <span>Release</span>
+                                            </span>
+                                        }
+                                    >
+
+                                        <Menu.Item key="release_status_menu_item" icon={<HistoryOutlined />}>
+                                            <Link to="/release/status">
+                                                Release Status
+                                            </Link>
+                                        </Menu.Item>
 
                                     </SubMenu>
 
@@ -105,7 +126,8 @@ export default class App extends Component{
                                 <Switch>
                                     <Route path="/build/health/overview" exact component={Build_health_home} name="build_health"/>
                                     <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
-                                    <Redirect exact from="" to="/build/health/overview"/>
+                                    <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
+                                    <Redirect exact from="" to="/build/history"/>
                                 </Switch>
                             </Content>
 
