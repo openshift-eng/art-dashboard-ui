@@ -199,6 +199,30 @@ export default class BuildsTable extends Component{
 
     handle_for_update_build_table_data(where_cond, for_search_filter=false, search_clicked=false){
 
+
+
+        let order_by_string = null;
+
+        // if the order by is in the where_cond, that from the form submit
+        // then respect the new values, this will have for_search_filter = true, hence no
+        // neeed to check
+        if ("order" in where_cond){
+                let order = where_cond["order"];
+                if (order["sort_filter_column"] !== undefined && order["sort_filter_order"] !== undefined) {
+                    order_by_string = "" + order["sort_filter_column"] + " " + order["sort_filter_order"];
+                    this.setState({order_by: order_by_string});
+                }
+
+                delete where_cond["order"];
+        }
+        // if it is from a search, but old search then where_cond will not have order and
+        // hence should use old order by value from the state
+        else if(for_search_filter === true){
+            order_by_string = this.state.order_by;
+            if("order" in where_cond)
+                delete where_cond["order"]
+        }
+
         let filter = {
             where: where_cond,
             limit: 100
@@ -229,7 +253,12 @@ export default class BuildsTable extends Component{
             this.setState({filter_load_more: true})
         }
 
-        this.setState({state_data: get_build_data_witt_filters(filter)})
+        if ( order_by_string !== null){
+            this.setState({state_data: get_build_data_witt_filters(filter, order_by_string)})
+        }else{
+            this.setState({state_data: get_build_data_witt_filters(filter)})
+
+        }
 
         this.state.state_data.then(data => {
             this.setState({table_data: data["Items"]});

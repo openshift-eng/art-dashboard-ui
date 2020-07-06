@@ -28,7 +28,7 @@ export default class Run_status_filter extends Component{
             <div>
                 <Select style={{width: "100%"}} onChange={this.onChange}>
                     <Option value="=0">Success</Option>
-                    <Option value="!=0">Failed</Option>
+                    <Option value="!=0">Failure</Option>
                 </Select>
             </div>
         );

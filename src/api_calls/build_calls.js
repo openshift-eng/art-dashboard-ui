@@ -19,7 +19,7 @@ export async function get_build_data_without_filters() {
     return await response.json();
 }
 
-export async function get_build_data_witt_filters(filters) {
+export async function get_build_data_witt_filters(filters, order=null) {
 
     /*
     expect filters to be in following format
@@ -89,9 +89,15 @@ export async function get_build_data_witt_filters(filters) {
         "limit": 100
     }
 
+    if (order !== null){
+        data["order_by"] = order;
+    }
+
     if (filters.hasOwnProperty("next_token")){
         data["next_token"] = filters["next_token"];
     }
+
+    console.log(JSON.stringify(data));
 
     const response = await fetch(process.env.REACT_APP_BUILD_ENDPOINT, {
         method: "POST",

@@ -25,7 +25,10 @@ export default class Search_filters_popover extends Component{
         if(this.state.data !== undefined){
             const data = this.state.data;
             for(const key in data){
-                if(data.hasOwnProperty(key)){
+                if( data.hasOwnProperty(key) && key === "order"){
+                    continue;
+                }
+                else if(data.hasOwnProperty(key)){
                     data[key].forEach((value) =>{
                         popoverData.push(value);
                     });
@@ -61,7 +64,7 @@ export default class Search_filters_popover extends Component{
                             color: "white"}}
 
                         onClick={this.props.handleFilterBuildParamsButton}
-                        icon={<FilterTwoTone/>}>Advance Filters
+                        icon={<FilterTwoTone/>}>Advanced Filters
                     </Button>
                 </Popover>
         );

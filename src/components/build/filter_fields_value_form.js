@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Form, Row, Col, Input, Button, Select, AutoComplete} from 'antd';
+import {Form, Row, Col, Input, Button, Select, AutoComplete, Divider} from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import {DatePicker} from "antd";
 import BuildAlert from "./alert";
@@ -53,8 +53,15 @@ export default class AdvancedSearchForm extends Component{
             },
             setBuild2DateFilter: (date, dateString) => {
                 this.setState({build_date2_filter_value: dateString})
-            }
+            },
+            sort_column: "`time.iso`",
+            sort_order: "desc"
+
         }
+
+        this.error_alert_close = this.error_alert_close.bind(this);
+        this.sort_column_change = this.sort_column_change.bind(this);
+        this.sort_order_change = this.sort_order_change.bind(this);
 
         this.like_or_where_select = <Select style={{width: "200px"}}>
             <Option value="like">Like</Option>
@@ -133,7 +140,35 @@ export default class AdvancedSearchForm extends Component{
             }]
         };
 
-        this.error_alert_close = this.error_alert_close.bind(this);
+        this.sort_filter =
+            <Col span={24}>
+                <Col span={12}>
+                    <Form.Item name={"sort_filter_column"}>
+                        <Select onChange={this.sort_column_change} placeholder={"Select Sort Column"}>
+                            <Option value="`time.iso`">Build Time</Option>
+                            <Option value="`build.0.version`">OpenShift Version</Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+
+                <Col span={12}>
+                    <Form.Item name={"sort_filter_order"}>
+                        <Select onChange={this.sort_order_change} placeholder={"Select Sort Order"}>
+                            <Option value={"desc"}>Decreasing</Option>
+                            <Option value={"asc"}>Ascending</Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+
+            </Col>
+    }
+
+    sort_column_change(value){
+            this.setState({sort_column: value})
+    }
+
+    sort_order_change(value){
+            this.setState({sort_order: value})
     }
 
     build_status_onchange = (value) => {
@@ -149,6 +184,8 @@ export default class AdvancedSearchForm extends Component{
 
         const count = this.state.expand ? 10 : 6;
         const children = [];
+
+        children.push(<Col span={24}><Divider orientation={"left"}>Filters</Divider> </Col> )
 
         for(let key in this.search_fields_to_show){
             if(this.search_fields_to_show.hasOwnProperty(key)){
@@ -191,19 +228,29 @@ export default class AdvancedSearchForm extends Component{
                 })
             }
         }
+        children.push(<Col span={24}><Divider orientation={"left"}>Sort Result</Divider> </Col> )
+        children.push(this.sort_filter);
 
         return children;
     };
 
 
     validateFormInput = values => {
-        console.log(JSON.stringify(values))
         let output_values = {}
         for(const key in values){
             // only if key in not undefined
-            if(values.hasOwnProperty(key) && values[key] !== undefined){
+            if(values.hasOwnProperty(key) && key.substring(0, 11) === "sort_filter"){
+                if(!("order" in output_values)){
+                    output_values["order"] = {}
+                }
+
+                output_values["order"][key] = values[key];
+
+            }
+            else if(values.hasOwnProperty(key) && values[key] !== undefined){
                 // split the key, for ex: build.ids will be ["build.ids"] and build.ids____like.or.where will become
                 // ["build.ids", "like.or.where"]
+                console.log(values[key])
                 const first_key_split = key.split("####");
                 const ele_count = parseInt(first_key_split[0]);
                 const key_split = first_key_split[1].split("____")
@@ -212,7 +259,6 @@ export default class AdvancedSearchForm extends Component{
                     if(values[key + "____like.or.where"] === undefined){
                         // if like.or.where of this key ex: build.ids is not defined alert
                         //alert("Like/where missing for some filter fields.");
-                        console.log(key);
                         return false;
                     }
                 }
@@ -243,7 +289,6 @@ export default class AdvancedSearchForm extends Component{
                         // else for now ignore, since like.or.where is selected but its key value is not defined.
                         // alert("Filter parameters are not proper.");
                         // return false;
-                        console.log("here")
                     }
 
                 }
