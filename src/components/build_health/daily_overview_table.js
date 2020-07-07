@@ -49,6 +49,17 @@ export default class Daily_overview_table extends Component{
                 title: "Build Success Rate",
                 dataIndex: "success_rate",
                 key: "success_rate"
+            },{
+                title: "Build History",
+                render: (data, record) => {
+                    return(
+                        <div>
+                            <Link to={`/health/daily/build/${record["date"]}`}>
+                                <p>{record["date"]}</p>
+                            </Link>
+                        </div>
+                    )
+                }
             }
         ]
 

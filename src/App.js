@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import Release_status_table from "./components/release/status/release_status_table";
 import Release_home_page from "./components/release/release_home_page";
+import Build_record_table from "./components/build_health/build_record_table";
 require('dotenv').config();
 
 const {SubMenu} = Menu;

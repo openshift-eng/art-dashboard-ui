@@ -40,3 +40,17 @@ export async function get_expanded_data_for_a_date_and_fault_code(date){
     });
     return await response.json();
 }
+
+export async function get_daily_build_data_for_a_date(date){
+    let endpoint = process.env.REACT_APP_DAILY_BUILD_DATA_FOR_A_DATE;
+    endpoint = endpoint+date;
+
+    const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json"
+        }
+    });
+    return await response.json();
+}
