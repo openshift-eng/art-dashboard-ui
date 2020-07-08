@@ -1,9 +1,8 @@
 import React, {Component} from "react";
 import 'antd/dist/antd.css';
 import {get_daily_build_data_for_a_date} from "../../api_calls/build_health_calls";
-import {Col, Modal, Row, Table, Tooltip} from "antd";
-import Run_status_filter from "../build/run_status_filter";
-import {CheckOutlined, CloseOutlined, EyeOutlined, PlusOutlined} from "@ant-design/icons";
+import {Table, Tooltip} from "antd";
+import {CheckOutlined, CloseOutlined, EyeOutlined, LinkOutlined, PlusOutlined} from "@ant-design/icons";
 
 
 export default class Build_record_table extends Component{
@@ -16,13 +15,20 @@ export default class Build_record_table extends Component{
             date: this.props.match.params.date,
             group_filter: [],
             label_name_filter: [],
+            loading: true
         }
 
-        get_daily_build_data_for_a_date(this.state.date).then((data) => {
-            this.setState({data: data["data"]});
-            this.setState({group_filter:this.generate_openshift_group_filter(data["data"])});
-            this.setState({label_name_filter: this.generate_openshift_label_name_filter(data["data"])})
-        })
+        const { type } = this.props;
+
+        if(type === "all"){
+            get_daily_build_data_for_a_date(this.state.date).then((data) => {
+                this.setState({data: data["data"]});
+                this.setState({group_filter:this.generate_openshift_group_filter(data["data"])});
+                this.setState({label_name_filter: this.generate_openshift_label_name_filter(data["data"])});
+                this.setState({loading: false});
+            })
+        }
+
 
     }
 
@@ -128,7 +134,7 @@ export default class Build_record_table extends Component{
               render: (data, record) =>{
                   return (
                       <div>
-                          <p><a href={record["jenkins_build_url"]}>{<EyeOutlined/>}</a></p>
+                          <p><a href={record["jenkins_build_url"]}>{<LinkOutlined/>}</a></p>
                       </div>
                   )
               }
@@ -168,7 +174,7 @@ export default class Build_record_table extends Component{
 
         return (
             <div>
-                <Table dataSource={this.state.data} columns={table_column} style={{padding: "30px"}}/>
+                <Table dataSource={this.state.data} columns={table_column} style={{padding: "30px"}} loading={this.state.loading}/>
             </div>
         );
     }

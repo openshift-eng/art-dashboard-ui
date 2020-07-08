@@ -4,7 +4,14 @@ import {get_build_data_witt_filters} from "../../api_calls/build_calls";
 import {Table, Pagination, Modal, Button, Space, Spin, Row, Col} from "antd";
 import 'antd/dist/antd.css';
 import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_fields_modal";
-import {CheckOutlined, CloseOutlined, FilterFilled, FilterOutlined, FilterTwoTone} from "@ant-design/icons";
+import {
+    CheckOutlined,
+    CloseOutlined, ExpandAltOutlined, ExpandOutlined,
+    FilterFilled,
+    FilterOutlined,
+    FilterTwoTone,
+    LinkOutlined
+} from "@ant-design/icons";
 import {SyncOutlined} from "@ant-design/icons";
 import {EyeOutlined} from "@ant-design/icons";
 import {PlusOutlined} from "@ant-design/icons";
@@ -206,7 +213,7 @@ export default class BuildsTable extends Component{
         // if the order by is in the where_cond, that from the form submit
         // then respect the new values, this will have for_search_filter = true, hence no
         // neeed to check
-        if ("order" in where_cond){
+        if (where_cond !== "" && "order" in where_cond){
                 let order = where_cond["order"];
                 if (order["sort_filter_column"] !== undefined && order["sort_filter_order"] !== undefined) {
                     order_by_string = "" + order["sort_filter_column"] + " " + order["sort_filter_order"];
@@ -414,7 +421,7 @@ export default class BuildsTable extends Component{
                 key: "label.io.openshift.build.commit.url",
                 render: (data, record) => {
                     return(
-                        <a href={record["label.io.openshift.build.commit.url"]} target="_blank" rel="noopener noreferrer"><EyeOutlined/></a>
+                        <a href={record["label.io.openshift.build.commit.url"]} target="_blank" rel="noopener noreferrer"><LinkOutlined/></a>
                     )
                 }
             },
@@ -447,7 +454,7 @@ export default class BuildsTable extends Component{
                 render: (text, record) => (
                     <div>
                         <a>
-                            <PlusOutlined  onClick={() => this.showBuildDescriptionModal(record)}/>
+                            <ExpandOutlined  onClick={() => this.showBuildDescriptionModal(record)}/>
                         </a>
                         <Modal
                             title= {"Build Details"}

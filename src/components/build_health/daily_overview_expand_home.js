@@ -34,8 +34,7 @@ export default class Daily_overview_expand_home extends Component{
 
     render() {
         return (
-            <div style={{backgroundColor: "white"}}>
-                <div>
+            <div style={{backgroundColor: "white", margin: "30px", padding: "30px"}}>
                     <Divider>Statistics</Divider>
                     <br/>
                     <Row className="center">
@@ -74,7 +73,6 @@ export default class Daily_overview_expand_home extends Component{
                     <br/>
                     <Divider>Detail Summary</Divider>
                     <Daily_overview_expanded_detailed_summary_table data={this.state.expanded_detail_summary_table_data}/>
-                </div>
             </div>
         )
     }

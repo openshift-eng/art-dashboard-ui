@@ -3,7 +3,6 @@ import 'antd/dist/antd.css';
 import { Layout, Menu } from 'antd';
 import {BrowserRouter as Router, Link, Route, Switch, Redirect, withRouter} from "react-router-dom";
 import BuildsTable from "./components/build/build_table";
-import Build_health_home from "./components/build_health/build_health_home";
 import {
     MenuUnfoldOutlined,
     MenuFoldOutlined,
@@ -15,6 +14,8 @@ import {
 import Release_status_table from "./components/release/status/release_status_table";
 import Release_home_page from "./components/release/release_home_page";
 import Build_record_table from "./components/build_health/build_record_table";
+import Daily_overview_table from "./components/build_health/daily_overview_table";
+import Daily_overview_expand_home from "./components/build_health/daily_overview_expand_home";
 require('dotenv').config();
 
 const {SubMenu} = Menu;
@@ -78,7 +79,7 @@ export default class App extends Component{
 
 
                                             <Menu.Item key="build_health_item" icon={<SmileOutlined/>} >
-                                                <Link to="/build/health/overview">
+                                                <Link to="/health/daily/overview">
                                                 Health
                                                 </Link>
                                             </Menu.Item>
@@ -125,9 +126,11 @@ export default class App extends Component{
                             </Header>
                             <Content>
                                 <Switch>
-                                    <Route path="/build/health/overview" exact component={Build_health_home} name="build_health"/>
+                                    <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
                                     <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
                                     <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
+                                    <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>
+                                    <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props} type="all"/>} name="daily_build_by_date"/>
                                     <Redirect exact from="" to="/build/history"/>
                                 </Switch>
                             </Content>

@@ -64,7 +64,8 @@ export default class Daily_overview_table extends Component{
         ]
 
         return(
-                <div>
+                <div
+                    style={{padding: "30px"}}>
                     <Table dataSource={this.state.table_data}
                            columns={table_columns}
                            pagination={<Pagination defaultCurrent={0}/>}
