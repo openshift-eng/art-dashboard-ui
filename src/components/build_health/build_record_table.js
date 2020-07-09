@@ -1,8 +1,11 @@
 import React, {Component} from "react";
 import 'antd/dist/antd.css';
-import {get_daily_build_data_for_a_date} from "../../api_calls/build_health_calls";
+import {
+    get_daily_build_data_for_a_date,
+    get_daily_build_data_for_a_date_for_a_column
+} from "../../api_calls/build_health_calls";
 import {Table, Tooltip} from "antd";
-import {CheckOutlined, CloseOutlined, EyeOutlined, LinkOutlined, PlusOutlined} from "@ant-design/icons";
+import {CheckOutlined, CloseOutlined, LinkOutlined} from "@ant-design/icons";
 
 
 export default class Build_record_table extends Component{
@@ -10,15 +13,30 @@ export default class Build_record_table extends Component{
     constructor(props) {
         super(props);
 
+        console.log(JSON.stringify(props))
+
         this.state = {
             data: [],
             date: this.props.match.params.date,
             group_filter: [],
             label_name_filter: [],
-            loading: true
+            loading: true,
+            query_params: undefined
         }
 
-        const { type } = this.props;
+        let query_params = this.parse_query_params(this.props);
+        let type = null;
+
+        console.log(JSON.stringify(query_params));
+
+
+        if(query_params.hasOwnProperty("type")){
+            type = query_params["type"];
+        }
+
+
+        console.log(type);
+
 
         if(type === "all"){
             get_daily_build_data_for_a_date(this.state.date).then((data) => {
@@ -27,9 +45,39 @@ export default class Build_record_table extends Component{
                 this.setState({label_name_filter: this.generate_openshift_label_name_filter(data["data"])});
                 this.setState({loading: false});
             })
+        } else if(type === "column_search"){
+            if( query_params.hasOwnProperty("column") && query_params.hasOwnProperty("value")){
+                get_daily_build_data_for_a_date_for_a_column(query_params["column"], query_params["value"], this.state.date).then((data) => {
+                    this.setState({data: data["data"]});
+                    this.setState({group_filter:this.generate_openshift_group_filter(data["data"])});
+                    this.setState({label_name_filter: this.generate_openshift_label_name_filter(data["data"])});
+                    this.setState({loading: false});
+                })
+            }
+        }else{
+            console.log("else")
         }
+    }
 
+    parse_query_params(props){
 
+        if(!props.hasOwnProperty("location")){
+            return {}
+        }else{
+            let query_params = {}
+            let search_string = props.location.search;
+            if(search_string !== ""){
+
+                if(search_string[0] === "?")
+                    search_string = search_string.substr(1);
+
+                search_string.split("&").forEach(key_val =>{
+                    const key = key_val.split("=")[0];
+                    query_params[key] = key_val.split("=")[1];
+                })
+            }
+            return query_params;
+        }
     }
 
     generate_openshift_group_filter(data){

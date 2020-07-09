@@ -54,7 +54,7 @@ export default class Daily_overview_table extends Component{
                 render: (data, record) => {
                     return(
                         <div>
-                            <Link to={`/health/daily/build/${record["date"]}`}>
+                            <Link to={`/health/daily/build/${record["date"]}/?type=all`}>
                                 <p>{record["date"]}</p>
                             </Link>
                         </div>

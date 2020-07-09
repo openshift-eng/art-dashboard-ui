@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import {Table, Input} from "antd";
+import {Link} from "react-router-dom";
 
 
 export default class Daily_overview_expanded_detailed_summary_table extends Component{
@@ -39,6 +40,15 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
         this.setState({label_name_filter: this.generate_column_filter("label_name", nextProps.data)})
     }
 
+    render_single_digit_to_double_datetime(digit){
+        digit = digit.toString()
+        if(digit.length === 1){
+            return "0" + digit;
+        }
+        return digit;
+
+    }
+
     render() {
 
         const table_column = [
@@ -47,7 +57,13 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
                 key: "label_name",
                 dataIndex: "label_name",
                 filters: this.state.label_name_filter,
-                onFilter: (value, record) => record.label_name === value
+                onFilter: (value, record) => record.label_name === value,
+                render: (data, record) => {
+
+                    return(
+                        <Link to={`/health/daily/build/${record.date}?type=column_search&column=label_name&value=${record.label_name}`}>{record.label_name}</Link>
+                    )
+                }
             },
             {
                 title: "Total Build Attempts",
