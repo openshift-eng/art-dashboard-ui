@@ -17,6 +17,7 @@ import Build_record_table from "./components/build_health/build_record_table";
 import Daily_overview_table from "./components/build_health/daily_overview_table";
 import Daily_overview_expand_home from "./components/build_health/daily_overview_expand_home";
 import Whatsnew_carousel from "./components/whatsnew/whatsnew_carousel";
+import Advisory_Overview_Home from "./components/release/advisory_overview/home";
 require('dotenv').config();
 
 const {SubMenu} = Menu;
@@ -100,7 +101,7 @@ export default class App extends Component{
                                     >
 
                                         <Menu.Item key="release_status_menu_item" icon={<HistoryOutlined />}>
-                                            <Link to="/release/status">
+                                            <Link to="/release/status/?type=all">
                                                 Release Status
                                             </Link>
                                         </Menu.Item>
@@ -131,7 +132,7 @@ export default class App extends Component{
                                         <h1 style={{color: "#316DC1"}}>ART Dashboard</h1>
                                     </div>
                             </Header>
-                            <Content style={{height: "100vh"}}>
+                            <Content>
                                 <Switch>
                                     <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
                                     <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
@@ -139,6 +140,7 @@ export default class App extends Component{
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>
                                     <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props}/>} name="daily_build_by_date"/>
                                     <Route path="/whatsnew" exact component={Whatsnew_carousel}/>
+                                    <Route path="/release/advisory/overview/:advisoryid" exact component={Advisory_Overview_Home} name="advisory_overview_home"/>
                                     <Redirect exact from="" to="/build/history"/>
                                 </Switch>
                             </Content>

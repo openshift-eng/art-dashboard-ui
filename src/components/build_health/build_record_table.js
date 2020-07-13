@@ -13,7 +13,6 @@ export default class Build_record_table extends Component{
     constructor(props) {
         super(props);
 
-        console.log(JSON.stringify(props))
 
         this.state = {
             data: [],
@@ -27,16 +26,10 @@ export default class Build_record_table extends Component{
         let query_params = this.parse_query_params(this.props);
         let type = null;
 
-        console.log(JSON.stringify(query_params));
-
 
         if(query_params.hasOwnProperty("type")){
             type = query_params["type"];
         }
-
-
-        console.log(type);
-
 
         if(type === "all"){
             get_daily_build_data_for_a_date(this.state.date).then((data) => {
