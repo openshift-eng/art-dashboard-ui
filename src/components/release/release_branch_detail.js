@@ -1,8 +1,11 @@
 import React, {Component} from "react";
-import {advisory_ids_for_branch} from "../../api_calls/release_calls";
-import {Table} from "antd";
+import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../../api_calls/release_calls";
+import {Empty, Typography} from "antd";
 import {LinkOutlined} from "@ant-design/icons";
 import {Link} from "react-router-dom";
+import Release_branch_detail_card from "./release_branch_detail_card";
+
+const {Title, Text} = Typography;
 
 
 export default class Release_branch_detail extends Component{
@@ -11,7 +14,9 @@ export default class Release_branch_detail extends Component{
         super(props);
         this.state = {
             branch: this.props.branch_name,
-            overview_table_data: []
+            overview_table_data: [],
+            advisory_details: [],
+            loading_cards: true
         }
 
         advisory_ids_for_branch(this.state.branch).then((data) => {
@@ -20,9 +25,45 @@ export default class Release_branch_detail extends Component{
                 if(data.hasOwnProperty(key))
                     table_data.push({type: key, id: data[key], advisory_link: "https://errata.devel.redhat.com/advisory/" + data[key]})
             }
-            this.setState({overview_table_data: table_data})
+            this.setState({overview_table_data: table_data}, () => {
+                this.generate_data_for_each_advisory()
+            })
+
         })
 
+    }
+
+    generate_data_for_each_advisory(){
+
+        this.setState({advisory_details: []}, () => {
+
+            let advisories_data = []
+
+            this.state.overview_table_data.forEach((data) => {
+
+                let advisory_data = {};
+
+                advisory_details_for_advisory_id(data.id).then(data_api => {
+                    advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
+                    advisory_data["bug_details"] = data_api["data"]["bugs"];
+                    advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
+                    advisory_data["type"] = data.type;
+                    advisories_data.push(advisory_data);
+                    this.setState({advisory_details: advisories_data});
+                    this.setState({loading_cards: false})
+                });
+
+            });
+        })
+
+    }
+
+    render_advisory_cards(advisory_data){
+        return advisory_data.map((data) => {
+           return (
+               <Release_branch_detail_card data={data}/>
+           )
+        });
     }
 
 
@@ -70,15 +111,18 @@ export default class Release_branch_detail extends Component{
 
         return(
             <div>
-                <Table
-                    title= {(currentDataSource) => {
-                        return <h3 className="center">All Advisories for {this.state.branch}</h3>
-                    }}
-                    dataSource={this.state.overview_table_data}
-                    columns={overview_table_columns}
-                    style={{padding: "30px"}}
-                    pagination={false}
-                />
+                <Title level={2} style={{paddingLeft: "40px", paddingTop: "40px"}}><Text code>{this.state.branch}</Text></Title>
+                {/*<Table*/}
+                {/*    title= {(currentDataSource) => {*/}
+                {/*        return <h3 className="center">All Advisories for {this.state.branch}</h3>*/}
+                {/*    }}*/}
+                {/*    dataSource={this.state.overview_table_data}*/}
+                {/*    columns={overview_table_columns}*/}
+                {/*    style={{padding: "30px"}}*/}
+                {/*    pagination={false}*/}
+                {/*/>*/}
+                {this.state.loading_cards && <Empty/>}
+                {this.render_advisory_cards(this.state.advisory_details)}
             </div>
         )
     }
