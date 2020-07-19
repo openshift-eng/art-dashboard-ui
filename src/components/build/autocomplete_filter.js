@@ -44,7 +44,7 @@ export default class Autocomplete_filter extends Component{
 
 
     onChange(value){
-        let where_cond = { "build.0.nvr": [{"value": value, "cond": "=", "like_or_where": "like", "name": "NVR"}]}
+        let where_cond = { "dg_name": [{"value": value, "cond": "=", "like_or_where": "like", "name": "NVR"}]}
         this.props.search_callback(where_cond);
     }
 

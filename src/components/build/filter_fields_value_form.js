@@ -18,21 +18,21 @@ export default class AdvancedSearchForm extends Component{
             build_date2_filter_value: "2020-12-31",
             error_alert_show: false,
             where_cond_holders: {
-              "brew.faultCode":[{
+              "fault_code":[{
                   "cond": "=",
                   "value": "0",
                   changeHandler: (cond) => {
-                      let element = this.state["where_cond_holders"]["brew.faultCode"][0]
+                      let element = this.state["where_cond_holders"]["fault_code"][0]
                       element["cond"] = cond;
                       this.setState({element})
                   },
                   onValueChangeHandler: (value) => {
-                      let element = this.state["where_cond_holders"]["brew.faultCode"]
+                      let element = this.state["where_cond_holders"]["fault_code"]
                       element["value"] = value;
                       this.setState({element})
                   }
               }],
-              "time.iso": [
+              "iso_time": [
                   {
                       "cond": ">="
                   },
@@ -54,7 +54,7 @@ export default class AdvancedSearchForm extends Component{
             setBuild2DateFilter: (date, dateString) => {
                 this.setState({build_date2_filter_value: dateString})
             },
-            sort_column: "`time.iso`",
+            sort_column: "iso_time",
             sort_order: "desc"
 
         }
@@ -80,7 +80,7 @@ export default class AdvancedSearchForm extends Component{
 
         this.search_fields_to_show = {
 
-            "time.iso": [{
+            "iso_time": [{
                 "name": "Start Date",
                 "required": false,
                 "ant_element": <DatePicker style={{width: "300px"}} placeholder="Start Date" format={"YYYY-MM-DD"} value={this.state.build_date1_filter_value} onChange={this.state.setBuild1DateFilter}/>,
@@ -93,7 +93,7 @@ export default class AdvancedSearchForm extends Component{
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": "build_date2_filter_value"
             }],
-            "brew.faultCode": [{
+            "fault_code": [{
                 "name": "Build Status",
                 "required": false,
                 "ant_element": <Select style={{width: "300px"}} onChange={this.build_status_onchange}>
@@ -103,35 +103,35 @@ export default class AdvancedSearchForm extends Component{
                 "like_or_where": this.like_or_where_like_disabled,
                 "formatter_state_variable": undefined
             }],
-            "build.0.nvr": [{
-                "name": "NVR",
-                "required": false,
-                "ant_element": <Input placeholder="NVR"/>,
-                "like_or_where": this.like_or_where_select,
-                "formatter_state_variable": undefined
-            }],
-            "dg.name": [{
+            // "build.0.nvr": [{
+            //     "name": "NVR",
+            //     "required": false,
+            //     "ant_element": <Input placeholder="NVR"/>,
+            //     "like_or_where": this.like_or_where_select,
+            //     "formatter_state_variable": undefined
+            // }],
+            "dg_name": [{
                 "name": "Dist Git Name",
                 "required": false,
                 "ant_element": <Input placeholder="Dist Git Name"/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": undefined
             }],
-            "label.name": [{
+            "label_name": [{
                 "name": "Label Name",
                 "required": false,
                 "ant_element": <Input placeholder="Label Name"/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": undefined
             }],
-            "label.version": [{
+            "label_version": [{
                 "name": "Label Version",
                 "required": false,
                 "ant_element": <Input placeholder="Label Version"/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": undefined
             }],
-            "jenkins.job_name": [{
+            "jenkins_job_name": [{
                 "name": "Jenkins Job Name",
                 "required": false,
                 "ant_element": <Input placeholder="Jenkins Job Name"/>,
@@ -145,8 +145,8 @@ export default class AdvancedSearchForm extends Component{
                 <Col span={12}>
                     <Form.Item name={"sort_filter_column"}>
                         <Select onChange={this.sort_column_change} placeholder={"Select Sort Column"}>
-                            <Option value="`time.iso`">Build Time</Option>
-                            <Option value="`build.0.version`">OpenShift Version</Option>
+                            <Option value="iso_time">Build Time</Option>
+                            <Option value="label_version">OpenShift Version</Option>
                         </Select>
                     </Form.Item>
                 </Col>
@@ -154,8 +154,8 @@ export default class AdvancedSearchForm extends Component{
                 <Col span={12}>
                     <Form.Item name={"sort_filter_order"}>
                         <Select onChange={this.sort_order_change} placeholder={"Select Sort Order"}>
-                            <Option value={"desc"}>Decreasing</Option>
                             <Option value={"asc"}>Ascending</Option>
+                            <Option value={"desc"}>Descending</Option>
                         </Select>
                     </Form.Item>
                 </Col>
@@ -175,7 +175,7 @@ export default class AdvancedSearchForm extends Component{
 
         console.log(value);
         const value_split = value.split("____");
-        let element = this.state["where_cond_holders"]["brew.faultCode"][0];
+        let element = this.state["where_cond_holders"]["fault_code"][0];
         element.changeHandler(value_split[0]);
         element.onValueChangeHandler(value_split[1])
     }
@@ -356,16 +356,6 @@ export default class AdvancedSearchForm extends Component{
                         >
                             Clear
                         </Button>
-                        {/*<a*/}
-                        {/*    style={{*/}
-                        {/*        fontSize: 12,*/}
-                        {/*    }}*/}
-                        {/*    onClick={() => {*/}
-                        {/*        this.state.setExpand(!this.state.expand);*/}
-                        {/*    }}*/}
-                        {/*>*/}
-                        {/*    {this.state.expand ? <UpOutlined /> : <DownOutlined />} Collapse*/}
-                        {/*</a>*/}
                     </Col>
                 </Row>
             </Form>

@@ -66,6 +66,7 @@ export default class Search_filters_popover extends Component{
                         onClick={this.props.handleFilterBuildParamsButton}
                         icon={<FilterTwoTone/>}>Advanced Filters
                     </Button>
+                    <Button/>
                 </Popover>
         );
     }

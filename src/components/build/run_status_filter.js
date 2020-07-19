@@ -19,7 +19,7 @@ export default class Run_status_filter extends Component{
         }else{
             cond = "!="
         }
-        let where_cond = { "brew.faultCode": [{"value": "0", "cond": cond, "like_or_where": "where", "name": "Build Status"}]}
+        let where_cond = { "fault_code": [{"value": "0", "cond": cond, "like_or_where": "where", "name": "Build Status"}]}
         this.props.search_callback(where_cond);
     }
 
