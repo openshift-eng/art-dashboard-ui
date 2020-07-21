@@ -13,7 +13,8 @@ export default class Whatsnew_carousel extends Component{
         const data_july_20_2020 = [
             "Build History: Data source migrated from SimpleDB to MySQL. Faster results. Now can support even more advanced filters.",
             "Build History: Support for link with query parameters to support link sharing for filtered results.",
-            "Build History: Export history data to csv."
+            "Build History: Export history data to csv.",
+            "Build History: Aesthetic UI changes. Cleaner \"More Details\" popup."
         ]
 
         const data_july_15_2020 = [

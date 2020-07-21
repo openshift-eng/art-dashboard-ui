@@ -135,7 +135,6 @@ export default class App extends Component{
                             <Content>
                                 <Switch>
                                     <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
-                                    {/*<Route path="/build/history" exact component={BuildsTable} name="build_history"/>*/}
                                     <Route path="/build/history" exact component={Build_history_home} name="build_history"/>
                                     <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>

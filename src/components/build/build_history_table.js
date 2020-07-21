@@ -143,8 +143,8 @@ export default class Build_history_table extends Component{
                                 //href={split_pieces.slice(0,-1).join("") + "/tree/?id="+split_pieces[split_pieces.length-1]}
                                 // href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
                                 target="_blank" rel="noopener noreferrer">
-                                {/*{split_pieces[split_pieces.length-1]}*/}
-                                {record["dg_name"]}
+                                {"#" + split_pieces[split_pieces.length-1].substr(split_pieces[split_pieces.length-1].length-10)}
+                                {/*{record["dg_name"]}*/}
                             </a>
                         );
                     }else{
@@ -181,9 +181,10 @@ export default class Build_history_table extends Component{
                 dataIndex: "iso_time",
                 key: "iso_time",
                 render: (data, record) => {
-                    let date = new Date(record["iso_time"])
+                    //let date = new Date(record["iso_time"])
                     return (
-                        <p>{date.getFullYear()+'-' + this.render_single_digit_to_double_datetime((date.getMonth()+1)) + '-'+this.render_single_digit_to_double_datetime(date.getDate()) + ' ' + this.render_single_digit_to_double_datetime(date.getHours()) + ':' + this.render_single_digit_to_double_datetime(date.getMinutes()) + ":" + this.render_single_digit_to_double_datetime(date.getSeconds())}</p>
+                        <p>{record["iso_time"].split("T")[0] + " " + record["iso_time"].split("T")[1].split(".")[0]}</p>
+                        // <p>{date.getFullYear()+'-' + this.render_single_digit_to_double_datetime((date.getMonth()+1)) + '-'+this.render_single_digit_to_double_datetime(date.getDate()) + ' ' + this.render_single_digit_to_double_datetime(date.getHours()) + ':' + this.render_single_digit_to_double_datetime(date.getMinutes()) + ":" + this.render_single_digit_to_double_datetime(date.getSeconds())}</p>
                     )
                 }
             },
