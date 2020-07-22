@@ -1,10 +1,11 @@
 import React, {Component} from "react";
 import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../../api_calls/release_calls";
-import {Empty, Typography} from "antd";
+import {Col, Empty, Row, Typography} from "antd";
 import {LinkOutlined} from "@ant-design/icons";
 import {Link} from "react-router-dom";
 import Release_branch_detail_card from "./release_branch_detail_card";
 import Release_branch_detail_table from "./release_branch_detail_table";
+import Openshift_version_select from "./openshift_version_select";
 
 const {Title, Text} = Typography;
 
@@ -13,13 +14,18 @@ export default class Release_branch_detail extends Component{
 
     constructor(props) {
         super(props);
-        console.log("here")
         this.state = {
             branch: this.props.match.params.branch,
             overview_table_data: [],
             advisory_details: [],
             loading_cards: true
         }
+        this.get_branch_data = this.get_branch_data.bind(this);
+        this.get_branch_data();
+
+    }
+
+    get_branch_data(){
 
         advisory_ids_for_branch(this.state.branch).then((data) => {
             let table_data = [];
@@ -33,6 +39,12 @@ export default class Release_branch_detail extends Component{
 
         })
 
+    }
+
+    componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({branch: nextProps.match.params.branch},()=>{
+            this.get_branch_data();
+        });
     }
 
     generate_data_for_each_advisory(){
@@ -113,7 +125,9 @@ export default class Release_branch_detail extends Component{
 
         return(
             <div>
-                <Title level={2} style={{paddingLeft: "20px", paddingTop: "40px"}}><Text code>{this.state.branch}</Text></Title>
+
+                <Title style={{paddingLeft: "20px", paddingTop: "40px"}} level={2}><Text code>{this.state.branch}</Text></Title>
+
                 {/*<Table*/}
                 {/*    title= {(currentDataSource) => {*/}
                 {/*        return <h3 className="center">All Advisories for {this.state.branch}</h3>*/}
@@ -124,7 +138,7 @@ export default class Release_branch_detail extends Component{
                 {/*    pagination={false}*/}
                 {/*/>*/}
                 {this.state.loading_cards && <Empty/>}
-                <Release_branch_detail_table data={this.state.advisory_details}/>
+                {!this.state.loading_cards && <Release_branch_detail_table data={this.state.advisory_details}/>}
                 {/*{this.render_advisory_cards(this.state.advisory_details)}*/}
             </div>
         )

@@ -2,7 +2,6 @@ import React, {Component} from "react";
 import {Select} from "antd";
 import {get_release_branches_from_ocp_build_data} from "../../api_calls/release_calls";
 import {Redirect} from "react-router";
-import {Link} from "react-router-dom";
 
 const {Option} = Select;
 
@@ -11,12 +10,22 @@ export default class Openshift_version_select extends Component{
 
     constructor(props) {
         super(props);
+        console.log("here");
         this.state = {
             data: [],
             loading: true,
             on_select_version: undefined
         }
 
+        this.set_data();
+
+        this.generate_select_option_from_state_date = this.generate_select_option_from_state_date.bind(this);
+        this.onChange = this.onChange.bind(this);
+        this.set_data = this.set_data.bind(this);
+
+    }
+
+    set_data(){
         get_release_branches_from_ocp_build_data().then(data => {
 
             let select_data = [];
@@ -28,10 +37,10 @@ export default class Openshift_version_select extends Component{
                 this.setState({loading: false})
             })
         })
+    }
 
-        this.generate_select_option_from_state_date = this.generate_select_option_from_state_date.bind(this);
-        this.onChange = this.onChange.bind(this);
-
+    componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({on_select_version: undefined})
     }
 
     onChange(value){
@@ -55,9 +64,10 @@ export default class Openshift_version_select extends Component{
                         {this.generate_select_option_from_state_date(this.state.data)}
                     </Select>
                 </div>
+
             );
         }else{
-            return(<Redirect to={`/release/status/detail/${this.state.on_select_version}`}/>);
+            return<Redirect to={`/release/status/detail/${this.state.on_select_version}`}/>;
         }
 
     }

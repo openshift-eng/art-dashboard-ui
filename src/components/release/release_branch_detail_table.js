@@ -256,7 +256,7 @@ export default class Release_branch_detail_table extends Component{
                     dataSource={this.state.data}
                     columns={table_column}
                     bordered pagination={false}
-                    title={() => <Openshift_version_select/>}/>
+                    title={() => <Openshift_version_select style={{flex:1}}/>}/>
             </div>
         );
     }
