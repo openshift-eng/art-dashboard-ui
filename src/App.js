@@ -18,6 +18,7 @@ import Daily_overview_table from "./components/build_health/daily_overview_table
 import Daily_overview_expand_home from "./components/build_health/daily_overview_expand_home";
 import Whatsnew_carousel from "./components/whatsnew/whatsnew_carousel";
 import Advisory_Overview_Home from "./components/release/advisory_overview/home";
+import Release_branch_detail from "./components/release/release_branch_detail";
 require('dotenv').config();
 
 const {SubMenu} = Menu;
@@ -137,6 +138,7 @@ export default class App extends Component{
                                     <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
                                     <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
                                     <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
+                                    <Route path="/release/status/detail/:branch" exact component={Release_branch_detail} name="release_status_detail"/>
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>
                                     <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props}/>} name="daily_build_by_date"/>
                                     <Route path="/whatsnew" exact component={Whatsnew_carousel}/>

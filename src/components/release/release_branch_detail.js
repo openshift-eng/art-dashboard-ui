@@ -4,6 +4,7 @@ import {Empty, Typography} from "antd";
 import {LinkOutlined} from "@ant-design/icons";
 import {Link} from "react-router-dom";
 import Release_branch_detail_card from "./release_branch_detail_card";
+import Release_branch_detail_table from "./release_branch_detail_table";
 
 const {Title, Text} = Typography;
 
@@ -12,8 +13,9 @@ export default class Release_branch_detail extends Component{
 
     constructor(props) {
         super(props);
+        console.log("here")
         this.state = {
-            branch: this.props.branch_name,
+            branch: this.props.match.params.branch,
             overview_table_data: [],
             advisory_details: [],
             loading_cards: true
@@ -111,7 +113,7 @@ export default class Release_branch_detail extends Component{
 
         return(
             <div>
-                <Title level={2} style={{paddingLeft: "40px", paddingTop: "40px"}}><Text code>{this.state.branch}</Text></Title>
+                <Title level={2} style={{paddingLeft: "20px", paddingTop: "40px"}}><Text code>{this.state.branch}</Text></Title>
                 {/*<Table*/}
                 {/*    title= {(currentDataSource) => {*/}
                 {/*        return <h3 className="center">All Advisories for {this.state.branch}</h3>*/}
@@ -122,7 +124,8 @@ export default class Release_branch_detail extends Component{
                 {/*    pagination={false}*/}
                 {/*/>*/}
                 {this.state.loading_cards && <Empty/>}
-                {this.render_advisory_cards(this.state.advisory_details)}
+                <Release_branch_detail_table data={this.state.advisory_details}/>
+                {/*{this.render_advisory_cards(this.state.advisory_details)}*/}
             </div>
         )
     }

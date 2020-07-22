@@ -5,6 +5,9 @@ import Github_rate_limit_status_bar from "./github_rate_limit_status_bar";
 import {Link} from "react-router-dom";
 
 
+
+
+
 export default class Release_status_table extends Component{
 
     constructor(props) {
@@ -31,7 +34,7 @@ export default class Release_status_table extends Component{
                 render: (data, record) =>{
                     return(
                         <div>
-                            <Link to={`/release/status/?type=branch&branch=${record["name"]}`}>{record["name"]}</Link>
+                            <Link to={`/release/status/detail/${record["name"]}`}>{record["name"]}</Link>
                         </div>
                     )
                 }
@@ -47,11 +50,12 @@ export default class Release_status_table extends Component{
 
         return (
             <div>
-                <Table dataSource={this.state.table_data}
-                       columns={table_column}
-                       style={{padding: "30px"}}
-                       bordered
-                       pagination={false}
+                <Table
+                    dataSource={this.state.table_data}
+                    columns={table_column}
+                    style={{padding: "30px"}}
+                    bordered
+                    pagination={false}
                 />
             </div>
         );
