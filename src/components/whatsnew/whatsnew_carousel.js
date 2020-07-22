@@ -26,9 +26,23 @@ export default class Whatsnew_carousel extends Component{
             "Release: overview for specific advisory. Sample Endpoint : /release/advisory/overview/54579"
         ]
 
+        const data_july_21_2020 = [
+            "Release: Revamped openshift branch page. Sample Endpoint : /release/status/?type=branch&branch=openshift-4.6",
+            "Release: Dropdown to select openshift branch to get advisory details."
+        ]
+
         return (
             <div style={{ margin: "30px", backgroundColor: "white"}} className="center">
 
+                <List
+                    size="large"
+                    header={<div>New Features: July 21st 2020</div>}
+                    footer={<div>Try them out!</div>}
+                    bordered
+                    dataSource={data_july_21_2020}
+                    renderItem={item => <List.Item>{item}</List.Item>}
+                />
+                <br/>
                 <List
                     size="large"
                     header={<div>New Features: July 13th 2020</div>}
