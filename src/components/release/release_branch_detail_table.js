@@ -3,6 +3,7 @@ import {Badge, Select, Table, Tag, Tooltip} from "antd";
 import {AuditOutlined, DesktopOutlined} from "@ant-design/icons";
 import {Link} from "react-router-dom";
 import Openshift_version_select from "./openshift_version_select";
+import {user_details_for_user_id} from "../../api_calls/release_calls";
 
 const {Option} = Select;
 
@@ -12,20 +13,29 @@ export default class Release_branch_detail_table extends Component{
     constructor(props) {
         super(props);
         this.state = {
-            data: this.transform_data(this.props.data)
+            data: []
         }
+
+        this.transform_data(this.props.data).then((t_data)=> {
+            console.log(JSON.stringify(t_data));
+            this.setState({data: t_data});
+        })
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        this.setState({data: this.transform_data(nextProps.data)});
+        this.transform_data(nextProps.data).then((t_data)=>{
+            this.setState({data: t_data});
+        })
+        // this.setState({data: this.transform_data(nextProps.data)});
     }
 
-    transform_data(table_data){
+    async transform_data(table_data){
 
         let transformed_data = []
         table_data.forEach((data) => {
             let table_row = {}
             table_row["advisory_type"] = data["type"];
+            table_row["publish_date"] = data["advisory_details"][0]["publish_date"];
             table_row["synopsis"] = data["advisory_details"][0]["synopsis"];
             table_row["errata_id"] = data["advisory_details"][0]["id"];
             table_row["release_date"] = data["advisory_details"][0]["release_date"];
@@ -34,9 +44,37 @@ export default class Release_branch_detail_table extends Component{
             table_row["doc_complete"] = data["advisory_details"][0]["doc_complete"];
             table_row["security_approved"] = data["advisory_details"][0]["security_approved"];
             table_row["qe_reviewer_id"] = data["advisory_details"][0]["qe_reviewer_id"];
+
+            if (data["advisory_details"][0]["qe_reviewer_details"] !== null){
+                table_row["qe_reviewer_email_address"] = data["advisory_details"][0]["qe_reviewer_details"]["email_address"];
+                table_row["qe_reviewer_realname"] = data["advisory_details"][0]["qe_reviewer_details"]["realname"];
+            }else{
+                table_row["qe_reviewer_email_address"] = "Not Available";
+                table_row["qe_reviewer_realname"] = "Not Available";
+            }
+
             table_row["doc_reviewer_id"] = data["advisory_details"][0]["doc_reviewer_id"];
+
+            if (data["advisory_details"][0]["doc_reviewer_details"] !== null){
+                table_row["doc_reviewer_email_address"] = data["advisory_details"][0]["doc_reviewer_details"]["email_address"];
+                table_row["doc_reviewer_realname"] = data["advisory_details"][0]["doc_reviewer_details"]["realname"];
+            }else{
+                table_row["doc_reviewer_email_address"] = "Not Available";
+                table_row["doc_reviewer_realname"] = "Not Available";
+            }
+
             table_row["product_security_reviewer_id"] = data["advisory_details"][0]["product_security_reviewer_id"];
+
+            if (data["advisory_details"][0]["product_security_reviewer_details"] !== null){
+                table_row["product_security_reviewer_email_address"] = data["advisory_details"][0]["product_security_reviewer_details"]["email_address"];
+                table_row["product_security_reviewer_realname"] = data["advisory_details"][0]["product_security_reviewer_details"]["realname"];
+            }else{
+                table_row["product_security_reviewer_email_address"] = "Not Available";
+                table_row["product_security_reviewer_realname"] = "Not Available";
+            }
+
             table_row["bug_summary"] = data["bug_summary"];
+
             transformed_data.push(table_row);
         });
         return transformed_data;
@@ -93,34 +131,14 @@ export default class Release_branch_detail_table extends Component{
                     },
                     {
                         title: "Release Date",
-                        key: "release_date",
-                        dataIndex: "release_date",
+                        key: "publish_date",
+                        dataIndex: "publish_date",
                     }
                 ]
             },
             {
-                title: "Advisory Approval Status",
+                title: "Doc",
                 children: [
-                    {
-                        title: "QE Approval",
-                        key: "qa_complete",
-                        dataIndex: "qa_complete",
-                        render: data => {
-                            if(data === "Approved"){
-                                return (
-                                    <Tag color={"green"}>{data}</Tag>
-                                )
-                            }else if(data === "Requested"){
-                                return(
-                                    <Tag color={"blue"}>{data}</Tag>
-                                )
-                            }else{
-                                return(
-                                    <Tag color={"red"}>{data}</Tag>
-                                )
-                            }
-                        }
-                    },
                     {
                         title: "Doc Approval",
                         key: "doc_complete",
@@ -142,6 +160,44 @@ export default class Release_branch_detail_table extends Component{
                         }
                     },
                     {
+                        title: "Doc Reviewer",
+                        children: [
+                            {
+                                title: "Name",
+                                key: "doc_reviewer_realname",
+                                dataIndex: "doc_reviewer_realname",
+                                render: (data, record) => {
+
+                                    if(data === null){
+                                        return(<p>Not Available</p>)
+                                    }else{
+                                        return(<p>{data}</p>)
+                                    }
+                                }
+                            },
+                            {
+                                title: "Email",
+                                key: "doc_reviewer_email_address",
+                                dataIndex: "doc_reviewer_email_address",
+                                render: (data, record) => {
+
+                                    if(data === null){
+                                        return(<p>Not Available</p>)
+                                    }else{
+                                        return(<p>{data}</p>)
+                                    }
+                                }
+                            }
+                        ]
+
+                    }
+
+                ]
+            },
+            {
+                title: "Product Security",
+                children: [
+                    {
                         title: "Security Approval",
                         key: "security_approved",
                         dataIndex: "security_approved",
@@ -160,60 +216,45 @@ export default class Release_branch_detail_table extends Component{
                                 )
                             }
                         }
-                    }
-                ]
-            },
-            {
-                title: "Reviewers",
-                children: [
-                    {
-                        title: "QE Reviewer",
-                        key: "qe_reviewer_id",
-                        dataIndex: "qe_reviewer_id",
-                        render: (data, record) => {
-                            if (record["qe_reviewer_id"] == null){
-                                return(<div>
-                                    <Tag color={"red"}>Not Available</Tag>
-                                </div>)
-                            }else{
-                                return(<div>
-                                    <a href={"https://errata.devel.redhat.com/user/" + data} target="_blank" rel="noopener noreferrer">{data}</a>
-                                </div>)
-                            }
-                        }
                     },
                     {
-                        title: "Doc Reviewer",
-                        key: "doc_reviewer_id",
-                        dataIndex: "doc_reviewer_id",
-                        render: (data, record) => {
-                            if (record["doc_reviewer_id"] == null){
-                                return(<div>
-                                    <Tag color={"red"}>Not Available</Tag>
-                                </div>)
-                            }else{
-                                return(<div>
-                                    <a href={"https://errata.devel.redhat.com/user/" + data} target="_blank" rel="noopener noreferrer">{data}</a>
-                                </div>)
-                            }
-                        }
-                    },
-                    {
-                        title: "Security Reviewer",
-                        key: "product_security_reviewer_id",
-                        dataIndex: "product_security_reviewer_id",
-                        render: (data, record) => {
-                            if (record["product_security_reviewer_id"] == null){
-                                return(<div>
-                                    <Tag color={"red"}>Not Available</Tag>
-                                </div>)
-                            }else{
-                                return(<div>
-                                    <a href={"https://errata.devel.redhat.com/user/" + data} target="_blank" rel="noopener noreferrer">{data}</a>
-                                </div>)
-                            }
-                        }
+                      title: "Reviewer",
+                      children: [
+                          {
+                              title: "Name",
+                              key: "product_security_reviewer_realname",
+                              dataIndex: "product_security_reviewer_realname",
+                              render: (data, record) => {
+                                  if (record["product_security_reviewer_realname"] == null){
+                                      return(<div>
+                                          <p>Not Available</p>
+                                      </div>)
+                                  }else{
+                                      return(<div>
+                                          <p>{data}</p>
+                                      </div>)
+                                  }
+                              }
+                          },
+                          {
+                              title: "Email",
+                              key: "product_security_reviewer_email_address",
+                              dataIndex: "product_security_reviewer_email_address",
+                              render: (data, record) => {
+                                  if (record["product_security_reviewer_email_address"] == null){
+                                      return(<div>
+                                          <p>Not Available</p>
+                                      </div>)
+                                  }else{
+                                      return(<div>
+                                          <p>{data}</p>
+                                      </div>)
+                                  }
+                              }
+                          }
+                      ]
                     }
+
                 ]
             },
             {
