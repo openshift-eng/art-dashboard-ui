@@ -90,6 +90,8 @@ export default class BuildsTable extends Component{
             "build.time.iso": true,
             "build.0.nvr": true,
             "dg.name": true,
+            "dg.commit": true,
+            "dg.namespace": true,
             "dg.qualified_name": true,
             "label.version": true,
             "label.io.openshift.build.commit.url": true,
@@ -397,26 +399,11 @@ export default class BuildsTable extends Component{
                 dataIndex: "build.0.source",
                 key: "build.0.source",
                 render: (data, record) => {
-                    const source = record["build.0.source"]
-                    if(source !== undefined){
-                        const split_pieces = source.split("#")
-                        const git_link = split_pieces.slice(0,-1).join("")
-                        let  http_link = "http://" + git_link.split("//").slice(1,).join() + "/tree/?id="+split_pieces[split_pieces.length-1]
-                        http_link = http_link.replace(/.com\//g, ".com/cgit/")
-                        return (
-                            <a  href={http_link}
-                                //href={split_pieces.slice(0,-1).join("") + "/tree/?id="+split_pieces[split_pieces.length-1]}
-                                // href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
-                                target="_blank" rel="noopener noreferrer">
-                                {/*{split_pieces[split_pieces.length-1]}*/}
-                                {record["dg.name"]}
-                            </a>
-                        );
-                    }else{
-                        return (
-                            <p></p>
-                        );
-                    }
+
+                    const http_link = "http://pkgs.devel.redhat.com/cgit/" + record["dg.namespace"] + "/" + record["dg.name"] + "/tree/?id=" + record["dg.commit"];
+                    return (
+                        <a href={http_link} target="_blank" rel="noopener noreferrer">{record["dg.commit"]}</a>
+                    )
 
                 }
             },
