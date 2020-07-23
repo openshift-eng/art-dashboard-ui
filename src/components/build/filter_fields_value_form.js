@@ -103,7 +103,7 @@ export default class AdvancedSearchForm extends Component{
                 "like_or_where": this.like_or_where_like_disabled,
                 "formatter_state_variable": undefined
             }],
-            "build.0.nvr": [{
+            "dg.qualified_name": [{
                 "name": "NVR",
                 "required": false,
                 "ant_element": <Input placeholder="NVR"/>,

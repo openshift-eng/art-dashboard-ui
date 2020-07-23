@@ -79,8 +79,6 @@ export default class BuildsTable extends Component{
 
     renderTableDataAntd(){
 
-        console.log("Render table called.")
-
         let table_object = []
 
         const required_columns = {
@@ -92,6 +90,8 @@ export default class BuildsTable extends Component{
             "build.time.iso": true,
             "build.0.nvr": true,
             "dg.name": true,
+            "dg.qualified_name": true,
+            "label.version": true,
             "label.io.openshift.build.commit.url": true,
         }
 
@@ -376,7 +376,7 @@ export default class BuildsTable extends Component{
                     return (
                         <Row>
                             <Col span={24} className="left">
-                                NVR
+                                Package
                             </Col>
                             <Col span={24}>
                                 <Autocomplete_filter placeholder={"Package Name"} type={"nvr"} search_callback={this.handle_for_update_build_table_data_simple_filters}/>
@@ -384,8 +384,13 @@ export default class BuildsTable extends Component{
                         </Row>
                     )
                 },
-                dataIndex: "build.0.nvr",
-                key: "build.0.nvr"
+                dataIndex: "dg.qualified_name",
+                key: "dg.qualified_name"
+            },
+            {
+                title: "Version",
+                key: "label.version",
+                dataIndex: "label.version"
             },
             {
                 title: "CGIT Link",
