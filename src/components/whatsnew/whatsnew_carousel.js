@@ -10,7 +10,7 @@ export default class Whatsnew_carousel extends Component{
 
     render() {
 
-        const data_july_20_2020 = [
+        const data_july_27_2020 = [
             "Build History: Data source migrated from SimpleDB to MySQL. Faster results. Now can support even more advanced filters.",
             "Build History: Support for link with query parameters to support link sharing for filtered results.",
             "Build History: Export history data to csv.",
@@ -45,7 +45,7 @@ export default class Whatsnew_carousel extends Component{
                     header={<div>New Features: July 20th 2020</div>}
                     footer={<div>Try them out!</div>}
                     bordered
-                    dataSource={data_july_20_2020}
+                    dataSource={data_july_27_2020}
                     renderItem={item => <List.Item>{item}</List.Item>}
                 />
 
