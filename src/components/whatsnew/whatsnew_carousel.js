@@ -58,6 +58,16 @@ export default class Whatsnew_carousel extends Component{
 
                 <List
                     size="large"
+                    header={<div>New Features: July 21st 2020</div>}
+                    footer={<div>Try them out!</div>}
+                    bordered
+                    dataSource={data_july_21_2020}
+                    renderItem={item => <List.Item>{item}</List.Item>}
+                />
+                <br/>
+
+                <List
+                    size="large"
                     header={<div>New Features: July 15th 2020</div>}
                     footer={<div>Try them out!</div>}
                     bordered
@@ -65,16 +75,6 @@ export default class Whatsnew_carousel extends Component{
                     renderItem={item => <List.Item>{item}</List.Item>}
                 />
 
-                <br/>
-
-                <List
-                    size="large"
-                    header={<div>New Features: July 21st 2020</div>}
-                    footer={<div>Try them out!</div>}
-                    bordered
-                    dataSource={data_july_21_2020}
-                    renderItem={item => <List.Item>{item}</List.Item>}
-                />
                 <br/>
 
                 <List
