@@ -42,7 +42,7 @@ export default class Whatsnew_carousel extends Component{
 
                 <List
                     size="large"
-                    header={<div>New Features: July 20th 2020</div>}
+                    header={<div>New Features: July 27th 2020</div>}
                     footer={<div>Try them out!</div>}
                     bordered
                     dataSource={data_july_27_2020}
