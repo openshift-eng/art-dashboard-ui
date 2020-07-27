@@ -130,7 +130,7 @@ export default class App extends Component{
                                         })}
                                     </div>
                                     <div className="center">
-                                        <h1 style={{color: "#316DC1"}}>ART Dashboard</h1>
+                                        <h1 style={{color: "#316DC1"}}>Release Dashboard</h1>
                                     </div>
                             </Header>
                             <Content>
