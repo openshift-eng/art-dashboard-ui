@@ -103,31 +103,17 @@ export default class AdvancedSearchForm extends Component{
                 "like_or_where": this.like_or_where_like_disabled,
                 "formatter_state_variable": undefined
             }],
-            // "build.0.nvr": [{
-            //     "name": "NVR",
-            //     "required": false,
-            //     "ant_element": <Input placeholder="NVR"/>,
-            //     "like_or_where": this.like_or_where_select,
-            //     "formatter_state_variable": undefined
-            // }],
             "dg_name": [{
-                "name": "Dist Git Name",
+                "name": "Package Name",
                 "required": false,
-                "ant_element": <Input placeholder="Dist Git Name"/>,
-                "like_or_where": this.like_or_where_select,
-                "formatter_state_variable": undefined
-            }],
-            "label_name": [{
-                "name": "Label Name",
-                "required": false,
-                "ant_element": <Input placeholder="Label Name"/>,
+                "ant_element": <Input placeholder="Package Name"/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": undefined
             }],
             "label_version": [{
-                "name": "Label Version",
+                "name": "OpenShift Version",
                 "required": false,
-                "ant_element": <Input placeholder="Label Version"/>,
+                "ant_element": <Input placeholder="OpenShift Version"/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": undefined
             }],

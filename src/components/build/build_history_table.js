@@ -140,13 +140,14 @@ export default class Build_history_table extends Component{
 
                     const http_link = "http://pkgs.devel.redhat.com/cgit/" + record["dg_namespace"] + "/" + record["dg_name"] + "/tree/?id=" + record["dg_commit"];
                     return (
-                        <a href={http_link} target="_blank" rel="noopener noreferrer">{record["dg_commit"]}</a>
+                        <a href={http_link} target="_blank" rel="noopener noreferrer">{"#"+record["dg_commit"]}</a>
                     )
 
                 }
             },
             {
                 title: "Source Commit",
+                align: "center",
                 dataIndex: "build_commit_url_github",
                 key: "build_commit_url_github",
                 render: (data, record) => {

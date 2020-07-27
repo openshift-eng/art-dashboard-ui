@@ -64,12 +64,8 @@ export default class Daily_overview_expand_home extends Component{
                                 }}
                                 percent={Math.round(this.state.success_rate)}
                             />
-                            {/*<StatisticsComp title="Success Rate" value={.toString() + "%"}/>*/}
                         </Col>
                     </Row>
-                    <br/>
-                    <Divider>Visualization</Divider>
-                    <Daily_overview_expand_fault_pie_chart data={this.state.pie_chart_data}/>
                     <br/>
                     <Divider>Detail Summary</Divider>
                     <Daily_overview_expanded_detailed_summary_table data={this.state.expanded_detail_summary_table_data}/>
