@@ -18,7 +18,9 @@ import Daily_overview_table from "./components/build_health/daily_overview_table
 import Daily_overview_expand_home from "./components/build_health/daily_overview_expand_home";
 import Whatsnew_carousel from "./components/whatsnew/whatsnew_carousel";
 import Advisory_Overview_Home from "./components/release/advisory_overview/home";
+import Build_history_home from "./components/build/build_history_home";
 import Release_branch_detail from "./components/release/release_branch_detail";
+
 require('dotenv').config();
 
 const {SubMenu} = Menu;
@@ -81,12 +83,11 @@ export default class App extends Component{
                                         </Menu.Item>
 
 
-                                            <Menu.Item key="build_health_item" icon={<SmileOutlined/>} >
-                                                <Link to="/health/daily/overview">
-                                                Health
-                                                </Link>
-                                            </Menu.Item>
-
+                                        <Menu.Item key="build_health_item" icon={<SmileOutlined/>} >
+                                            <Link to="/health/daily/overview">
+                                            Health
+                                            </Link>
+                                        </Menu.Item>
 
 
                                     </SubMenu>
@@ -122,7 +123,7 @@ export default class App extends Component{
                             </div>
                         </Sider>
                         <Layout>
-                            <Header style={{background: "white", height: "100px", float: "left"}}>
+                            <Header style={{background: "white", height: "120px", float: "left"}}>
                                     <div className="left">
                                         {React.createElement(this.state.collapsed_sider ? MenuUnfoldOutlined : MenuFoldOutlined, {
                                             className: 'trigger',
@@ -130,13 +131,13 @@ export default class App extends Component{
                                         })}
                                     </div>
                                     <div className="center">
-                                        <h1 style={{color: "#316DC1"}}>Release Dashboard</h1>
+                                        <h1 style={{color: "#316DC1", margin: "20px"}}>OpenShift Release Dashboard</h1>
                                     </div>
                             </Header>
                             <Content>
                                 <Switch>
                                     <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
-                                    <Route path="/build/history" exact component={BuildsTable} name="build_history"/>
+                                    <Route path="/build/history" exact component={Build_history_home} name="build_history"/>
                                     <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
                                     <Route path="/release/status/detail/:branch" exact component={Release_branch_detail} name="release_status_detail"/>
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>

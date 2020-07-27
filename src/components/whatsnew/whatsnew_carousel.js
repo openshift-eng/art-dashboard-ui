@@ -10,6 +10,17 @@ export default class Whatsnew_carousel extends Component{
 
     render() {
 
+        const data_july_27_2020 = [
+            "Build History: Data source migrated from SimpleDB to MySQL. Faster results. Now can support even more advanced filters.",
+            "Build History: Support for link with query parameters to support link sharing for filtered results.",
+            "Build History: Export history data to csv.",
+            "Build History: Aesthetic UI changes. Cleaner \"More Details\" popup."
+        ]
+
+        const data_july_15_2020 = [
+            "Release: Release status page for each openshift version. Sample Endpoint: /release/status/?type=branch&branch=openshift-4.6"
+        ]
+
         const data_july_09_2020 = [
             "Build History: Advanced Filters has option to sort results based on columns.",
             "Build History: Semantically correct icons in the table.",
@@ -36,6 +47,28 @@ export default class Whatsnew_carousel extends Component{
 
                 <List
                     size="large"
+                    header={<div>New Features: July 27th 2020</div>}
+                    footer={<div>Try them out!</div>}
+                    bordered
+                    dataSource={data_july_27_2020}
+                    renderItem={item => <List.Item>{item}</List.Item>}
+                />
+
+                <br/>
+
+                <List
+                    size="large"
+                    header={<div>New Features: July 15th 2020</div>}
+                    footer={<div>Try them out!</div>}
+                    bordered
+                    dataSource={data_july_15_2020}
+                    renderItem={item => <List.Item>{item}</List.Item>}
+                />
+
+                <br/>
+
+                <List
+                    size="large"
                     header={<div>New Features: July 21st 2020</div>}
                     footer={<div>Try them out!</div>}
                     bordered
@@ -43,6 +76,7 @@ export default class Whatsnew_carousel extends Component{
                     renderItem={item => <List.Item>{item}</List.Item>}
                 />
                 <br/>
+
                 <List
                     size="large"
                     header={<div>New Features: July 13th 2020</div>}

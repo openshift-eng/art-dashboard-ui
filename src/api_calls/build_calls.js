@@ -97,8 +97,6 @@ export async function get_build_data_witt_filters(filters, order=null) {
         data["next_token"] = filters["next_token"];
     }
 
-    console.log(JSON.stringify(data));
-
     const response = await fetch(process.env.REACT_APP_BUILD_ENDPOINT, {
         method: "POST",
         headers: {
@@ -120,6 +118,23 @@ export async function auto_complete_nvr() {
             'Accept': 'application/json',
             "Content-Type": "application/json",
         }
+    });
+
+    return await response.json();
+
+}
+
+export async function get_builds(request_params){
+
+    console.log(request_params);
+
+    const response = await fetch(process.env.REACT_APP_BUILD_MYSQL_ENDPOINT, {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(request_params)
     });
 
     return await response.json();
