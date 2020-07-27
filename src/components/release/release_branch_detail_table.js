@@ -160,36 +160,17 @@ export default class Release_branch_detail_table extends Component{
                         }
                     },
                     {
-                        title: "Doc Reviewer",
-                        children: [
-                            {
-                                title: "Name",
-                                key: "doc_reviewer_realname",
-                                dataIndex: "doc_reviewer_realname",
-                                render: (data, record) => {
+                        title: "Reviewer Name",
+                        key: "doc_reviewer_realname",
+                        dataIndex: "doc_reviewer_realname",
+                        render: (data, record) => {
 
-                                    if(data === null){
-                                        return(<p>Not Available</p>)
-                                    }else{
-                                        return(<p>{data}</p>)
-                                    }
-                                }
-                            },
-                            {
-                                title: "Email",
-                                key: "doc_reviewer_email_address",
-                                dataIndex: "doc_reviewer_email_address",
-                                render: (data, record) => {
-
-                                    if(data === null){
-                                        return(<p>Not Available</p>)
-                                    }else{
-                                        return(<p>{data}</p>)
-                                    }
-                                }
+                            if(data === null){
+                                return(<p>Not Available</p>)
+                            }else{
+                                return(<p>{data}</p>)
                             }
-                        ]
-
+                        }
                     }
 
                 ]
@@ -218,42 +199,21 @@ export default class Release_branch_detail_table extends Component{
                         }
                     },
                     {
-                      title: "Reviewer",
-                      children: [
-                          {
-                              title: "Name",
-                              key: "product_security_reviewer_realname",
-                              dataIndex: "product_security_reviewer_realname",
-                              render: (data, record) => {
-                                  if (record["product_security_reviewer_realname"] == null){
-                                      return(<div>
-                                          <p>Not Available</p>
-                                      </div>)
-                                  }else{
-                                      return(<div>
-                                          <p>{data}</p>
-                                      </div>)
-                                  }
-                              }
-                          },
-                          {
-                              title: "Email",
-                              key: "product_security_reviewer_email_address",
-                              dataIndex: "product_security_reviewer_email_address",
-                              render: (data, record) => {
-                                  if (record["product_security_reviewer_email_address"] == null){
-                                      return(<div>
-                                          <p>Not Available</p>
-                                      </div>)
-                                  }else{
-                                      return(<div>
-                                          <p>{data}</p>
-                                      </div>)
-                                  }
-                              }
-                          }
-                      ]
-                    }
+                        title: "Reviewer Name",
+                        key: "product_security_reviewer_realname",
+                        dataIndex: "product_security_reviewer_realname",
+                        render: (data, record) => {
+                            if (record["product_security_reviewer_realname"] == null){
+                                return(<div>
+                                    <p>Not Available</p>
+                                </div>)
+                            }else{
+                                return(<div>
+                                    <p>{data}</p>
+                                </div>)
+                            }
+                        }
+                    },
 
                 ]
             },
