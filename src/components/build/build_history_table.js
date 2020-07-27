@@ -116,7 +116,7 @@ export default class Build_history_table extends Component{
                     return (
                         <Row>
                             <Col span={24} className="left">
-                                NVR
+                                Package
                             </Col>
                             <Col span={24}>
                                 <Autocomplete_filter placeholder={"Package Name"} type={"nvr"} search_callback={this.props.simple_filter_callback}/>
@@ -124,34 +124,24 @@ export default class Build_history_table extends Component{
                         </Row>
                     )
                 },
-                dataIndex: "nvr",
-                key: "nvr"
+                dataIndex: "dg_qualified_name",
+                key: "dg_qualified_name"
+            },
+            {
+                title: "Version",
+                key: "label_version",
+                dataIndex: "label_version"
             },
             {
                 title: "CGIT Link",
-                dataIndex: "build_source",
-                key: "build_source",
+                dataIndex: "build_0_source",
+                key: "build_0_source",
                 render: (data, record) => {
-                    const source = record["build_source"]
-                    if(source !== undefined && source !== null && source !== ""){
-                        const split_pieces = source.split("#")
-                        const git_link = split_pieces.slice(0,-1).join("")
-                        let  http_link = "http://" + git_link.split("//").slice(1,).join() + "/tree/?id="+split_pieces[split_pieces.length-1]
-                        http_link = http_link.replace(/.com\//g, ".com/cgit/")
-                        return (
-                            <a  href={http_link}
-                                //href={split_pieces.slice(0,-1).join("") + "/tree/?id="+split_pieces[split_pieces.length-1]}
-                                // href={process.env.REACT_APP_CGIT_BUILD_TABLE_LINK+split_pieces[split_pieces.length-1]}
-                                target="_blank" rel="noopener noreferrer">
-                                {"#" + split_pieces[split_pieces.length-1].substr(split_pieces[split_pieces.length-1].length-10)}
-                                {/*{record["dg_name"]}*/}
-                            </a>
-                        );
-                    }else{
-                        return (
-                            <Tooltip title={"Link not available."}><IssuesCloseOutlined/></Tooltip>
-                        );
-                    }
+
+                    const http_link = "http://pkgs.devel.redhat.com/cgit/" + record["dg_namespace"] + "/" + record["dg_name"] + "/tree/?id=" + record["dg_commit"];
+                    return (
+                        <a href={http_link} target="_blank" rel="noopener noreferrer">{record["dg_commit"]}</a>
+                    )
 
                 }
             },
