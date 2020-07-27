@@ -56,3 +56,16 @@ export async function advisory_details_for_advisory_id(advisory_id) {
     return await response.json();
 
 }
+
+export async function user_details_for_user_id(user_id) {
+
+    const response = await fetch(process.env.REACT_APP_USER_DETAILS_FOR_A_USER_ID + user_id, {
+        method: "GET",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json",
+        }
+    });
+
+    return await response.json();
+}

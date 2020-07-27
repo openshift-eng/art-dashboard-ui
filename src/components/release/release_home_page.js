@@ -16,8 +16,7 @@ export default class Release_home_page extends Component{
         }
 
         this.state.query_params = this.parse_query_params(this.props);
-        const page_type  = this.state.query_params["type"];
-        this.state.page_type = page_type;
+        this.state.page_type = this.state.query_params["type"];
 
     }
 
@@ -54,11 +53,11 @@ export default class Release_home_page extends Component{
 
         return (
             <div>
-                <Row style={{backgroundColor: "white", margin: "30px", marginBottom: "0px"}} className="center">
+                {page_type === "all" && <Row style={{backgroundColor: "white", margin: "30px", marginBottom: "0px"}} className="center">
                     <Col span={24}>
                         <Github_rate_limit_status_bar/>
                     </Col>
-                </Row>
+                </Row>}
                 {(page_type === "all") && <Release_status_table/>}
                 {(page_type === "branch") && <Release_branch_detail branch_name={this.state.query_params["branch"]}/>}
             </div>
