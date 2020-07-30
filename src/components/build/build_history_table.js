@@ -156,9 +156,14 @@ export default class Build_history_table extends Component{
                 dataIndex: "build_commit_url_github",
                 key: "build_commit_url_github",
                 render: (data, record) => {
-                    return(
-                        <a href={record["build_commit_url_github"]} target="_blank" rel="noopener noreferrer">{"#" + record["build_commit_url_github"].slice(-8)}</a>
-                    )
+                    if(record["build_commit_url_github"] !== null)
+                        return(
+                            <a href={record["build_commit_url_github"]} target="_blank" rel="noopener noreferrer">{"#" + record["build_commit_url_github"].slice(-8)}</a>
+                        )
+                    else
+                        return(
+                            <p>Not Available</p>
+                        )
                 }
             },
             {
