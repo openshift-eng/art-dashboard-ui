@@ -53,11 +53,11 @@ export default class Release_home_page extends Component{
 
         return (
             <div>
-                {page_type === "all" && <Row style={{backgroundColor: "white", margin: "30px", marginBottom: "0px"}} className="center">
-                    <Col span={24}>
-                        <Github_rate_limit_status_bar/>
-                    </Col>
-                </Row>}
+                {/*{page_type === "all" && <Row style={{backgroundColor: "white", margin: "30px", marginBottom: "0px"}} className="center">*/}
+                {/*    <Col span={24}>*/}
+                {/*        <Github_rate_limit_status_bar/>*/}
+                {/*    </Col>*/}
+                {/*</Row>}*/}
                 {(page_type === "all") && <Release_status_table/>}
                 {(page_type === "branch") && <Release_branch_detail branch_name={this.state.query_params["branch"]}/>}
             </div>

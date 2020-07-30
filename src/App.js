@@ -92,23 +92,23 @@ export default class App extends Component{
 
                                     </SubMenu>
 
-                                    <SubMenu
-                                        key="sub2"
-                                        title={
-                                            <span>
-                                            <ForkOutlined />
-                                            <span>Release</span>
-                                            </span>
-                                        }
-                                    >
+                                    {/*<SubMenu*/}
+                                    {/*    key="sub2"*/}
+                                    {/*    title={*/}
+                                    {/*        <span>*/}
+                                    {/*        <ForkOutlined />*/}
+                                    {/*        <span>Release</span>*/}
+                                    {/*        </span>*/}
+                                    {/*    }*/}
+                                    {/*>*/}
 
                                         <Menu.Item key="release_status_menu_item" icon={<HistoryOutlined />}>
                                             <Link to="/release/status/?type=all">
-                                                Release Status
+                                                Release
                                             </Link>
                                         </Menu.Item>
 
-                                    </SubMenu>
+                                    {/*</SubMenu>*/}
 
                                     <Menu.Item key={"whats_news"} icon={<QuestionOutlined/>}>
                                         <Link to={"/whatsnew"}>

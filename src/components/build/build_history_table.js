@@ -77,11 +77,13 @@ export default class Build_history_table extends Component{
                 },
                 dataIndex: "fault_code",
                 key: "fault_code",
+                align: "center",
                 render: (text, record) =>{
                     if(record["fault_code"] === "0"){
                         return(
                             <div>
-                                <CheckOutlined style = {{color:  "#52c41a"}}/>
+                                <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
+                                   target="_blank" rel="noopener noreferrer"><CheckOutlined style = {{color:  "#52c41a"}}/></a>
                             </div>
                         )
                     }
@@ -89,28 +91,31 @@ export default class Build_history_table extends Component{
                     else{
                         return(
                             <div>
-                                <Tooltip title={"Fault Code is " + record["fault_code"]}>
-                                    <CloseOutlined style = {{color: "#f55d42"}}/>
-                                </Tooltip>
+                                <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
+                                   target="_blank" rel="noopener noreferrer">
+                                    <Tooltip title={"Fault Code is " + record["fault_code"]}>
+                                        <CloseOutlined style = {{color: "#f55d42"}}/>
+                                    </Tooltip>
+                                </a>
                             </div>
                         )
                     }
                 }
             },
-            {
-                title: "Brew Task",
-                dataIndex: "task_id",
-                key: "task_id",
-                render: (data, record) => {
-                    return(
-                        <div>
-                            <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
-                               target="_blank" rel="noopener noreferrer">{record["task_id"]}</a>
-                        </div>
-                    )
-
-                }
-            },
+            // {
+            //     title: "Brew Task",
+            //     dataIndex: "task_id",
+            //     key: "task_id",
+            //     render: (data, record) => {
+            //         return(
+            //             <div>
+            //                 <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
+            //                    target="_blank" rel="noopener noreferrer">{record["task_id"]}</a>
+            //             </div>
+            //         )
+            //
+            //     }
+            // },
             {
                 title:()=>{
                     return (
@@ -124,8 +129,8 @@ export default class Build_history_table extends Component{
                         </Row>
                     )
                 },
-                dataIndex: "dg_qualified_name",
-                key: "dg_qualified_name"
+                dataIndex: "dg_name",
+                key: "dg_name"
             },
             {
                 title: "Version",
@@ -152,7 +157,7 @@ export default class Build_history_table extends Component{
                 key: "build_commit_url_github",
                 render: (data, record) => {
                     return(
-                        <a href={record["build_commit_url_github"]} target="_blank" rel="noopener noreferrer"><LinkOutlined/></a>
+                        <a href={record["build_commit_url_github"]} target="_blank" rel="noopener noreferrer">{"#" + record["build_commit_url_github"].slice(-8)}</a>
                     )
                 }
             },
@@ -181,6 +186,7 @@ export default class Build_history_table extends Component{
             },
             {
                 title: 'More Details',
+                align: "center",
                 render: (text, record) => (
                     <div>
                         <a>

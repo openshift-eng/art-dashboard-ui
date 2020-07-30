@@ -17,7 +17,6 @@ export default class Release_branch_detail_table extends Component{
         }
 
         this.transform_data(this.props.data).then((t_data)=> {
-            console.log(JSON.stringify(t_data));
             this.setState({data: t_data});
         })
     }
