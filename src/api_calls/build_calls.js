@@ -1,4 +1,4 @@
-require('dotenv').config()
+//require('dotenv').config()
 
 export async function get_build_data_without_filters() {
 

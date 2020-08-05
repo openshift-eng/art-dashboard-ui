@@ -1,4 +1,4 @@
-require('dotenv').config()
+//require('dotenv').config()
 
 export async function get_release_branches_from_ocp_build_data() {
 

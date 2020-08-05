@@ -9,7 +9,7 @@ import {
     HistoryOutlined,
     SmileOutlined,
     SettingOutlined,
-    ForkOutlined, QuestionOutlined
+    ForkOutlined, QuestionOutlined, ToolOutlined
 } from '@ant-design/icons';
 import Release_status_table from "./components/release/status/release_status_table";
 import Release_home_page from "./components/release/release_home_page";
@@ -65,6 +65,11 @@ export default class App extends Component{
                             <div>
                                 <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
 
+                                    <Menu.Item key="release_status_menu_item" icon={<HistoryOutlined />}>
+                                        <Link to="/release/status/?type=all">
+                                            Release
+                                        </Link>
+                                    </Menu.Item>
 
                                     <SubMenu
                                         key="sub1"
@@ -92,33 +97,12 @@ export default class App extends Component{
 
                                     </SubMenu>
 
-                                    {/*<SubMenu*/}
-                                    {/*    key="sub2"*/}
-                                    {/*    title={*/}
-                                    {/*        <span>*/}
-                                    {/*        <ForkOutlined />*/}
-                                    {/*        <span>Release</span>*/}
-                                    {/*        </span>*/}
-                                    {/*    }*/}
-                                    {/*>*/}
-
-                                        <Menu.Item key="release_status_menu_item" icon={<HistoryOutlined />}>
-                                            <Link to="/release/status/?type=all">
-                                                Release
-                                            </Link>
-                                        </Menu.Item>
-
-                                    {/*</SubMenu>*/}
-
-                                    <Menu.Item key={"whats_news"} icon={<QuestionOutlined/>}>
-                                        <Link to={"/whatsnew"}>
-                                            What's New!
+                                    <Menu.Item key={"whats_news"} icon={<ToolOutlined/>}>
+                                        <Link to={"/help"}>
+                                            Help
                                         </Link>
                                     </Menu.Item>
 
-                                    {/*<Menu.Item key="bugzilla_menu_item" icon={<VideoCameraOutlined />} onClick={()=>this.handle_menu_item_click("bugzilla")}>*/}
-                                    {/*    Bugzilla*/}
-                                    {/*</Menu.Item>*/}
                                 </Menu>
                             </div>
                         </Sider>
@@ -131,7 +115,7 @@ export default class App extends Component{
                                         })}
                                     </div>
                                     <div className="center">
-                                        <h1 style={{color: "#316DC1", margin: "20px"}}>OpenShift Release Dashboard</h1>
+                                        <h1 style={{color: "#316DC1", margin: "20px"}}>OpenShift Release Board</h1>
                                     </div>
                             </Header>
                             <Content>
@@ -142,9 +126,10 @@ export default class App extends Component{
                                     <Route path="/release/status/detail/:branch" exact component={Release_branch_detail} name="release_status_detail"/>
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>
                                     <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props}/>} name="daily_build_by_date"/>
-                                    <Route path="/whatsnew" exact component={Whatsnew_carousel}/>
+                                    <Route path="/help" exact component={Whatsnew_carousel}/>
                                     <Route path="/release/advisory/overview/:advisoryid" exact component={Advisory_Overview_Home} name="advisory_overview_home"/>
-                                    <Redirect exact from="" to="/build/history"/>
+                                    <Redirect exact from="" to="/release/status/?type=all"/>
+                                    <Redirect exact from="" to="/release/status/?type=allOpen"/>
                                 </Switch>
                             </Content>
 

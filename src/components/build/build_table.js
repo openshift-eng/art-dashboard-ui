@@ -6,22 +6,17 @@ import 'antd/dist/antd.css';
 import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_fields_modal";
 import {
     CheckOutlined,
-    CloseOutlined, ExpandAltOutlined, ExpandOutlined,
-    FilterFilled,
-    FilterOutlined,
-    FilterTwoTone,
+    CloseOutlined, ExpandOutlined,
     LinkOutlined
 } from "@ant-design/icons";
 import {SyncOutlined} from "@ant-design/icons";
-import {EyeOutlined} from "@ant-design/icons";
-import {PlusOutlined} from "@ant-design/icons";
 import Search_filters_popover from "./search_filters_popover";
 import {Tooltip} from "antd";
 import Autocomplete_filter from "./autocomplete_filter";
 import Datepicker_filter from "./datepicker_filter";
 import Run_status_filter from "./run_status_filter";
 
-require('dotenv').config();
+//require('dotenv').config();
 
 
 export default class BuildsTable extends Component{

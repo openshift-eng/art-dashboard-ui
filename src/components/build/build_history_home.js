@@ -54,6 +54,7 @@ export default class Build_history_home extends Component{
         query_params = decodeURIComponent(query_params);
 
         get_builds(query_params).then((data) => {
+            console.log(JSON.stringify(data));
            this.setState({data: data["data"]}, ()=>{
                this.generate_data_for_csv_export(this.state.data)
            });
