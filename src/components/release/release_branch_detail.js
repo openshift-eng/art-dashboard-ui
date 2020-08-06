@@ -1,11 +1,7 @@
 import React, {Component} from "react";
 import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../../api_calls/release_calls";
-import {Col, Empty, Row, Typography} from "antd";
-import {LinkOutlined} from "@ant-design/icons";
-import {Link} from "react-router-dom";
-import Release_branch_detail_card from "./release_branch_detail_card";
+import {Empty, Typography} from "antd";
 import Release_branch_detail_table from "./release_branch_detail_table";
-import Openshift_version_select from "./openshift_version_select";
 
 const {Title, Text} = Typography;
 
@@ -15,13 +11,14 @@ export default class Release_branch_detail extends Component{
     constructor(props) {
         super(props);
         this.state = {
-            branch: this.props.match.params.branch,
+            branch: this.props.branch,
             overview_table_data: [],
             advisory_details: [],
             loading_cards: true,
             overview_table_data_previous: [],
             advisory_details_previous: []
         }
+
         this.get_branch_data = this.get_branch_data.bind(this);
         this.get_branch_data();
 
@@ -54,7 +51,8 @@ export default class Release_branch_detail extends Component{
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        this.setState({branch: nextProps.match.params.branch},()=>{
+
+        this.setState({branch: nextProps.branch},()=>{
             this.get_branch_data();
         });
     }
@@ -65,7 +63,9 @@ export default class Release_branch_detail extends Component{
 
             let advisories_data = []
 
-            this.state.overview_table_data.forEach((data) => {
+            const number_of_entries_in_overview_table_data = this.state.overview_table_data.length;
+
+            this.state.overview_table_data.forEach((data, index) => {
 
                 let advisory_data = {};
 
@@ -75,8 +75,14 @@ export default class Release_branch_detail extends Component{
                     advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
                     advisory_data["type"] = data.type;
                     advisories_data.push(advisory_data);
-                    this.setState({advisory_details: advisories_data});
-                    this.setState({loading_cards: false})
+
+                    if(index === number_of_entries_in_overview_table_data -1){
+                        this.setState({advisory_details: advisories_data}, ()=>{
+                            this.props.destroy_loading_callback();
+                        });
+                        this.setState({loading_cards: false})
+                    }
+
                 });
 
             });
@@ -90,7 +96,9 @@ export default class Release_branch_detail extends Component{
 
             let advisories_data = []
 
-            this.state.overview_table_data_previous.forEach((data) => {
+            const number_of_entries_in_overview_table_data_previous = this.state.overview_table_data_previous.length;
+
+            this.state.overview_table_data_previous.forEach((data, index) => {
 
                 let advisory_data = {};
 
@@ -100,8 +108,10 @@ export default class Release_branch_detail extends Component{
                     advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
                     advisory_data["type"] = data.type;
                     advisories_data.push(advisory_data);
-                    this.setState({advisory_details_previous: advisories_data});
-                    this.setState({loading_cards: false})
+                    if(number_of_entries_in_overview_table_data_previous -1 === index){
+                        this.setState({advisory_details_previous: advisories_data});
+                        this.setState({loading_cards: false})
+                    }
                 });
 
             });
@@ -109,78 +119,21 @@ export default class Release_branch_detail extends Component{
 
     }
 
-    render_advisory_cards(advisory_data){
-        return advisory_data.map((data) => {
-           return (
-               <Release_branch_detail_card data={data}/>
-           )
-        });
-    }
-
 
     render() {
 
-
-
-        const overview_table_columns = [
-            {
-                title: "Advisory ID",
-                key: "id",
-                dataIndex: "id",
-                align: "center",
-                render: (data, record) => {
-                    return (
-                        <div>
-                            <Link to={`/release/advisory/overview/${record["id"]}`}>
-                                {record["id"]}
-                            </Link>
-                        </div>
-                    )
-                }
-            },
-            {
-                title: "Advisory Type",
-                key: "type",
-                dataIndex: "type",
-                align: "center",
-
-            },
-            {
-                title: "Advisory Link",
-                key: "advisory_link",
-                dataIndex: "advisory_link",
-                align: "center",
-                render: (data, record) =>{
-                    return (
-                        <div>
-                            <p><a href={record["advisory_link"]} target="_blank" rel="noopener noreferrer">{<LinkOutlined/>}</a></p>
-                        </div>
-                    )
-                }
-            }
-        ]
 
         return(
             <div>
 
                 <Title style={{paddingLeft: "20px", paddingTop: "40px"}} level={2}><Text code>{this.state.branch}</Text></Title>
 
-                {/*<Table*/}
-                {/*    title= {(currentDataSource) => {*/}
-                {/*        return <h3 className="center">All Advisories for {this.state.branch}</h3>*/}
-                {/*    }}*/}
-                {/*    dataSource={this.state.overview_table_data}*/}
-                {/*    columns={overview_table_columns}*/}
-                {/*    style={{padding: "30px"}}*/}
-                {/*    pagination={false}*/}
-                {/*/>*/}
                 {this.state.loading_cards && <Empty/>}
                 {!this.state.loading_cards && <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}><Text code>{"Current Advisories"}</Text></Title>}
                 {!this.state.loading_cards && <Release_branch_detail_table data={this.state.advisory_details}/>}
                 <br/>
                 {!this.state.loading_cards && <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}><Text code>{"Previous Advisories"}</Text></Title>}
                 {!this.state.loading_cards && <Release_branch_detail_table data={this.state.advisory_details_previous}/>}
-                {/*{this.render_advisory_cards(this.state.advisory_details)}*/}
             </div>
         )
     }

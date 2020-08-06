@@ -59,7 +59,7 @@ export default class Openshift_version_select extends Component{
     render() {
         if(this.state.on_select_version === undefined){
             return (
-                <div>
+                <div className={"right"} style={{padding: "30px"}}>
                     <Select loading={this.state.loading} placeholder={"OpenShift Version"} onChange={this.onChange}>
                         {this.generate_select_option_from_state_date(this.state.data)}
                     </Select>
@@ -67,7 +67,7 @@ export default class Openshift_version_select extends Component{
 
             );
         }else{
-            return<Redirect to={`/release/status/detail/${this.state.on_select_version}`}/>;
+            return<Redirect to={`/release/status/${this.state.on_select_version}`}/>;
         }
 
     }

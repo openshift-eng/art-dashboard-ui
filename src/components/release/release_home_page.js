@@ -1,8 +1,9 @@
 import React, {Component} from "react";
 import Release_status_table from "./status/release_status_table";
-import Github_rate_limit_status_bar from "./status/github_rate_limit_status_bar";
-import {Col, Row} from "antd";
 import Release_branch_detail from "./release_branch_detail";
+import {message} from "antd";
+import {get_release_branches_from_ocp_build_data} from "../../api_calls/release_calls";
+import Openshift_version_select from "./openshift_version_select";
 
 
 export default class Release_home_page extends Component{
@@ -10,56 +11,45 @@ export default class Release_home_page extends Component{
     constructor(props) {
         super(props);
 
+
         this.state = {
-            page_type: "all",
-            query_params: {}
+            release_table_data: [],
+            current_branch: undefined,
+            loaded_shown: false,
         }
 
-        this.state.query_params = this.parse_query_params(this.props);
-        this.state.page_type = this.state.query_params["type"];
+        message.config({
+            maxCount: 2
+        })
+
+        this.destroy_loading = this.destroy_loading.bind(this);
 
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        this.setState({query_params: this.parse_query_params(nextProps)}, () => {
-            this.setState({page_type: this.state.query_params["type"]})
-        })
+        console.log(nextProps)
+        this.setState({current_branch: nextProps.match.params["branch"]});
     }
 
-    parse_query_params(props){
-
-        if(!props.hasOwnProperty("location")){
-            return {}
-        }else{
-            let query_params = {}
-            let search_string = props.location.search;
-            if(search_string !== ""){
-
-                if(search_string[0] === "?")
-                    search_string = search_string.substr(1);
-
-                search_string.split("&").forEach(key_val =>{
-                    const key = key_val.split("=")[0];
-                    query_params[key] = key_val.split("=")[1];
-                })
-            }
-            return query_params;
-        }
+    display_loading(){
+        message.loading({content: "Loading Data", duration:0, style: {position: "fixed", left: "50%", top: "20%"}});
     }
+
+    destroy_loading(){
+
+        message.destroy()
+        message.success({content: "Loaded", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
+
+    }
+
 
     render() {
 
-        const page_type = this.state.page_type;
-
         return (
             <div>
-                {/*{page_type === "all" && <Row style={{backgroundColor: "white", margin: "30px", marginBottom: "0px"}} className="center">*/}
-                {/*    <Col span={24}>*/}
-                {/*        <Github_rate_limit_status_bar/>*/}
-                {/*    </Col>*/}
-                {/*</Row>}*/}
-                {(page_type === "all") && <Release_status_table/>}
-                {(page_type === "branch") && <Release_branch_detail branch_name={this.state.query_params["branch"]}/>}
+                {this.display_loading()}
+                <Openshift_version_select/>
+                <Release_branch_detail branch={this.props.match.params.branch} destroy_loading_callback={this.destroy_loading}/>
             </div>
         );
     }

@@ -1,17 +1,15 @@
 import React, {Component} from 'react';
 import 'antd/dist/antd.css';
-import { Layout, Menu } from 'antd';
-import {BrowserRouter as Router, Link, Route, Switch, Redirect, withRouter} from "react-router-dom";
-import BuildsTable from "./components/build/build_table";
+import { Layout, Menu, notification } from 'antd';
+import {BrowserRouter as Router, Link, Route, Switch, Redirect} from "react-router-dom";
 import {
     MenuUnfoldOutlined,
     MenuFoldOutlined,
     HistoryOutlined,
     SmileOutlined,
     SettingOutlined,
-    ForkOutlined, QuestionOutlined, ToolOutlined
+    ToolOutlined
 } from '@ant-design/icons';
-import Release_status_table from "./components/release/status/release_status_table";
 import Release_home_page from "./components/release/release_home_page";
 import Build_record_table from "./components/build_health/build_record_table";
 import Daily_overview_table from "./components/build_health/daily_overview_table";
@@ -20,12 +18,11 @@ import Whatsnew_carousel from "./components/whatsnew/whatsnew_carousel";
 import Advisory_Overview_Home from "./components/release/advisory_overview/home";
 import Build_history_home from "./components/build/build_history_home";
 import Release_branch_detail from "./components/release/release_branch_detail";
+import Cookies from "js-cookie";
 
 require('dotenv').config();
 
 const {SubMenu} = Menu;
-
-const Bar = () => <div><h1>This is component BugZilla.</h1></div>;
 
 export default class App extends Component{
 
@@ -43,18 +40,29 @@ export default class App extends Component{
         this.setState({collapsed_sider: !this.state.collapsed_sider});
     }
 
+    openNotification = () => {
+        notification.open({
+            message: 'New Updates!',
+            description:
+                'There are new updates on the dashboard. Checkout updates in the help section under feature history.',
+            icon: <SmileOutlined style={{color: "#108ee9"}}/>
+        });
+    };
+
 
     render() {
 
         const { Header, Footer, Sider, Content } = Layout;
 
-        let selected_menu = this.state.selected_tab;
-        let content;
-        if(selected_menu === "build"){
-            content = <BuildsTable></BuildsTable>
-        }else if(selected_menu === "bugzilla"){
-            content = <Bar></Bar>
+        const release_number_whats_new_cookie = Cookies.get("release_number_whats_new_cookie");
+        const release_number_env = process.env.REACT_APP_RELEASE_NUMBER_WHATS_NEW;
+
+        if(release_number_whats_new_cookie === undefined || release_number_whats_new_cookie !== release_number_env){
+            this.openNotification();
+            Cookies.set("release_number_whats_new_cookie", release_number_env);
         }
+
+
 
         return (
 
@@ -115,21 +123,20 @@ export default class App extends Component{
                                         })}
                                     </div>
                                     <div className="center">
-                                        <h1 style={{color: "#316DC1", margin: "20px"}}>OpenShift Release Board</h1>
+                                        <h1 style={{color: "#316DC1", margin: "20px"}}>OpenShift Release Portal</h1>
                                     </div>
                             </Header>
                             <Content>
                                 <Switch>
                                     <Route component={Daily_overview_table} path="/health/daily/overview" exact/>
                                     <Route path="/build/history" exact component={Build_history_home} name="build_history"/>
-                                    <Route path="/release/status" exact component={Release_home_page} name="release_status"/>
-                                    <Route path="/release/status/detail/:branch" exact component={Release_branch_detail} name="release_status_detail"/>
+                                    <Route path="/release/status/:branch" exact component={Release_home_page} name="release_status"/>
                                     <Route component={Daily_overview_expand_home} path="/health/daily/detail/:date" exact/>
                                     <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props}/>} name="daily_build_by_date"/>
                                     <Route path="/help" exact component={Whatsnew_carousel}/>
                                     <Route path="/release/advisory/overview/:advisoryid" exact component={Advisory_Overview_Home} name="advisory_overview_home"/>
-                                    <Redirect exact from="" to="/release/status/?type=all"/>
-                                    <Redirect exact from="" to="/release/status/?type=allOpen"/>
+                                    <Redirect exact from="" to={"/release/status/"+process.env.REACT_APP_OPENSHIFT_VERSION_RELEASE_HOME_PAGE}/>
+
                                 </Switch>
                             </Content>
 

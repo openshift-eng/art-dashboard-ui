@@ -14,13 +14,17 @@ export default class Release_status_table extends Component{
         super(props);
 
         this.state = {
-            table_data: []
+            table_data: this.props.data
         }
 
-        get_release_branches_from_ocp_build_data().then(data => {
-            this.setState({table_data: data})
-        })
+        // get_release_branches_from_ocp_build_data().then(data => {
+        //     this.setState({table_data: data})
+        // })
 
+    }
+
+    componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({table_data: nextProps.data});
     }
 
     render() {
