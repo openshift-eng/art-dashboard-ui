@@ -96,6 +96,7 @@ export default class Build_history_home extends Component{
     redirect_to_updated_query_params(where_cond, for_search_filter=false, search_clicked=false){
 
         let queryString = encodeURIComponent(JSON.stringify(where_cond));
+        this.display_loading();
         this.setState({query_redirect_string: queryString})
     }
 
