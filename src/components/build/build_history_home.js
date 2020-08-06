@@ -4,7 +4,7 @@ import Search_filters_popover from "./search_filters_popover";
 import {Link, Redirect} from "react-router-dom";
 import {get_builds} from "../../api_calls/build_calls";
 import Build_history_table from "./build_history_table";
-import {Button, Row} from "antd";
+import {Button, message, Row} from "antd";
 import {CSVDownload, CSVLink} from "react-csv";
 import {DownloadOutlined, FilterTwoTone, IssuesCloseOutlined} from "@ant-design/icons";
 
@@ -18,7 +18,8 @@ export default class Build_history_home extends Component{
             data: [],
             export_csv_data: [],
             filter_attribute_selection_modal_visible: false,
-            query_redirect_string: undefined
+            query_redirect_string: undefined,
+            no_data: false
         }
 
         this.load_updated_data(this.state.query_params);
@@ -54,11 +55,25 @@ export default class Build_history_home extends Component{
         query_params = decodeURIComponent(query_params);
 
         get_builds(query_params).then((data) => {
-            console.log(JSON.stringify(data));
+
+            this.setState({data_loaded: true});
+
            this.setState({data: data["data"]}, ()=>{
-               this.generate_data_for_csv_export(this.state.data)
+               this.generate_data_for_csv_export(this.state.data);
+               this.destroy_loading();
            });
         });
+
+    }
+
+    display_loading(){
+        message.loading({content: "Loading Data", duration:0, style: {position: "fixed", left: "50%", top: "20%"}});
+    }
+
+    destroy_loading(){
+
+        message.destroy()
+        message.success({content: "Loaded", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
 
     }
 
@@ -88,13 +103,13 @@ export default class Build_history_home extends Component{
 
         if(this.state.query_redirect_string !== undefined){
             return <Redirect to={"/build/history/?" + this.state.query_redirect_string}/>;
-
         }
 
         else{
 
             return (
                 <div style={{padding: "30px"}}>
+                    {!this.state.data_loaded && this.display_loading()}
                     <Attribute_transfer_filter_fields_modal
                         visible={this.state.filter_attribute_selection_modal_visible}
                         handler={this.filter_button_toggle_modal_visibility}
