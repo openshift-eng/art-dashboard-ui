@@ -23,6 +23,7 @@ export default class Build_history_home extends Component{
         }
 
         this.load_updated_data(this.state.query_params);
+        this.setState({build_filter_where_cond: JSON.parse(decodeURIComponent(this.state.query_params))});
 
         this.filter_button_toggle_modal_visibility = this.filter_button_toggle_modal_visibility.bind(this);
         this.redirect_to_updated_query_params = this.redirect_to_updated_query_params.bind(this);
