@@ -65,6 +65,8 @@ export default class Release_branch_detail extends Component{
 
             const number_of_entries_in_overview_table_data = this.state.overview_table_data.length;
 
+            let count = 0;
+
             this.state.overview_table_data.forEach((data, index) => {
 
                 let advisory_data = {};
@@ -75,8 +77,10 @@ export default class Release_branch_detail extends Component{
                     advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
                     advisory_data["type"] = data.type;
                     advisories_data.push(advisory_data);
+                    count += 1;
 
-                    if(index === number_of_entries_in_overview_table_data -1){
+                    if(count === number_of_entries_in_overview_table_data){
+
                         this.setState({advisory_details: advisories_data}, ()=>{
                             this.props.destroy_loading_callback();
                         });
@@ -98,6 +102,8 @@ export default class Release_branch_detail extends Component{
 
             const number_of_entries_in_overview_table_data_previous = this.state.overview_table_data_previous.length;
 
+            let count = 0;
+
             this.state.overview_table_data_previous.forEach((data, index) => {
 
                 let advisory_data = {};
@@ -108,7 +114,8 @@ export default class Release_branch_detail extends Component{
                     advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
                     advisory_data["type"] = data.type;
                     advisories_data.push(advisory_data);
-                    if(number_of_entries_in_overview_table_data_previous -1 === index){
+                    count += 1;
+                    if(number_of_entries_in_overview_table_data_previous  === count){
                         this.setState({advisory_details_previous: advisories_data});
                         this.setState({loading_cards: false})
                     }
@@ -121,7 +128,6 @@ export default class Release_branch_detail extends Component{
 
 
     render() {
-
 
         return(
             <div>

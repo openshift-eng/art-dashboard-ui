@@ -25,11 +25,9 @@ export default class Build_history_home extends Component{
         this.load_updated_data(this.state.query_params);
 
         if (this.state.query_params !== undefined && this.state.query_params !== ""){
-            console.log("A")
             this.setState({build_filter_where_cond: JSON.parse(decodeURIComponent(this.state.query_params))});
         }
         else{
-            console.log("B")
             this.setState({build_filter_where_cond: JSON.parse("{}")});
         }
 

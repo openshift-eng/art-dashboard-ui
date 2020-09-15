@@ -15,17 +15,21 @@ export default class Release_branch_detail_table extends Component{
         this.state = {
             data: []
         }
+    }
+
+    componentDidMount() {
 
         this.transform_data(this.props.data).then((t_data)=> {
             this.setState({data: t_data});
         })
+
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
         this.transform_data(nextProps.data).then((t_data)=>{
             this.setState({data: t_data});
         })
-        // this.setState({data: this.transform_data(nextProps.data)});
+
     }
 
     async transform_data(table_data){
@@ -251,6 +255,7 @@ export default class Release_branch_detail_table extends Component{
         ]
 
         return (
+
             <div style={{padding: "40px"}}>
                 <Table
                     dataSource={this.state.data}
