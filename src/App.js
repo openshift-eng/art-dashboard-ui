@@ -8,7 +8,8 @@ import {
     HistoryOutlined,
     SmileOutlined,
     SettingOutlined,
-    ToolOutlined
+    ToolOutlined,
+    FireFilled
 } from '@ant-design/icons';
 import Release_home_page from "./components/release/release_home_page";
 import Build_record_table from "./components/build_health/build_record_table";
@@ -17,8 +18,8 @@ import Daily_overview_expand_home from "./components/build_health/daily_overview
 import Whatsnew_carousel from "./components/whatsnew/whatsnew_carousel";
 import Advisory_Overview_Home from "./components/release/advisory_overview/home";
 import Build_history_home from "./components/build/build_history_home";
-import Release_branch_detail from "./components/release/release_branch_detail";
 import Cookies from "js-cookie";
+import Incident_home from "./components/incident/incident_home";
 
 require('dotenv').config();
 
@@ -105,6 +106,12 @@ export default class App extends Component{
 
                                     </SubMenu>
 
+                                    <Menu.Item key={"incidents"} icon={<FireFilled/>}>
+                                        <Link to={"/incidents"}>
+                                            Incidents
+                                        </Link>
+                                    </Menu.Item>
+
                                     <Menu.Item key={"whats_news"} icon={<ToolOutlined/>}>
                                         <Link to={"/help"}>
                                             Help
@@ -135,6 +142,7 @@ export default class App extends Component{
                                     <Route path="/health/daily/build/:date" exact render={(props) => <Build_record_table {...props}/>} name="daily_build_by_date"/>
                                     <Route path="/help" exact component={Whatsnew_carousel}/>
                                     <Route path="/release/advisory/overview/:advisoryid" exact component={Advisory_Overview_Home} name="advisory_overview_home"/>
+                                    <Route path="/incidents" exact component={Incident_home}/>
                                     <Redirect exact from="" to={"/release/status/"+process.env.REACT_APP_OPENSHIFT_VERSION_RELEASE_HOME_PAGE}/>
 
                                 </Switch>

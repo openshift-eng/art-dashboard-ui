@@ -27,7 +27,6 @@ export default class Release_home_page extends Component{
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
-        console.log(nextProps)
         this.setState({current_branch: nextProps.match.params["branch"]});
     }
 

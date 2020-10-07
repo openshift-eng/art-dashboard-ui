@@ -123,24 +123,31 @@ export default class Build_history_home extends Component{
                         handler={this.filter_button_toggle_modal_visibility}
                         handler_to_update_build_table_data={this.redirect_to_updated_query_params}/>
                         <Button/>
-                    <Row className={"right"} >
-                        <CSVLink data={this.state.data} filename={(Date.now()).toString()+ ".csv"} target="_blank">
-                            <Button
-                                size={"medium"}
-                                className="right"
-                                style={{
-                                    marginBottom: "20px",
-                                    background: "#316DC1",
-                                    color: "white"}}
-                                icon={<DownloadOutlined/>}>Export
-                            </Button>
-                            <Button/>
-                        </CSVLink>
+
+                    <Row className={"right"}>
                         <Search_filters_popover handleFilterBuildParamsButton={this.filter_button_toggle_modal_visibility} data={this.state.build_filter_where_cond}/>
                         <Button/>
                     </Row>
 
                     <Build_history_table data={this.state.data} simple_filter_callback={this.redirect_to_updated_query_params}/>
+
+                    <Row className={"right"} >
+                        <CSVLink data={this.state.data} filename={(Date.now()).toString()+ ".csv"} target="_blank">
+                            <Button
+                                size={"large"}
+                                type="primary"
+                                shape="circle"
+                                style={{
+                                    position: "fixed",
+                                    right: "50px",
+                                    bottom: "50px",
+                                    boxShadow: "0 6px 14px 0 #666",
+                                }}
+                                icon={<DownloadOutlined/>}>
+                            </Button>
+                            <Button/>
+                        </CSVLink>
+                    </Row>
 
                 </div>
             );
