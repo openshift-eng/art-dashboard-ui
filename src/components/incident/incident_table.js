@@ -1,9 +1,11 @@
 import React, {Component} from "react";
-import {Table} from "antd";
+import {message, Table} from "antd";
 import { Typography } from 'antd';
-import {EditOutlined, ExpandOutlined} from "@ant-design/icons";
+import {DeleteColumnOutlined, DeleteOutlined, EditOutlined, ExpandOutlined} from "@ant-design/icons";
 import Update_incident_drawer from "./update_incident_drawer";
 import Detailed_view_modal from "./detailed_view_modal";
+import Popconfirm from "antd/es/popconfirm";
+import {delete_incident} from "../../api_calls/incident_calls";
 
 const { Paragraph, Text } = Typography;
 
@@ -20,6 +22,8 @@ export default class Incident_table extends Component{
         this.show_incident_update_view = this.show_incident_update_view.bind(this);
         this.show_incident_detailed_view = this.show_incident_detailed_view.bind(this);
         this.hide_incident_detailed_view = this.hide_incident_detailed_view.bind(this);
+        this.delete_incident_view = this.delete_incident_view.bind(this);
+        this.cancel_delete = this.cancel_delete.bind(this);
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
@@ -54,9 +58,22 @@ export default class Incident_table extends Component{
         this.setState(state_var);
     }
 
+    delete_incident_view(event){
+        console.log(event)
+    }
+
+    cancel_delete(record){
+        alert("No delete" + record["pk"]);
+    }
+
     render() {
 
         const columns = [
+            {
+              title: "Incident ID",
+              key: "pk",
+              dataIndex: "pk"
+            },
             {
                 title: "Start Time",
                 render: (data, record) => {
@@ -134,7 +151,39 @@ export default class Incident_table extends Component{
                         </div>
                     )
                 }
+            },
+            {
+                title: "Delete",
+                render: (data, record) =>{
+                    return(
+                        <div>
+                            <Popconfirm
+                                title="Are you sure you want to delete this incident record?"
+                                onConfirm={() => {
+                                    delete_incident(record["pk"]).then(data=>{
+                                        if(data["status"] === 0){
+                                            message.success({content: "Incident Deleted", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
+                                        }else{
+                                            message.error({content: "Failed to delete Incident", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
+                                        }
+                                    })
+                                }}
+                                onCancel={()=>{
+
+                                }}
+                                okText="Delete"
+                                cancelText="Cancel"
+                                okButtonProps={{"record": record}}
+                            >
+                                <a>
+                                    <DeleteOutlined/>
+                                </a>
+                            </Popconfirm>
+                        </div>
+                    )
+                }
             }
+
         ]
 
 

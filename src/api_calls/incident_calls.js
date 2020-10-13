@@ -54,3 +54,22 @@ export async function create_incident(incident_record) {
     return await response.json();
 
 }
+
+export async function delete_incident(incident_id) {
+
+    let data = {
+        "log_incident_id": incident_id
+    }
+
+    const response = await fetch(server_endpoint + process.env.REACT_APP_REPORTED_INCIDENTS, {
+        method: "DELETE",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    return await response.json();
+
+}
