@@ -5,7 +5,7 @@ import {DeleteColumnOutlined, DeleteOutlined, EditOutlined, ExpandOutlined} from
 import Update_incident_drawer from "./update_incident_drawer";
 import Detailed_view_modal from "./detailed_view_modal";
 import Popconfirm from "antd/es/popconfirm";
-import {delete_incident} from "../../api_calls/incident_calls";
+import {delete_incident, get_all_incident_reports} from "../../api_calls/incident_calls";
 
 const { Paragraph, Text } = Typography;
 
@@ -22,13 +22,12 @@ export default class Incident_table extends Component{
         this.show_incident_update_view = this.show_incident_update_view.bind(this);
         this.show_incident_detailed_view = this.show_incident_detailed_view.bind(this);
         this.hide_incident_detailed_view = this.hide_incident_detailed_view.bind(this);
-        this.delete_incident_view = this.delete_incident_view.bind(this);
-        this.cancel_delete = this.cancel_delete.bind(this);
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: nextProps.data["data"]})
     }
+
 
     show_incident_detailed_view(record){
         let state_val = "visible_modal_"+record["pk"];
@@ -56,14 +55,6 @@ export default class Incident_table extends Component{
         let state_var = {}
         state_var[state_val] = false;
         this.setState(state_var);
-    }
-
-    delete_incident_view(event){
-        console.log(event)
-    }
-
-    cancel_delete(record){
-        alert("No delete" + record["pk"]);
     }
 
     render() {
@@ -131,7 +122,7 @@ export default class Incident_table extends Component{
                                     <EditOutlined  onClick={() => this.show_incident_update_view(record)}/>
                                 </a>
 
-                                <Update_incident_drawer visibility = {this.state["visible_update_"+record["pk"]]} data={record} modal_close_function={this.hide_incident_update_view}/>
+                                <Update_incident_drawer visibility = {this.state["visible_update_"+record["pk"]]} data={record} modal_close_function={this.hide_incident_update_view} refresh_callback={this.props.refresh_callback}/>
                             </div>
                         )
 
@@ -163,6 +154,7 @@ export default class Incident_table extends Component{
                                     delete_incident(record["pk"]).then(data=>{
                                         if(data["status"] === 0){
                                             message.success({content: "Incident Deleted", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
+                                            this.props.refresh_callback();
                                         }else{
                                             message.error({content: "Failed to delete Incident", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
                                         }

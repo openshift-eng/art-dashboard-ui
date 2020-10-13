@@ -15,9 +15,16 @@ export default class Incident_home extends Component{
         }
         this.open_drawer = this.open_drawer.bind(this);
         this.close_drawer = this.close_drawer.bind(this);
+        this.refresh_table = this.refresh_table.bind(this);
     }
 
     componentDidMount() {
+        get_all_incident_reports().then(data => {
+            this.setState({"incident_table_data": data})
+        })
+    }
+
+    refresh_table() {
         get_all_incident_reports().then(data => {
             this.setState({"incident_table_data": data})
         })
@@ -35,8 +42,8 @@ export default class Incident_home extends Component{
         return (
             <div style={{padding: "30px"}}>
 
-                <Incident_table data={this.state.incident_table_data}/>
-                <New_incident_drawer visibility={this.state.new_incident_drawer_visible} draw_close_callback={this.close_drawer}/>
+                <Incident_table data={this.state.incident_table_data} refresh_callback={this.refresh_table}/>
+                <New_incident_drawer visibility={this.state.new_incident_drawer_visible} draw_close_callback={this.close_drawer} refresh_callback={this.refresh_table}/>
                 <Button type="primary" shape="circle" icon={<PlusOutlined/>} size={"large"}
                         style={{
                             position: "fixed",

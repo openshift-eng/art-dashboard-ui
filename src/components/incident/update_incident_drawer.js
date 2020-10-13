@@ -116,8 +116,10 @@ export default class Update_incident_drawer extends Component{
 
         update_incident(this.state.data).then(data => {
             message.destroy()
-            if(data["status"] === 0)
+            if(data["status"] === 0){
                 message.success({content: "Incident Updated", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
+                this.props.refresh_callback();
+            }
             else
                 message.error({content: "Failed to create Incident", duration: 2, style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}})
 
