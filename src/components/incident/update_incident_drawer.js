@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {Drawer, Form, Button, Col, Row, Input, Select, DatePicker, Typography, message} from 'antd';
 import {update_incident} from "../../api_calls/incident_calls";
 import moment from "moment";
+import ReactMarkdown from "react-markdown";
 
 const {TextArea} = Input;
 
@@ -23,6 +24,7 @@ export default class Update_incident_drawer extends Component{
         this.update_editable_cause = this.update_editable_cause.bind(this);
         this.update_editable_remedy = this.update_editable_remedy.bind(this);
         this.update_editable_action_items = this.update_editable_action_items.bind(this);
+        this.update_editable_title = this.update_editable_title.bind(this);
         this.start_date_on_change = this.start_date_on_change.bind(this);
         this.end_date_on_change = this.end_date_on_change.bind(this);
 
@@ -43,6 +45,7 @@ export default class Update_incident_drawer extends Component{
         formatted_data["remedy"] = data["fields"]["remedy"];
         formatted_data["action_items"] = data["fields"]["action_items"];
         formatted_data["incident_start"] = data["fields"]["incident_start"];
+        formatted_data["title"] = data["fields"]["title"];
 
         if (data["fields"]["incident_end"] !== undefined && data["fields"]["incident_end"] !== null){
             formatted_data["incident_end"] = data["fields"]["incident_end"];
@@ -111,6 +114,12 @@ export default class Update_incident_drawer extends Component{
         this.setState({data: data});
     }
 
+    update_editable_title(event){
+        let data = this.state.data;
+        data["title"] = event.target.value;
+        this.setState({data: data});
+    }
+
     handle_update(){
         message.loading({content: "Updating Incident", duration:0, style: {position: "fixed", left: "50%", top: "20%"}})
 
@@ -140,7 +149,7 @@ export default class Update_incident_drawer extends Component{
             <div>
                 <Drawer
                     title={"Update incident"}
-                    width={"65%"}
+                    width={"80%"}
                     onClose={this.onClose}
                     visible={this.state.visibility}
                     bodyStyle={{paddingBottom: 80}}
@@ -185,8 +194,27 @@ export default class Update_incident_drawer extends Component{
                             </Col>
                         </Row>
 
-                        <Row gutter={16}>
-                            <Col span={24}>
+                        <Row gutter={24}>
+                            <Col span={24} style={{margin: "10px"}}>
+                                <Form.Item
+                                    name="title"
+                                    label="Title"
+                                    rules={[{ required: false, message: 'Please enter the incident title' }]}
+                                >
+                                    {console.log(this.state.data["title"])}
+                                    <TextArea
+                                        onChange={this.update_editable_title}
+                                        placeholder="Please enter incident title"
+                                        maxLength={20000}
+                                        autoSize={{maxRows: 2}}
+                                        allowClear={true}
+                                        defaultValue={this.state.data["title"]}/>
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={24}>
+                            <Col span={10} style={{margin: "10px"}}>
                                 <Form.Item
                                     name="description"
                                     label="Description"
@@ -197,15 +225,21 @@ export default class Update_incident_drawer extends Component{
                                         onChange={this.update_editable_description}
                                         placeholder="Please enter incident description"
                                         maxLength={20000}
-                                        autoSize
+                                        autoSize={{maxRows: 20}}
                                         allowClear={true}
                                         defaultValue={description}/>
                                 </Form.Item>
                             </Col>
+                            <Col span={10} style={{margin: "10px"}}>
+                                <p>Preview</p>
+                                <div style={{ borderStyle: "groove", padding: "10px", maxHeight: "450px", overflowY: "auto"}}>
+                                    <ReactMarkdown source={this.state.data["description"]} escapeHtml={false}/>
+                                </div>
+                            </Col>
                         </Row>
 
                         <Row gutter={16}>
-                            <Col span={24}>
+                            <Col span={10} style={{margin: "10px"}}>
                                 <Form.Item
                                     name="impact"
                                     label="Impact"
@@ -216,15 +250,21 @@ export default class Update_incident_drawer extends Component{
                                         onChange={this.update_editable_impact}
                                         maxLength={20000}
                                         placeholder="Please enter incident impact"
-                                        autoSize
+                                        autoSize={{maxRows: 20}}
                                         allowClear={true}
                                         defaultValue={this.state.data["impact"]}/>
                                 </Form.Item>
                             </Col>
+                            <Col span={10} style={{margin: "10px"}}>
+                                <p>Preview</p>
+                                <div style={{ borderStyle: "groove", padding: "10px", maxHeight: "450px", overflowY: "auto"}}>
+                                    <ReactMarkdown source={this.state.data["impact"]} escapeHtml={false}/>
+                                </div>
+                            </Col>
                         </Row>
 
                         <Row gutter={16}>
-                            <Col span={24}>
+                            <Col span={10} style={{margin: "10px"}}>
                                 <Form.Item
                                     name="cause"
                                     label="Cause"
@@ -235,15 +275,21 @@ export default class Update_incident_drawer extends Component{
                                         onChange={this.update_editable_cause}
                                         maxLength={20000}
                                         placeholder="Please enter incident cause"
-                                        autoSize
+                                        autoSize={{maxRows: 20}}
                                         allowClear={true}
                                         defaultValue={this.state.data["cause"]}/>
                                 </Form.Item>
                             </Col>
+                            <Col span={10} style={{margin: "10px"}}>
+                                <p>Preview</p>
+                                <div style={{ borderStyle: "groove", padding: "10px", maxHeight: "450px", overflowY: "auto"}}>
+                                    <ReactMarkdown source={this.state.data["cause"]} escapeHtml={false}/>
+                                </div>
+                            </Col>
                         </Row>
 
                         <Row gutter={16}>
-                            <Col span={24}>
+                            <Col span={10} style={{margin: "10px"}}>
                                 <Form.Item
                                     name="remedy"
                                     label="Remedy"
@@ -254,15 +300,21 @@ export default class Update_incident_drawer extends Component{
                                         onChange={this.update_editable_remedy}
                                         maxLength={20000}
                                         placeholder="Please enter incident remedy"
-                                        autoSize
+                                        autoSize={{maxRows: 20}}
                                         allowClear={true}
                                         defaultValue={this.state.data["remedy"]}/>
                                 </Form.Item>
                             </Col>
+                            <Col span={10} style={{margin: "10px"}}>
+                                <p>Preview</p>
+                                <div style={{ borderStyle: "groove", padding: "10px", maxHeight: "450px", overflowY: "auto"}}>
+                                    <ReactMarkdown source={this.state.data["remedy"]} escapeHtml={false}/>
+                                </div>
+                            </Col>
                         </Row>
 
                         <Row gutter={16}>
-                            <Col span={24}>
+                            <Col span={10} style={{margin: "10px"}}>
                                 <Form.Item
                                     name="action_items"
                                     label="Action Items"
@@ -273,10 +325,16 @@ export default class Update_incident_drawer extends Component{
                                         onChange={this.update_editable_action_items}
                                         maxLength={20000}
                                         placeholder="Please enter incident action items"
-                                        autoSize
+                                        autoSize={{maxRows: 20}}
                                         allowClear={true}
                                         defaultValue={this.state.data["action_items"]}/>
                                 </Form.Item>
+                            </Col>
+                            <Col span={10} style={{margin: "10px"}}>
+                                <p>Preview</p>
+                                <div style={{ borderStyle: "groove", padding: "10px", maxHeight: "450px", overflowY: "auto"}}>
+                                    <ReactMarkdown source={this.state.data["action_items"]} escapeHtml={false}/>
+                                </div>
                             </Col>
                         </Row>
 

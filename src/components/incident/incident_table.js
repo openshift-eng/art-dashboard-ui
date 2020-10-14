@@ -6,6 +6,7 @@ import Update_incident_drawer from "./update_incident_drawer";
 import Detailed_view_modal from "./detailed_view_modal";
 import Popconfirm from "antd/es/popconfirm";
 import {delete_incident, get_all_incident_reports} from "../../api_calls/incident_calls";
+import ReactMarkdown from "react-markdown";
 
 const { Paragraph, Text } = Typography;
 
@@ -104,11 +105,11 @@ export default class Incident_table extends Component{
                 }
             },
             {
-                title: "Description",
+                title: "Title",
                 render: (data, record) => {
                     return(
                         <div>
-                            <Paragraph ellipsis={{rows: 2, expandable: false}}>{record["fields"]["description"]}</Paragraph>
+                            <Paragraph ellipsis={{rows: 2, expandable: false}}> {record["fields"]["title"]}</Paragraph>
                         </div>
                     )
                 }
