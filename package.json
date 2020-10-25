@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "history": "^5.0.0",
     "webpack-cli": "^3.3.11"
   }
 }
