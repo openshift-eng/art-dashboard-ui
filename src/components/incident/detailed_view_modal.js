@@ -1,8 +1,9 @@
 import React, {Component} from "react";
-import {Typography, Modal, Button} from "antd";
+import {Typography, Modal, Button, Col, Row} from "antd";
 import { HighlightOutlined, SmileOutlined, SmileFilled } from '@ant-design/icons';
 import {get_all_incident_reports, update_incident} from "../../api_calls/incident_calls";
 import TextArea from "antd/es/input/TextArea";
+import ReactMarkdown from "react-markdown";
 
 
 const {Title, Paragraph, Text} = Typography;
@@ -120,38 +121,79 @@ export default class Detailed_view_modal extends Component{
                 onCancel={() => this.handleOk()}
                 footer={null}
             >
-                <Typography>
-                    <Title level={4}>Description</Title>
-                    <TextArea  autoSize defaultValue={description} contentEditable={false}/>
-                </Typography>
+
+                <Row>
+                    <Col span={24}>
+                        <Typography>
+                            <Title level={4}>Description</Title>
+                        </Typography>
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <div style={{ width: "100%", margin: "15px", padding: "15px", borderStyle: "groove"}}>
+                                <ReactMarkdown source={description} escapeHtml={false}/>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
                 <br/>
 
-                <Typography>
-                    <Title level={4}>Impact</Title>
-                    <TextArea  autoSize defaultValue={impact}/>
-                </Typography>
+                <Row>
+                    <Col span={24}>
+                        <Typography>
+                            <Title level={4}>Impact</Title>
+                        </Typography>
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <div style={{ width: "100%", margin: "15px", padding: "15px", borderStyle: "groove"}}>
+                                <ReactMarkdown source={impact} escapeHtml={false}/>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
                 <br/>
 
-                <Typography>
-                    <Title level={4}>Cause</Title>
-                    <TextArea  autoSize defaultValue={cause}/>
-                </Typography>
+                <Row>
+                    <Col span={24}>
+                        <Typography>
+                            <Title level={4}>Cause</Title>
+                        </Typography>
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <div style={{ width: "100%", margin: "15px", padding: "15px", borderStyle: "groove"}}>
+                                <ReactMarkdown source={cause} escapeHtml={false}/>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
                 <br/>
 
-                <Typography>
-                    <Title level={4}>Remedy</Title>
-                    <TextArea  autoSize defaultValue={remedy}/>
-                </Typography>
+                <Row>
+                    <Col span={24}>
+                        <Typography>
+                            <Title level={4}>Remedy</Title>
+                        </Typography>
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <div style={{ width: "100%", margin: "15px", padding: "15px", borderStyle: "groove"}}>
+                                <ReactMarkdown source={remedy} escapeHtml={false}/>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
                 <br/>
 
-                <Typography>
-                    <Title level={4}>Action Items</Title>
-                    <TextArea  autoSize defaultValue={action_items}/>
-                </Typography>
+                <Row>
+                    <Col span={24}>
+                        <Typography>
+                            <Title level={4}>Action Items</Title>
+                        </Typography>
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <div style={{ width: "100%", margin: "15px", padding: "15px", borderStyle: "groove"}}>
+                                <ReactMarkdown source={action_items} escapeHtml={false}/>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
 
             </Modal>
