@@ -24,6 +24,7 @@ export default class Detailed_view_modal extends Component{
         this.update_editable_remedy = this.update_editable_remedy.bind(this);
         this.update_editable_action_items = this.update_editable_action_items.bind(this);
         this.handle_update = this.handle_update.bind(this);
+        this.update_from_detailed_view = this.update_from_detailed_view.bind(this);
     }
 
     componentWillReceiveProps(nextProps, nextContext) {
@@ -33,6 +34,10 @@ export default class Detailed_view_modal extends Component{
 
     handleOk = () => {
         this.props.modal_close_function(this.state.data);
+    }
+
+    update_from_detailed_view() {
+        this.props.update_view_show_callback(this.state.data["pk"]);
     }
 
     handle_update(){
@@ -81,6 +86,7 @@ export default class Detailed_view_modal extends Component{
         let action_items;
         let end_time = null;
         let start_time = null;
+        let incident_id = null;
 
         if (this.state.data["fields"]["description"] === null){
             description = "Not Available"
@@ -121,6 +127,11 @@ export default class Detailed_view_modal extends Component{
                 onCancel={() => this.handleOk()}
                 footer={null}
             >
+                <Row style={{paddingRight: "10px", paddingBottom: "20px", margin: "20px"}}>
+                    <Col span={24}>
+                        <Button primary={true} onClick={this.update_from_detailed_view}>Update</Button>
+                    </Col>
+                </Row>
 
                 <Row>
                     <Col span={24}>
