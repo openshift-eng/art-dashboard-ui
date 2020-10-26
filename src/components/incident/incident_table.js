@@ -28,6 +28,7 @@ class Incident_table extends Component{
         this.show_incident_update_view = this.show_incident_update_view.bind(this);
         this.show_incident_detailed_view = this.show_incident_detailed_view.bind(this);
         this.hide_incident_detailed_view = this.hide_incident_detailed_view.bind(this);
+        this.show_update_view_callback_from_detailed_view = this.show_update_view_callback_from_detailed_view.bind(this);
     }
 
     set_valid_incident_ids(data){
@@ -104,6 +105,15 @@ class Incident_table extends Component{
         let state_var = {}
         state_var[state_val] = true;
         this.setState(state_var);
+    }
+
+    show_update_view_callback_from_detailed_view(incident_id){
+        let state_val = "visible_modal_"+incident_id.toString();
+        let state_var = {}
+        state_var[state_val] = false;
+        this.setState(state_var, ()=>{
+            this.props.history.push("/incidents/?page=update&id="+incident_id.toString());
+        })
     }
 
     hide_incident_update_view(record){
@@ -196,7 +206,7 @@ class Incident_table extends Component{
                                     <ExpandOutlined  onClick={() => this.props.history.push("/incidents/?page=detailed&id="+record["pk"])}/>
                                 </a>
                             </a>
-                            <Detailed_view_modal visible= {this.state["visible_modal_"+record["pk"]]} data={record} modal_close_function={this.hide_incident_detailed_view}/>
+                            <Detailed_view_modal visible= {this.state["visible_modal_"+record["pk"]]} data={record} modal_close_function={this.hide_incident_detailed_view} update_view_show_callback={this.show_update_view_callback_from_detailed_view}/>
                         </div>
                     )
                 }
