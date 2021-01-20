@@ -1,6 +1,5 @@
 import React, {Component} from "react";
 import {Modal} from "antd";
-import Filter_field_transfer from "./filter_field_transfer";
 import AdvancedSearchForm from "./filter_fields_value_form";
 
 

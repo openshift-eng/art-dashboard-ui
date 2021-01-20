@@ -1,12 +1,12 @@
 import React, {Component} from "react";
 import Attribute_transfer_filter_fields_modal from "./attribute_transfer_filter_fields_modal";
 import Search_filters_popover from "./search_filters_popover";
-import {Link, Redirect} from "react-router-dom";
+import {Redirect} from "react-router-dom";
 import {get_builds} from "../../api_calls/build_calls";
 import Build_history_table from "./build_history_table";
 import {Button, message, Row} from "antd";
-import {CSVDownload, CSVLink} from "react-csv";
-import {DownloadOutlined, FilterTwoTone, IssuesCloseOutlined} from "@ant-design/icons";
+import {CSVLink} from "react-csv";
+import {DownloadOutlined} from "@ant-design/icons";
 
 
 export default class Build_history_home extends Component{
