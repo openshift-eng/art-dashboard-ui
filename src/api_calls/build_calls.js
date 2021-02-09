@@ -10,7 +10,7 @@ if (process.env.REACT_APP_RUN_ENV === "dev"){
 
 export async function auto_complete_nvr() {
 
-    const response = await fetch(process.env.REACT_APP_AUTOCOMPLETE_FOR_NVR, {
+    const response = await fetch(server_endpoint + process.env.REACT_APP_AUTOCOMPLETE_FOR_NVR, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
@@ -23,8 +23,6 @@ export async function auto_complete_nvr() {
 }
 
 export async function get_builds(request_params){
-
-    alert(JSON.stringify(request_params));
 
     const response = await fetch(server_endpoint + process.env.REACT_APP_BUILD_ENDPOINT, {
         method: "POST",
