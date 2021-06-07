@@ -18,21 +18,21 @@ export default class AdvancedSearchForm extends Component{
             build_date2_filter_value: "2020-12-31",
             error_alert_show: false,
             where_cond_holders: {
-              "fault_code":[{
+              "brew_faultCode":[{
                   "cond": "=",
                   "value": "0",
                   changeHandler: (cond) => {
-                      let element = this.state["where_cond_holders"]["fault_code"][0]
+                      let element = this.state["where_cond_holders"]["brew_faultCode"][0]
                       element["cond"] = cond;
                       this.setState({element})
                   },
                   onValueChangeHandler: (value) => {
-                      let element = this.state["where_cond_holders"]["fault_code"]
+                      let element = this.state["where_cond_holders"]["brew_faultCode"]
                       element["value"] = value;
                       this.setState({element})
                   }
               }],
-              "iso_time": [
+              "time_iso": [
                   {
                       "cond": ">="
                   },
@@ -54,7 +54,7 @@ export default class AdvancedSearchForm extends Component{
             setBuild2DateFilter: (date, dateString) => {
                 this.setState({build_date2_filter_value: dateString})
             },
-            sort_column: "iso_time",
+            sort_column: "time_iso",
             sort_order: "desc"
 
         }
@@ -80,7 +80,7 @@ export default class AdvancedSearchForm extends Component{
 
         this.search_fields_to_show = {
 
-            "iso_time": [{
+            "time_iso": [{
                 "name": "Start Date",
                 "required": false,
                 "ant_element": <DatePicker style={{width: "300px"}} placeholder="Start Date" format={"YYYY-MM-DD"} value={this.state.build_date1_filter_value} onChange={this.state.setBuild1DateFilter}/>,
@@ -93,7 +93,7 @@ export default class AdvancedSearchForm extends Component{
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": "build_date2_filter_value"
             }],
-            "fault_code": [{
+            "brew_faultCode": [{
                 "name": "Build Status",
                 "required": false,
                 "ant_element": <Select style={{width: "300px"}} onChange={this.build_status_onchange}>
@@ -131,7 +131,7 @@ export default class AdvancedSearchForm extends Component{
                 <Col span={12}>
                     <Form.Item name={"sort_filter_column"}>
                         <Select onChange={this.sort_column_change} placeholder={"Select Sort Column"}>
-                            <Option value="iso_time">Build Time</Option>
+                            <Option value="time_iso">Build Time</Option>
                             <Option value="label_version">OpenShift Version</Option>
                         </Select>
                     </Form.Item>
@@ -161,7 +161,7 @@ export default class AdvancedSearchForm extends Component{
 
         console.log(value);
         const value_split = value.split("____");
-        let element = this.state["where_cond_holders"]["fault_code"][0];
+        let element = this.state["where_cond_holders"]["brew_faultCode"][0];
         element.changeHandler(value_split[0]);
         element.onValueChangeHandler(value_split[1])
     }

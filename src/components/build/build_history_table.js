@@ -79,7 +79,7 @@ export default class Build_history_table extends Component{
                 key: "fault_code",
                 align: "center",
                 render: (text, record) =>{
-                    if(record["fault_code"] === "0"){
+                    if(record["fault_code"] === 0){
                         return(
                             <div>
                                 <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
@@ -102,20 +102,6 @@ export default class Build_history_table extends Component{
                     }
                 }
             },
-            // {
-            //     title: "Brew Task",
-            //     dataIndex: "task_id",
-            //     key: "task_id",
-            //     render: (data, record) => {
-            //         return(
-            //             <div>
-            //                 <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
-            //                    target="_blank" rel="noopener noreferrer">{record["task_id"]}</a>
-            //             </div>
-            //         )
-            //
-            //     }
-            // },
             {
                 title:()=>{
                     return (
