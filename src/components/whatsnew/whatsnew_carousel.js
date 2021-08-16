@@ -71,18 +71,18 @@ export default class Whatsnew_carousel extends Component{
         const navigating_table_data = [
             {
                 'section': 'Release',
-                'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/release/status/?type=all',
+                'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/release/status/?type=all',
                 'desc': 'This is where you can find all the major OpenShift versions. The current status of each release. You also find the current and the previous advisories ' +
                     'associated with each version with information about approval status, reviewer details, release date and current status.',
                 'children': [
                     {
                         'section': 'Release Advisories',
-                        'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/release/status/detail/openshift-4.6',
+                        'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/release/status/detail/openshift-4.6',
                         'desc': 'This page has current and previous advisors (rpm, image, metadata, extras) details per OpenShift release version.'
                     },
                     {
                         'section': 'Advisory Details',
-                        'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/release/advisory/overview/54579',
+                        'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/release/advisory/overview/54579',
                         'desc': 'This pages displays details for a particular advisory. The details include bugs, release date, status of release.'
                     }
                 ]
@@ -95,7 +95,7 @@ export default class Whatsnew_carousel extends Component{
                 children: [
                     {
                         'section': 'Build History',
-                        'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/build/history',
+                        'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/build/history',
                         'desc': 'This page shows the complete history of all the build attempts made by ART team. The history can be filtered with ' +
                             'multiple parameters.'
                     },
@@ -107,12 +107,12 @@ export default class Whatsnew_carousel extends Component{
                         children: [
                             {
                                 'section': 'Daily Build Health',
-                                'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/health/daily/overview',
+                                'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/health/daily/overview',
                                 'desc': 'This page contains the daily overview and health of builds including success rate, failures.'
                             },
                             {
                                 'section': 'Detail Daily Health',
-                                'url': 'http://buildinterfaceui-art-build-dev.cloud.paas.psi.redhat.com/health/daily/detail/2020-08-04',
+                                'url': 'http://art-dash-ui-aos-art-web.apps.ocp4.prod.psi.redhat.com/health/daily/detail/2020-08-04',
                                 'desc': 'This page is the expansion of health for a particular date. The page is easy to navigate and intuitive.'
                             }
                         ]
