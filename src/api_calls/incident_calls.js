@@ -3,9 +3,9 @@ let server_endpoint = null
 if (process.env.REACT_APP_RUN_ENV === "dev"){
     server_endpoint = "http://localhost:8000/"
 }else if (process.env.REACT_APP_RUN_ENV === "staging"){
-    server_endpoint = "http://buildinterfaceserver-art-build-dev.cloud.paas.psi.redhat.com/"
+    server_endpoint = "http://art-dashboard-server-1-art-build-dev.apps.ocp4.prod.psi.redhat.com/"
 }else{
-    server_endpoint = "http://buildinterfaceserver-art-jenkins.cloud.paas.psi.redhat.com/"
+    server_endpoint = "http://art-dashboard-server-1-art-build-dev.apps.ocp4.prod.psi.redhat.com/"
 }
 
 export async function get_all_incident_reports() {
