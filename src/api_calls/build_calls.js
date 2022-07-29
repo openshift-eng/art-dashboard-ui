@@ -3,7 +3,7 @@ let server_endpoint = null
 if (process.env.REACT_APP_RUN_ENV === "dev"){
     server_endpoint = "http://localhost:8000/"
 }else{
-    server_endpoint = process.env.ART_DASH_SERVER_ROUTE + "/"
+    server_endpoint = process.env.REACT_APP_ART_DASH_SERVER_ROUTE + "/"
 }
 
 export async function auto_complete_nvr() {
