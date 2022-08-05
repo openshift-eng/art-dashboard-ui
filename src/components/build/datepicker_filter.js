@@ -21,7 +21,7 @@ export default class Datepicker_filter extends Component{
     date_on_change(date, dateString){
 
         this.setState({date: moment(dateString)}, () => {
-            let where_cond = { "iso_time": [{"value": dateString, "cond": "=", "like_or_where": "like", "name": "Build Time ISO"}]}
+            let where_cond = { "build_time_iso": [{"value": dateString, "cond": "=", "like_or_where": "like", "name": "Build Time ISO"}]}
             this.props.search_callback(where_cond);
         })
     }
