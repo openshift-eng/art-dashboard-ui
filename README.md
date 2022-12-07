@@ -1,34 +1,62 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ART Self Service
 
-## Getting Started
+## Development Guild
+### Setup Development Environment
+- Install NodeJS:
+  ```sh
+  dnf install nodejs
+  ```
+- (Optional) Install [PNPm](https://pnpm.io/) package manager:
+  ```sh
+  corepack enable
+  corepack prepare pnpm@latest --activate
+  ```
+### Build
+- Install build dependencies:
+  ```sh
+  pnpm install
+  ```
 
-First, run the development server:
+- Edit `next.config.js` if you need to deploy to a subpath on the web server. e.g.
+  ```js
+  basePath: '/pub/beta/self-service',
+  ```
+- Run
+    ```sh
+    pnpm build
+    # or with npm
+    npm run build
+    # or
+    yarn build
+    ```
+- Generated files can be found in `./out/`.
+### Run Development Server
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+- First, run the development server:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    ```bash
+    pnpm dev
+    # or
+    npm run dev
+    # or
+    yarn dev
+    ```
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+- Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+This project uses [Next.js](https://nextjs.org/) framework bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app). Web pages are rendered with [React](https://reactjs.org/). UI is constructed with [Material UI](https://mui.com/material-ui/getting-started/overview/).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### Directory Structure
+```
+├── components          React components. Step-specific portions of the self-service wizard can be found in this directory.
+├── next.config.js      Next.js config
+├── package.json        npm package metadata
+├── pages               Web pages
+├── pnpm-lock.yaml      pnpm's lockfile
+├── public              Public and static artifacts
+├── styles              Stylesheets (CSS, etc)
+├── tsconfig.json       TypeScript config
+└── utility             Utilities
+```

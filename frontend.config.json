@@ -1,0 +1,14 @@
+{
+    "comment": "Do not store sensitive information, such as private or secret API keys in the client-side config files, as they get bundled to the source during the build process.",
+    "newContent": {
+        "checklist": {
+            "cpaas_doc_help_link": "https://example.com",
+            "check_prodsec_review_help": "(Placeholder check_prodsec_review_help)"
+        }
+    },
+    "form": {
+        "prodsec_review_jira_help": "(Placeholder prodsec_review_jira_help)",
+        "cvo_payload_help": "(Placeholder cvo_payload_help)",
+        "cvo_payload_approval_help": "(Placeholder cvo_payload_approval_help)"
+    }
+}
