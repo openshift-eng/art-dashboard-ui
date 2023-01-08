@@ -1,8 +1,8 @@
 let server_endpoint = null
 
-if (process.env.REACT_APP_RUN_ENV === "dev"){
+if (process.env.REACT_APP_RUN_ENV === "dev") {
     server_endpoint = "http://localhost:8000/"
-}else{
+} else {
     server_endpoint = process.env.REACT_APP_ART_DASH_SERVER_ROUTE + "/"
 }
 
@@ -20,7 +20,7 @@ export async function auto_complete_nvr() {
 
 }
 
-export async function get_builds(request_params){
+export async function get_builds(request_params) {
 
     const response = await fetch(server_endpoint + process.env.REACT_APP_BUILD_ENDPOINT, {
         method: "POST",

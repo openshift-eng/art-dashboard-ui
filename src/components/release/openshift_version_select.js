@@ -1,75 +1,54 @@
-import React, {Component} from "react";
+import React, {useEffect, useState} from "react";
 import {Select} from "antd";
-import {get_release_branches_from_ocp_build_data} from "../../api_calls/release_calls";
-import {Redirect} from "react-router";
+import {getReleaseBranchesFromOcpBuildData} from "../../api_calls/release_calls";
 
 const {Option} = Select;
 
+function OpenshiftVersionSelect() {
+    const [data, setData] = useState([]);
+    const [onSelectVersion, setOnSelectVersion] = useState(undefined);
 
-export default class Openshift_version_select extends Component{
+    const setDataFunc = () => {
+        getReleaseBranchesFromOcpBuildData().then(loopData => {
 
-    constructor(props) {
-        super(props);
-        console.log("here");
-        this.state = {
-            data: [],
-            loading: true,
-            on_select_version: undefined
-        }
-
-        this.set_data();
-
-        this.generate_select_option_from_state_date = this.generate_select_option_from_state_date.bind(this);
-        this.onChange = this.onChange.bind(this);
-        this.set_data = this.set_data.bind(this);
-
-    }
-
-    set_data(){
-        get_release_branches_from_ocp_build_data().then(data => {
-
-            let select_data = [];
-            data.forEach((openshift_version_detail) => {
-                select_data.push(openshift_version_detail["name"]);
+            let selectData = [];
+            loopData.forEach((openshiftVersionDetail) => {
+                selectData.push(openshiftVersionDetail["name"]);
             });
 
-            this.setState({data: select_data}, ()=>{
-                this.setState({loading: false})
-            })
+            setData(selectData);
         })
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
-        this.setState({on_select_version: undefined})
+    const onChangeFunc = (value) => {
+        setOnSelectVersion(value);
     }
 
-    onChange(value){
-        this.setState({on_select_version: value})
-    }
+    const generateSelectOptionFromStateDate = (stateData) => {
+        return stateData.map((openshiftVersion) => {
 
-    generate_select_option_from_state_date(state_data){
-
-        return state_data.map((openshift_version) => {
-            return(
-                <Option value={openshift_version}>{openshift_version}</Option>
+            return (
+                <Option value={openshiftVersion}>{openshiftVersion}</Option>
             )
         })
     }
 
-    render() {
-        if(this.state.on_select_version === undefined){
-            return (
-                <div className={"right"} style={{padding: "30px"}}>
-                    <Select loading={this.state.loading} placeholder={"OpenShift Version"} onChange={this.onChange}>
-                        {this.generate_select_option_from_state_date(this.state.data)}
-                    </Select>
-                </div>
+    useEffect(() => {
+        setDataFunc();
+    }, [])
 
-            );
-        }else{
-            return<Redirect to={`/release/status/${this.state.on_select_version}`}/>;
-        }
+    if (onSelectVersion === undefined) {
+        return (
+            <div className={"right"} style={{padding: "30px"}}>
+                <Select placeholder={"OpenShift Version"} onChange={onChangeFunc}>
+                    {generateSelectOptionFromStateDate(data)}
+                </Select>
+            </div>
 
+        );
+    } else {
+        window.location.replace(`/release/status?branch=${onSelectVersion}`);
     }
-
 }
+
+export default OpenshiftVersionSelect;

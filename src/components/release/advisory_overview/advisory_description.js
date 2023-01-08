@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Descriptions} from "antd";
 
 
-export default class Advisory_description extends Component{
+export default class Advisory_description extends Component {
 
     constructor(props) {
         super(props);
@@ -13,15 +13,15 @@ export default class Advisory_description extends Component{
         this.update_data(this.props);
     }
 
-    update_data(props){
-        if (props.data.length >= 1){
+    update_data(props) {
+        if (props.data.length >= 1) {
             this.setState({data: props.data[0]})
-        }else{
+        } else {
             this.setState({data: []})
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.update_data(nextProps);
     }
 

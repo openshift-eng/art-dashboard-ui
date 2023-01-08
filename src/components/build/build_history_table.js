@@ -1,12 +1,12 @@
 import React, {Component} from "react";
 import {Col, Modal, Row, Table, Tooltip} from "antd";
-import Run_status_filter from "./run_status_filter";
-import {CheckOutlined, CloseOutlined, ExpandOutlined, IssuesCloseOutlined, LinkOutlined} from "@ant-design/icons";
-import Autocomplete_filter from "./autocomplete_filter";
-import Datepicker_filter from "./datepicker_filter";
+import RUN_STATUS_FILTER from "./run_status_filter";
+import {CheckOutlined, CloseOutlined, ExpandOutlined} from "@ant-design/icons";
+import AUTOCOMPLETE_FILTER from "./autocomplete_filter";
+import DATEPICKER_FILTER from "./datepicker_filter";
 
 
-export default class Build_history_table extends Component{
+export default class Build_history_table extends Component {
 
     constructor(props) {
         super(props);
@@ -15,20 +15,20 @@ export default class Build_history_table extends Component{
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: nextProps.data});
     }
 
-    render_single_digit_to_double_datetime(digit){
+    render_single_digit_to_double_datetime(digit) {
         digit = digit.toString()
-        if(digit.length === 1){
+        if (digit.length === 1) {
             return "0" + digit;
         }
         return digit;
 
     }
 
-    showBuildDescriptionModal(record){
+    showBuildDescriptionModal(record) {
 
         let key1 = "visible_modal_" + record["build_id"]
         let statevar = {}
@@ -36,7 +36,7 @@ export default class Build_history_table extends Component{
         this.setState(statevar);
     }
 
-    handleOkBuildDescriptionModal(record){
+    handleOkBuildDescriptionModal(record) {
         let key1 = "visible_modal_" + record["build_id"]
         let statevar = {}
         statevar[key1] = false;
@@ -54,7 +54,7 @@ export default class Build_history_table extends Component{
                 render: (text, record) => (
 
                     <div>
-                        <a href={process.env.REACT_APP_BREW_BUILD_LINK+record["build_id"]}
+                        <a href={process.env.REACT_APP_BREW_BUILD_LINK + record["build_id"]}
                            target="_blank" rel="noopener noreferrer">
                             {record["build_id"] !== null && record["build_id"]}
                             {record["build_id"] === null && "Not Available"}
@@ -63,14 +63,14 @@ export default class Build_history_table extends Component{
                 )
             },
             {
-                title:()=>{
+                title: () => {
                     return (
                         <Row>
                             <Col span={24} className="left">
                                 Build Status
                             </Col>
                             <Col span={24}>
-                                <Run_status_filter search_callback={this.props.simple_filter_callback}/>
+                                <RUN_STATUS_FILTER search_callback={this.props.simple_filter_callback}/>
                             </Col>
                         </Row>
                     )
@@ -78,23 +78,21 @@ export default class Build_history_table extends Component{
                 dataIndex: "fault_code",
                 key: "fault_code",
                 align: "center",
-                render: (text, record) =>{
-                    if(record["fault_code"] === 0){
-                        return(
+                render: (text, record) => {
+                    if (record["fault_code"] === 0) {
+                        return (
                             <div>
-                                <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
-                                   target="_blank" rel="noopener noreferrer"><CheckOutlined style = {{color:  "#52c41a"}}/></a>
+                                <a href={process.env.REACT_APP_BREW_TASK_LINK + record["task_id"]}
+                                   target="_blank" rel="noopener noreferrer"><CheckOutlined style={{color: "#52c41a"}}/></a>
                             </div>
                         )
-                    }
-
-                    else{
-                        return(
+                    } else {
+                        return (
                             <div>
-                                <a href={process.env.REACT_APP_BREW_TASK_LINK+record["task_id"]}
+                                <a href={process.env.REACT_APP_BREW_TASK_LINK + record["task_id"]}
                                    target="_blank" rel="noopener noreferrer">
                                     <Tooltip title={"Fault Code is " + record["fault_code"]}>
-                                        <CloseOutlined style = {{color: "#f55d42"}}/>
+                                        <CloseOutlined style={{color: "#f55d42"}}/>
                                     </Tooltip>
                                 </a>
                             </div>
@@ -103,14 +101,15 @@ export default class Build_history_table extends Component{
                 }
             },
             {
-                title:()=>{
+                title: () => {
                     return (
                         <Row>
                             <Col span={24} className="left">
                                 Package
                             </Col>
                             <Col span={24}>
-                                <Autocomplete_filter placeholder={"Package Name"} type={"nvr"} search_callback={this.props.simple_filter_callback}/>
+                                <AUTOCOMPLETE_FILTER placeholder={"Package Name"} type={"nvr"}
+                                                     search_callback={this.props.simple_filter_callback}/>
                             </Col>
                         </Row>
                     )
@@ -131,7 +130,7 @@ export default class Build_history_table extends Component{
 
                     const http_link = "http://pkgs.devel.redhat.com/cgit/" + record["dg_namespace"] + "/" + record["dg_name"] + "/tree/?id=" + record["dg_commit"];
                     return (
-                        <a href={http_link} target="_blank" rel="noopener noreferrer">{"#"+record["dg_commit"]}</a>
+                        <a href={http_link} target="_blank" rel="noopener noreferrer">{"#" + record["dg_commit"]}</a>
                     )
 
                 }
@@ -142,25 +141,27 @@ export default class Build_history_table extends Component{
                 dataIndex: "build_commit_url_github",
                 key: "build_commit_url_github",
                 render: (data, record) => {
-                    if(record["build_commit_url_github"] !== null)
-                        return(
-                            <a href={record["build_commit_url_github"]} target="_blank" rel="noopener noreferrer">{"#" + record["build_commit_url_github"].slice(-8)}</a>
+                    if (record["build_commit_url_github"] !== null)
+                        return (
+                            <a href={record["build_commit_url_github"]} target="_blank"
+                               rel="noopener noreferrer">{"#" + record["build_commit_url_github"].slice(-8)}</a>
                         )
                     else
-                        return(
+                        return (
                             <p>Not Available</p>
                         )
                 }
             },
             {
-                title: ()=>{
+                title: () => {
                     return (
                         <Row>
                             <Col span={24} className="left">
                                 Build Time ISO
                             </Col>
                             <Col span={24}>
-                                <Datepicker_filter placeholder={"Build Date"} search_callback={this.props.simple_filter_callback}/>
+                                <DATEPICKER_FILTER placeholder={"Build Date"}
+                                                   search_callback={this.props.simple_filter_callback}/>
                             </Col>
                         </Row>
                     )
@@ -180,12 +181,12 @@ export default class Build_history_table extends Component{
                 align: "center",
                 render: (text, record) => (
                     <div>
-                        <a>
-                            <ExpandOutlined  onClick={() => this.showBuildDescriptionModal(record)}/>
-                        </a>
+                        <div>
+                            <ExpandOutlined onClick={() => this.showBuildDescriptionModal(record)}/>
+                        </div>
                         <Modal
-                            title= {"Build Details"}
-                            visible= {this.state["visible_modal_"+record["build_id"]]}
+                            title={"Build Details"}
+                            visible={this.state["visible_modal_" + record["build_id"]]}
                             onOk={() => this.handleOkBuildDescriptionModal(record)}
                             onCancel={() => this.handleOkBuildDescriptionModal(record)}
                             footer={null}

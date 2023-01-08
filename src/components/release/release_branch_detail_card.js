@@ -6,7 +6,7 @@ import {AuditOutlined, DesktopOutlined} from "@ant-design/icons";
 import {Link} from "react-router-dom";
 
 
-export default class Release_branch_detail_card extends Component{
+export default class Release_branch_detail_card extends Component {
 
     constructor(props) {
         super(props);
@@ -16,11 +16,11 @@ export default class Release_branch_detail_card extends Component{
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: nextProps.data});
     }
 
-    get_step_number(status){
+    get_step_number(status) {
         let step = 0
 
         if (status === "Unknown")
@@ -52,7 +52,9 @@ export default class Release_branch_detail_card extends Component{
                       extra={this.state.data["advisory_details"][0]["synopsis"]}
                       title={this.state.data.type[0].toUpperCase() + this.state.data.type.slice(1)}
                       actions={[
-                          <a href={"https://errata.devel.redhat.com/advisory/" + this.state.data["advisory_details"][0]["id"]} target="_blank" rel="noopener noreferrer"><Tooltip title={"Errata Advisory Link"}><DesktopOutlined/></Tooltip></a>,
+                          <a href={"https://errata.devel.redhat.com/advisory/" + this.state.data["advisory_details"][0]["id"]}
+                             target="_blank" rel="noopener noreferrer"><Tooltip
+                              title={"Errata Advisory Link"}><DesktopOutlined/></Tooltip></a>,
                           <Link to={`/release/advisory/overview/${this.state.data["advisory_details"][0]["id"]}`}>
                               <Tooltip title={"Advisory Overview"}>
                                   <AuditOutlined/>
@@ -93,18 +95,31 @@ export default class Release_branch_detail_card extends Component{
                     <Row className={"center"}>
                         <Col span={8}>
                             <p>QE Reviewer</p>
-                            {this.state.data.advisory_details[0].qe_reviewer_id === null && <Tag color={"red"}>Not Available</Tag>}
-                            {this.state.data.advisory_details[0].qe_reviewer_id !== null && <Tag color={"green"}><a href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].qe_reviewer_id} target="_blank" rel="noopener noreferrer">{this.state.data.advisory_details[0].qe_reviewer_id}</a></Tag>}
+                            {this.state.data.advisory_details[0].qe_reviewer_id === null &&
+                                <Tag color={"red"}>Not Available</Tag>}
+                            {this.state.data.advisory_details[0].qe_reviewer_id !== null && <Tag color={"green"}><a
+                                href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].qe_reviewer_id}
+                                target="_blank"
+                                rel="noopener noreferrer">{this.state.data.advisory_details[0].qe_reviewer_id}</a></Tag>}
                         </Col>
                         <Col span={8}>
                             <p>Doc Reviewer</p>
-                            {this.state.data.advisory_details[0].doc_reviewer_id === null && <Tag color={"red"}>Not Available</Tag>}
-                            {this.state.data.advisory_details[0].doc_reviewer_id !== null && <Tag color={"green"}><a href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].doc_reviewer_id} target="_blank" rel="noopener noreferrer">{this.state.data.advisory_details[0].doc_reviewer_id}</a></Tag>}
+                            {this.state.data.advisory_details[0].doc_reviewer_id === null &&
+                                <Tag color={"red"}>Not Available</Tag>}
+                            {this.state.data.advisory_details[0].doc_reviewer_id !== null && <Tag color={"green"}><a
+                                href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].doc_reviewer_id}
+                                target="_blank"
+                                rel="noopener noreferrer">{this.state.data.advisory_details[0].doc_reviewer_id}</a></Tag>}
                         </Col>
                         <Col span={8}>
                             <p>Security Reviewer</p>
-                            {this.state.data.advisory_details[0].product_security_reviewer_id === null && <Tag color={"red"}>Not Available</Tag>}
-                            {this.state.data.advisory_details[0].product_security_reviewer_id !== null && <Tag color={"green"}><a href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].product_security_reviewer_id} target="_blank" rel="noopener noreferrer">{this.state.data.advisory_details[0].product_security_reviewer_id}</a></Tag>}
+                            {this.state.data.advisory_details[0].product_security_reviewer_id === null &&
+                                <Tag color={"red"}>Not Available</Tag>}
+                            {this.state.data.advisory_details[0].product_security_reviewer_id !== null &&
+                                <Tag color={"green"}><a
+                                    href={"https://errata.devel.redhat.com/user/" + this.state.data.advisory_details[0].product_security_reviewer_id}
+                                    target="_blank"
+                                    rel="noopener noreferrer">{this.state.data.advisory_details[0].product_security_reviewer_id}</a></Tag>}
                         </Col>
                     </Row>
                     <br/>

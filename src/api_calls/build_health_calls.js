@@ -1,8 +1,8 @@
 let server_endpoint = null
 
-if (process.env.REACT_APP_RUN_ENV === "dev"){
+if (process.env.REACT_APP_RUN_ENV === "dev") {
     server_endpoint = "http://localhost:8000/"
-}else{
+} else {
     server_endpoint = process.env.REACT_APP_ART_DASH_SERVER_ROUTE + "/"
 }
 
@@ -20,9 +20,9 @@ export async function get_daily_overview_data() {
     return await response.json();
 }
 
-export async function get_expanded_data_for_a_date(date){
+export async function get_expanded_data_for_a_date(date) {
     let endpoint = server_endpoint + process.env.REACT_APP_DAILY_REPORT_BY_DATE_ENDPOINT;
-    endpoint = endpoint+date;
+    endpoint = endpoint + date;
 
     const response = await fetch(endpoint, {
         method: "GET",
@@ -34,9 +34,9 @@ export async function get_expanded_data_for_a_date(date){
     return await response.json();
 }
 
-export async function get_expanded_data_for_a_date_and_fault_code(date){
+export async function get_expanded_data_for_a_date_and_fault_code(date) {
     let endpoint = server_endpoint + process.env.REACT_APP_DAILY_REPORT_BY_FAULT_CODE_BY_DATEWISE;
-    endpoint = endpoint+date;
+    endpoint = endpoint + date;
 
     const response = await fetch(endpoint, {
         method: "GET",
@@ -48,9 +48,9 @@ export async function get_expanded_data_for_a_date_and_fault_code(date){
     return await response.json();
 }
 
-export async function get_daily_build_data_for_a_date(date){
+export async function get_daily_build_data_for_a_date(date) {
     let endpoint = server_endpoint + process.env.REACT_APP_DAILY_BUILD_DATA_FOR_A_DATE;
-    endpoint = endpoint+date;
+    endpoint = endpoint + date;
 
     const response = await fetch(endpoint, {
         method: "GET",
@@ -63,7 +63,7 @@ export async function get_daily_build_data_for_a_date(date){
 }
 
 
-export async function get_daily_build_data_for_a_date_for_a_column(column_name, column_value, date){
+export async function get_daily_build_data_for_a_date_for_a_column(column_name, column_value, date) {
     let endpoint = server_endpoint + process.env.REACT_APP_DAILY_BUILD_DATA_FOR_A_COLUMN_AND_DATE;
     endpoint = endpoint.replace(/\{0\}/g, column_name);
     endpoint = endpoint.replace(/\{1\}/g, column_value);

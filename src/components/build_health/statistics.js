@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Statistic} from "antd";
 
 
-export default class StatisticsComp extends Component{
+export default class StatisticsComp extends Component {
     constructor(props) {
         super(props);
 
@@ -12,7 +12,7 @@ export default class StatisticsComp extends Component{
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({title: nextProps.title});
         this.setState({value: nextProps.value});
     }

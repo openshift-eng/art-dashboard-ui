@@ -1,29 +1,14 @@
 import React, {Component} from "react";
-import {Carousel, Col, List, Row, Table} from "antd";
-import { Collapse } from 'antd';
-import { Menu } from 'antd';
-import {AppstoreOutlined, LinkOutlined, MailOutlined, SettingOutlined} from '@ant-design/icons';
-import DownloadOutlined from "@ant-design/icons/";
+import {List, Table} from "antd";
+import {Collapse} from 'antd';
+import {LinkOutlined} from '@ant-design/icons';
 
-const { SubMenu } = Menu;
-const { Panel } = Collapse;
-
-function onChange(a, b, c) {
-    console.log(a, b, c);
-}
-
-const contentStyle = {
-    height: '400px',
-    color: '#fff',
-    lineHeight: '160px',
-    textAlign: 'center',
-    background: '#364d79',
-};
+const {Panel} = Collapse;
 
 
-export default class Whatsnew_carousel extends Component{
+export default class Whatsnew_carousel extends Component {
 
-    parse_based_on_section_request(){
+    parse_based_on_section_request() {
 
 
         const data_july_30_2020 = [
@@ -45,16 +30,6 @@ export default class Whatsnew_carousel extends Component{
 
         const data_july_15_2020 = [
             "Release: Release status page for each openshift version. Sample Endpoint: /release/status/?type=branch&branch=openshift-4.6"
-        ]
-
-        const data_july_09_2020 = [
-            "Build History: Advanced Filters has option to sort results based on columns.",
-            "Build History: Semantically correct icons in the table.",
-            "Build History: Quick Search over table headers.",
-            "Build Health: Build History for the date available.",
-            "Build Health: Build History for a particular package under health section.",
-            "Build Health: All the tables under health have required sort and filter over columns.",
-            "What's New: And the what's new section :)"
         ]
 
         const data_july_13_2020 = [
@@ -90,7 +65,7 @@ export default class Whatsnew_carousel extends Component{
             {
                 'section': 'Build',
                 'url': undefined,
-                'desc': 'This sections has data for all the builds for OpenShift builds attempted by ART team. The two major type of information'  +
+                'desc': 'This sections has data for all the builds for OpenShift builds attempted by ART team. The two major type of information' +
                     'is the build history and the build health.',
                 children: [
                     {
@@ -251,13 +226,13 @@ export default class Whatsnew_carousel extends Component{
                 key: 'url',
                 dataIndex: 'url',
                 render: (data, record) => {
-                    if(data !== undefined)
-                        return(
+                    if (data !== undefined)
+                        return (
                             <a href={data}><LinkOutlined/>
                             </a>
                         )
-                    else{
-                        return(
+                    else {
+                        return (
                             <p></p>
                         )
                     }
@@ -268,121 +243,122 @@ export default class Whatsnew_carousel extends Component{
         ]
 
 
+        return (
+            <Collapse defaultActiveKey={"Portal Navigation"} accordion bordered={false}>
+                <Panel key={"Portal Navigation"} header={"Portal Navigation"}>
+                    <div style={{marginLeft: "50px", marginTop: "30px"}}>
+                        <h5>
+                            Sections
+                        </h5>
+                        <ul>
+                            <li style={{margin: "10px", listStyleType: "circle"}}>
+                                The OpenShift Release Portal can be used to access various information about the release
+                                process and release status of OpenShift.
+                            </li>
+                            <li style={{margin: "10px", listStyleType: "circle"}}>
+                                All the information is segregated into sections for ease of use.
+                            </li>
+                            <li style={{margin: "10px", listStyleType: "circle"}}>
+                                The different sections can be access through navigation menu available on the left of
+                                the page.
+                            </li>
+                        </ul>
+                        <Table dataSource={navigating_table_data} columns={navigating_table_column} pagination={false}/>
+                    </div>
 
-                return (
-                    <Collapse defaultActiveKey={"Portal Navigation"} accordion bordered={false}>
-                        <Panel key={"Portal Navigation"} header={"Portal Navigation"}>
-                            <div style={{marginLeft: "50px", marginTop: "30px"}}>
-                                <h5>
-                                    Sections
-                                </h5>
-                                <ul>
-                                    <li style={{margin: "10px", listStyleType: "circle"}}>
-                                        The OpenShift Release Portal can be used to access various information about the release process and  release status of OpenShift.
-                                    </li>
-                                    <li style={{margin: "10px", listStyleType: "circle"}}>
-                                        All the information is segregated into sections for ease of use.
-                                    </li>
-                                    <li style={{margin: "10px", listStyleType: "circle"}}>
-                                        The different sections can be access through navigation menu available on the left of the page.
-                                    </li>
-                                </ul>
-                                <Table dataSource={navigating_table_data} columns={navigating_table_column} pagination={false}/>
-                            </div>
+                </Panel>
+                <Panel key={"Features"} header={"Features"}>
+                    <Table dataSource={features_table_data} columns={features_table_column} pagination={false}/>
+                </Panel>
+                <Panel key={"Feature History"} header={"Feature History"}>
+                    <div style={{padding: "30px"}}>
+                        <Collapse accordion defaultActiveKey={['1']}>
+                            <Panel key={"1"} header={"July 30th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 30th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_30_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
+                            <Panel key={"2"} header={"July 29th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 29th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_29_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
+                            <Panel key={"3"} header={"July 27th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 27th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_27_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
 
-                        </Panel>
-                        <Panel key={"Features"} header={"Features"}>
-                            <Table dataSource={features_table_data} columns={features_table_column} pagination={false}/>
-                        </Panel>
-                        <Panel key={"Feature History"} header={"Feature History"} >
-                            <div style={{ padding: "30px"}}>
-                                <Collapse accordion defaultActiveKey={['1']} >
-                                    <Panel key={"1"} header={"July 30th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 30th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_30_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
-                                    <Panel key={"2"} header={"July 29th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 29th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_29_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
-                                    <Panel key={"3"} header={"July 27th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 27th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_27_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
+                            <Panel key={"4"} header={"July 21st 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 21st 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_21_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
 
-                                    <Panel key={"4"} header={"July 21st 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 21st 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_21_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
+                            <Panel key={"5"} header={"July 15th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 15th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_15_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
 
-                                    <Panel key={"5"} header={"July 15th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 15th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_15_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
+                            <Panel key={"6"} header={"July 13th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 13th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_13_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
 
-                                    <Panel key={"6"} header={"July 13th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 13th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_13_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
-
-                                    <Panel key={"7"} header={"July 9th 2020"}>
-                                        <List
-                                            size="large"
-                                            style={{backgroundColor: "white"}}
-                                            header={<div>New Features: July 9th 2020</div>}
-                                            footer={<div>Try them out!</div>}
-                                            bordered
-                                            dataSource={data_july_27_2020}
-                                            renderItem={item => <List.Item>{item}</List.Item>}
-                                        />
-                                    </Panel>
-                                </Collapse>
-                            </div>
-                        </Panel>
-                    </Collapse>
-                )
+                            <Panel key={"7"} header={"July 9th 2020"}>
+                                <List
+                                    size="large"
+                                    style={{backgroundColor: "white"}}
+                                    header={<div>New Features: July 9th 2020</div>}
+                                    footer={<div>Try them out!</div>}
+                                    bordered
+                                    dataSource={data_july_27_2020}
+                                    renderItem={item => <List.Item>{item}</List.Item>}
+                                />
+                            </Panel>
+                        </Collapse>
+                    </div>
+                </Panel>
+            </Collapse>
+        )
 
     }
 
