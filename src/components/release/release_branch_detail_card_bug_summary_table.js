@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Table} from "antd";
 
 
-export default class Release_branch_detail_card_bug_summary_table extends Component{
+export default class Release_branch_detail_card_bug_summary_table extends Component {
 
     constructor(props) {
         super(props);
@@ -11,7 +11,7 @@ export default class Release_branch_detail_card_bug_summary_table extends Compon
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: nextProps.data})
     }
 
@@ -40,7 +40,9 @@ export default class Release_branch_detail_card_bug_summary_table extends Compon
 
         return (
             <div className={"center"}>
-                <Table title={() => {return <h6 className={"left"}>{"Bugs Summary"}</h6>}} dataSource={this.state.data} columns={table_column} pagination={false}/>
+                <Table title={() => {
+                    return <h6 className={"left"}>{"Bugs Summary"}</h6>
+                }} dataSource={this.state.data} columns={table_column} pagination={false}/>
             </div>
         );
     }

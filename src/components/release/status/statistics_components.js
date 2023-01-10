@@ -1,10 +1,7 @@
 import React, {Component} from "react";
 import {Statistic} from "antd";
 
-export default class Statistics_components extends Component{
-    constructor(props) {
-        super(props);
-    }
+export default class Statistics_components extends Component {
 
     render() {
         return (

@@ -1,13 +1,13 @@
 let server_endpoint = null
 
-if (process.env.REACT_APP_RUN_ENV === "dev"){
+if (process.env.REACT_APP_RUN_ENV === "dev") {
     server_endpoint = "http://localhost:8000/"
-}else{
+} else {
     server_endpoint = process.env.REACT_APP_ART_DASH_SERVER_ROUTE + "/"
 }
 
 
-export async function get_release_branches_from_ocp_build_data() {
+export async function getReleaseBranchesFromOcpBuildData() {
 
 
     const response = await fetch(server_endpoint + process.env.REACT_APP_OCP_BUILD_DATA_OPENSHIFT_BRANCH_ENDPOINT, {
@@ -67,6 +67,19 @@ export async function advisory_details_for_advisory_id(advisory_id) {
 export async function user_details_for_user_id(user_id) {
 
     const response = await fetch(server_endpoint + process.env.REACT_APP_USER_DETAILS_FOR_A_USER_ID + user_id, {
+        method: "GET",
+        headers: {
+            'Accept': 'application/json',
+            "Content-Type": "application/json",
+        }
+    });
+
+    return await response.json();
+}
+
+
+export async function gaVersion() {
+    const response = await fetch(server_endpoint + process.env.REACT_APP_API_ENDPOINT + "/ga-version", {
         method: "GET",
         headers: {
             'Accept': 'application/json',

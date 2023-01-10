@@ -3,7 +3,7 @@ import {Table, Input} from "antd";
 import {Link} from "react-router-dom";
 
 
-export default class Daily_overview_expanded_detailed_summary_table extends Component{
+export default class Daily_overview_expanded_detailed_summary_table extends Component {
 
     constructor(props) {
         super(props);
@@ -18,13 +18,13 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
 
     }
 
-    generate_column_filter(column_name, data){
+    generate_column_filter(column_name, data) {
         let all_values = {}
         let filter = []
 
-        if (data !== undefined){
+        if (data !== undefined) {
             data.forEach((val) => {
-                if (!(all_values.hasOwnProperty(val[column_name]))){
+                if (!(all_values.hasOwnProperty(val[column_name]))) {
                     all_values[val[column_name]] = 1;
                     filter.push({text: val[column_name], value: val[column_name]})
                 }
@@ -35,14 +35,14 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
         return filter;
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({table_data: nextProps.data});
         this.setState({label_name_filter: this.generate_column_filter("label_name", nextProps.data)})
     }
 
-    render_single_digit_to_double_datetime(digit){
+    render_single_digit_to_double_datetime(digit) {
         digit = digit.toString()
-        if(digit.length === 1){
+        if (digit.length === 1) {
             return "0" + digit;
         }
         return digit;
@@ -60,8 +60,9 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
                 onFilter: (value, record) => record.label_name === value,
                 render: (data, record) => {
 
-                    return(
-                        <Link to={`/health/daily/build/${record.date}?type=column_search&column=label_name&value=${record.label_name}`}>{record.label_name}</Link>
+                    return (
+                        <Link
+                            to={`/health/daily/build/${record.date}?type=column_search&column=label_name&value=${record.label_name}`}>{record.label_name}</Link>
                     )
                 }
             },
@@ -91,7 +92,7 @@ export default class Daily_overview_expanded_detailed_summary_table extends Comp
             }
         ]
 
-        return(
+        return (
             <div>
                 <Table dataSource={this.state.table_data} columns={table_column} pagination={false}>
                 </Table>

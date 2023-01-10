@@ -3,7 +3,7 @@ import LinkOutlined from "@ant-design/icons/lib/icons/LinkOutlined";
 import {Table} from "antd";
 
 
-export default class Bug_table extends Component{
+export default class Bug_table extends Component {
     constructor(props) {
         super(props);
 
@@ -14,7 +14,7 @@ export default class Bug_table extends Component{
         this.setState({data: this.props.data});
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: nextProps.data});
     }
 

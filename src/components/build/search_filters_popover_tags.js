@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {Tag} from "antd";
 
-export default class Search_filters_popover_tags extends Component{
+export default class Search_filters_popover_tags extends Component {
 
     constructor(props) {
         super(props);
@@ -12,7 +12,7 @@ export default class Search_filters_popover_tags extends Component{
         console.log(this.state.data);
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({data: this.props.data})
         console.log(this.state.data);
     }
@@ -21,32 +21,32 @@ export default class Search_filters_popover_tags extends Component{
 
         let tag_content = ""
 
-        if("name" in this.state.data){
+        if ("name" in this.state.data) {
             tag_content += (this.state.data["name"] + " ");
         }
 
-        if ("like_or_where" in this.state.data){
-            if (this.state.data.hasOwnProperty("like_or_where")){
-                if(this.state.data["like_or_where"] === "where"){
-                    if("cond" in this.state.data){
+        if ("like_or_where" in this.state.data) {
+            if (this.state.data.hasOwnProperty("like_or_where")) {
+                if (this.state.data["like_or_where"] === "where") {
+                    if ("cond" in this.state.data) {
                         tag_content += (this.state.data["cond"] + " ");
-                    }else{
+                    } else {
                         tag_content += ("= ");
                     }
-                }else if(this.state.data["like_or_where"] === "like"){
+                } else if (this.state.data["like_or_where"] === "like") {
                     tag_content += "like ";
                 }
             }
         }
 
-        if("value" in this.state.data){
+        if ("value" in this.state.data) {
             tag_content += (this.state.data["value"])
         }
 
-        return(
-                <Tag color="blue">
-                    {tag_content}
-                </Tag>
+        return (
+            <Tag color="blue">
+                {tag_content}
+            </Tag>
         );
     }
 }

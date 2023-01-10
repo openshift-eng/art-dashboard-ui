@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Tag} from "antd";
 
 
-export default class Approval_status_tag extends Component{
+export default class Approval_status_tag extends Component {
 
     constructor(props) {
         super(props);
@@ -12,7 +12,7 @@ export default class Approval_status_tag extends Component{
         }
     }
 
-    componentWillReceiveProps(nextProps, nextContext) {
+    UNSAFE_componentWillReceiveProps(nextProps, nextContext) {
         this.setState({result: nextProps.result});
         this.setState({result_for: nextProps.result_for});
     }
@@ -21,39 +21,31 @@ export default class Approval_status_tag extends Component{
 
         const result = this.state.result;
 
-        if (result === 0){
+        if (result === 0) {
             return (
                 <div>
                     <Tag color={"red"}>{"Unknown"}</Tag>
                 </div>
             )
-        }
-
-        else if (result === 1){
+        } else if (result === 1) {
             return (
                 <div>
                     <Tag color={"orange"}>{"Not Requested"}</Tag>
                 </div>
             )
-        }
-
-        else if (result === 2){
+        } else if (result === 2) {
             return (
                 <div>
                     <Tag color={"blue"}>{"Requested"}</Tag>
                 </div>
             )
-        }
-
-        else if (result === 3){
+        } else if (result === 3) {
             return (
                 <div>
                     <Tag color={"green"}>{"Approved"}</Tag>
                 </div>
             )
-        }
-
-        else{
+        } else {
             return (
                 <div>
                     <Tag color={"red"}>{"Unknown"}</Tag>

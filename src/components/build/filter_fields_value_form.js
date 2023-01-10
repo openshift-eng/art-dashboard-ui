@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
-import {Form, Row, Col, Input, Button, Select, AutoComplete, Divider} from 'antd';
-import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import React, {Component} from 'react';
+import {Form, Row, Col, Input, Button, Select, Divider} from 'antd';
 import {DatePicker} from "antd";
 import BuildAlert from "./alert";
-const { Option } = Select;
 
-export default class AdvancedSearchForm extends Component{
+const {Option} = Select;
+
+export default class AdvancedSearchForm extends Component {
 
     formRef = React.createRef();
 
@@ -18,33 +18,33 @@ export default class AdvancedSearchForm extends Component{
             build_date2_filter_value: "2020-12-31",
             error_alert_show: false,
             where_cond_holders: {
-              "brew_faultCode":[{
-                  "cond": "=",
-                  "value": "0",
-                  changeHandler: (cond) => {
-                      let element = this.state["where_cond_holders"]["brew_faultCode"][0]
-                      element["cond"] = cond;
-                      this.setState({element})
-                  },
-                  onValueChangeHandler: (value) => {
-                      let element = this.state["where_cond_holders"]["brew_faultCode"]
-                      element["value"] = value;
-                      this.setState({element})
-                  }
-              }],
-              "time_iso": [
-                  {
-                      "cond": ">="
-                  },
-                  {
-                      "cond": "<="
-                  }
-              ]
+                "brew_faultCode": [{
+                    "cond": "=",
+                    "value": "0",
+                    changeHandler: (cond) => {
+                        let element = this.state["where_cond_holders"]["brew_faultCode"][0]
+                        element["cond"] = cond;
+                        this.setState({element})
+                    },
+                    onValueChangeHandler: (value) => {
+                        let element = this.state["where_cond_holders"]["brew_faultCode"]
+                        element["value"] = value;
+                        this.setState({element})
+                    }
+                }],
+                "time_iso": [
+                    {
+                        "cond": ">="
+                    },
+                    {
+                        "cond": "<="
+                    }
+                ]
             },
             setExpand: () => {
-                if(this.state.expand){
+                if (this.state.expand) {
                     this.setState({expand: false})
-                }else{
+                } else {
                     this.setState({expand: true})
                 }
             },
@@ -83,13 +83,17 @@ export default class AdvancedSearchForm extends Component{
             "time_iso": [{
                 "name": "Start Date",
                 "required": false,
-                "ant_element": <DatePicker style={{width: "300px"}} placeholder="Start Date" format={"YYYY-MM-DD"} value={this.state.build_date1_filter_value} onChange={this.state.setBuild1DateFilter}/>,
+                "ant_element": <DatePicker style={{width: "300px"}} placeholder="Start Date" format={"YYYY-MM-DD"}
+                                           value={this.state.build_date1_filter_value}
+                                           onChange={this.state.setBuild1DateFilter}/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": "build_date1_filter_value"
-            },{
+            }, {
                 "name": "End Date",
                 "required": false,
-                "ant_element": <DatePicker style={{width: "300px"}} placeholder="End Date" format={"YYYY-MM-DD"} value={this.state.build_date2_filter_value} onChange={this.state.setBuild2DateFilter}/>,
+                "ant_element": <DatePicker style={{width: "300px"}} placeholder="End Date" format={"YYYY-MM-DD"}
+                                           value={this.state.build_date2_filter_value}
+                                           onChange={this.state.setBuild2DateFilter}/>,
                 "like_or_where": this.like_or_where_select,
                 "formatter_state_variable": "build_date2_filter_value"
             }],
@@ -149,12 +153,12 @@ export default class AdvancedSearchForm extends Component{
             </Col>
     }
 
-    sort_column_change(value){
-            this.setState({sort_column: value})
+    sort_column_change(value) {
+        this.setState({sort_column: value})
     }
 
-    sort_order_change(value){
-            this.setState({sort_order: value})
+    sort_order_change(value) {
+        this.setState({sort_order: value})
     }
 
     build_status_onchange = (value) => {
@@ -168,21 +172,20 @@ export default class AdvancedSearchForm extends Component{
 
     getFields = () => {
 
-        const count = this.state.expand ? 10 : 6;
         const children = [];
 
-        children.push(<Col span={24}><Divider orientation={"left"}>Filters</Divider> </Col> )
+        children.push(<Col span={24}><Divider orientation={"left"}>Filters</Divider> </Col>)
 
-        for(let key in this.search_fields_to_show){
-            if(this.search_fields_to_show.hasOwnProperty(key)){
+        for (let key in this.search_fields_to_show) {
+            if (this.search_fields_to_show.hasOwnProperty(key)) {
                 let ele_counter = 0;
-                this.search_fields_to_show[key].forEach( (key_ele) => {
+                this.search_fields_to_show[key].forEach((key_ele) => {
                     children.push(<Col span={24} key={ele_counter.toString() + "####" + key}>
                         <Form.Item label={key_ele["name"]}>
 
                             <Form.Item
                                 className="left"
-                                style={{paddingLeft: "30px", width: "300px" }}
+                                style={{paddingLeft: "30px", width: "300px"}}
                                 name={ele_counter.toString() + "####" + key}
                                 // label={search_fields_to_show[key]['name']}
                                 rules={[
@@ -214,7 +217,7 @@ export default class AdvancedSearchForm extends Component{
                 })
             }
         }
-        children.push(<Col span={24}><Divider orientation={"left"}>Sort Result</Divider> </Col> )
+        children.push(<Col span={24}><Divider orientation={"left"}>Sort Result</Divider> </Col>)
         children.push(this.sort_filter);
 
         return children;
@@ -223,55 +226,53 @@ export default class AdvancedSearchForm extends Component{
 
     validateFormInput = values => {
         let output_values = {}
-        for(const key in values){
+        for (const key in values) {
             // only if key in not undefined
-            if(values.hasOwnProperty(key) && key.substring(0, 11) === "sort_filter"){
-                if(!("order" in output_values)){
+            if (values.hasOwnProperty(key) && key.substring(0, 11) === "sort_filter") {
+                if (!("order" in output_values)) {
                     output_values["order"] = {}
                 }
 
                 output_values["order"][key] = values[key];
 
-            }
-            else if(values.hasOwnProperty(key) && values[key] !== undefined){
+            } else if (values.hasOwnProperty(key) && values[key] !== undefined) {
                 // split the key, for ex: build.ids will be ["build.ids"] and build.ids____like.or.where will become
                 // ["build.ids", "like.or.where"]
                 console.log(values[key])
                 const first_key_split = key.split("####");
                 const ele_count = parseInt(first_key_split[0]);
                 const key_split = first_key_split[1].split("____")
-                if(key_split.length === 1){
+                if (key_split.length === 1) {
                     // if the key is not like.or.where
-                    if(values[key + "____like.or.where"] === undefined){
+                    if (values[key + "____like.or.where"] === undefined) {
                         // if like.or.where of this key ex: build.ids is not defined alert
                         //alert("Like/where missing for some filter fields.");
                         return false;
                     }
-                }
-                else{
-                    if(ele_count.toString() + "####" + values[key_split[0]] !== undefined){
+                } else {
+                    if (ele_count.toString() + "####" + values[key_split[0]] !== undefined) {
                         // if the respective key of like.or.where is defined then
-                        if(!output_values.hasOwnProperty(key_split[0]))
+                        if (!output_values.hasOwnProperty(key_split[0]))
                             output_values[key_split[0]] = []
 
                         let output_value = {}
 
                         // if there is a formatted value stored for the input in state use that, which is generally set by onchange on
                         // antd component
-                        if(this.search_fields_to_show[key_split[0]][ele_count]["formatter_state_variable"] !== undefined &&
-                            key_split[0] in this.state.where_cond_holders){
+                        if (this.search_fields_to_show[key_split[0]][ele_count]["formatter_state_variable"] !== undefined &&
+                            key_split[0] in this.state.where_cond_holders) {
                             output_value["value"] = this.state[this.search_fields_to_show[key_split[0]][ele_count]["formatter_state_variable"]];
                             output_value["cond"] = this.state.where_cond_holders[key_split[0]][ele_count]["cond"];
-                        }else if(key_split[0] in this.state.where_cond_holders){
+                        } else if (key_split[0] in this.state.where_cond_holders) {
                             output_value["value"] = this.state.where_cond_holders[key_split[0]][ele_count]["value"];
                             output_value["cond"] = this.state.where_cond_holders[key_split[0]][ele_count]["cond"];
-                        }else{
-                            output_value["value"] = values[ele_count.toString() + "####" +key_split[0]]
+                        } else {
+                            output_value["value"] = values[ele_count.toString() + "####" + key_split[0]]
                         }
                         output_value["like_or_where"] = values[key]
                         output_value["name"] = this.search_fields_to_show[key_split[0]][ele_count]["name"];
                         output_values[key_split[0]].push(output_value)
-                    }else{
+                    } else {
                         // else for now ignore, since like.or.where is selected but its key value is not defined.
                         // alert("Filter parameters are not proper.");
                         // return false;
@@ -287,12 +288,12 @@ export default class AdvancedSearchForm extends Component{
 
         const form_validation_result = this.validateFormInput(values);
 
-        if(form_validation_result !== false){
+        if (form_validation_result !== false) {
             this.props.handler_to_update_build_table_data(form_validation_result, true, true);
             //this.formRef.current.resetFields();
             this.setState({error_alert_show: false})
             this.props.handle_close()
-        }else{
+        } else {
             this.setState({error_alert_show: true});
         }
     };
@@ -305,8 +306,10 @@ export default class AdvancedSearchForm extends Component{
 
         let error_alert_message = null;
 
-        if(this.state.error_alert_show){
-            error_alert_message = <Row><BuildAlert message="Filter fields are not filled properly. Make sure respective Exact/Like is selected for all filled values." type="error" close_func={this.error_alert_close}/></Row>;
+        if (this.state.error_alert_show) {
+            error_alert_message = <Row><BuildAlert
+                message="Filter fields are not filled properly. Make sure respective Exact/Like is selected for all filled values."
+                type="error" close_func={this.error_alert_close}/></Row>;
         }
 
 
