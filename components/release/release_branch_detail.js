@@ -127,9 +127,7 @@ function ReleaseBranchDetail(props) {
 
     return (
         <div>
-            <Title style={{paddingLeft: "20px", paddingTop: "40px"}} level={2}><code>{props.branch}</code></Title>
-
-            <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}>
+            <Title style={{paddingLeft: "40px"}} level={4}>
                 <code>{"Current Advisories"}</code>
             </Title>
             {

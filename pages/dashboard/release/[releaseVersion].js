@@ -1,11 +1,12 @@
 import React, {useEffect} from "react";
-import {Layout, Menu, message} from "antd";
+import {Layout, Menu, message, Typography} from "antd";
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import {useRouter} from 'next/router'
 import Head from "next/head";
 import {RocketOutlined, ToolOutlined} from "@ant-design/icons";
 
+const {Title} = Typography;
 
 function ReleaseHomePage() {
     const router = useRouter()
@@ -47,12 +48,12 @@ function ReleaseHomePage() {
         {
             key: "releaseStatusMenuItem",
             icon: <RocketOutlined/>,
-            label: <a href={"/dashboard"}>Release status</a>
+            label: <a href={"/dashboard"}><p style={{fontSize: "medium"}}>Release status</p></a>
         },
         {
             key: "whatsNew",
             icon: <ToolOutlined/>,
-            label: "Help"
+            label: <p style={{fontSize: "medium"}}>Help</p>
         },
     ]
 
@@ -65,7 +66,7 @@ function ReleaseHomePage() {
             </Head>
             <Layout>
                 <Sider collapsed={false}>
-                    <div>
+                    <div style={{paddingTop: "10px"}}>
                         <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} items={menuItems}/>
 
                     </div>
@@ -77,11 +78,14 @@ function ReleaseHomePage() {
                         background: "white", height: "120px", float: "left"
                     }}>
                         <div className="center">
-                            <h1 style={{color: "#316DC1", margin: "20px", fontSize: "50px"}}>OpenShift Release
+                            <h1 style={{color: "#316DC1", margin: "20px", fontSize: "4.2rem", fontWeight: "normal"}}>OpenShift Release
                                 Portal</h1>
                         </div>
                     </div>
-                    <OPENSHIFT_VERSION_SELECT branch={releaseVersion}/>
+                    <div className={"version-header"}>
+                        <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion}</code></Title>
+                        <OPENSHIFT_VERSION_SELECT branch={releaseVersion}/>
+                    </div>
                     <RELEASE_BRANCH_DETAIL branch={releaseVersion}
                                            destroyLoadingCallback={destroyLoading}/>
                     <Footer style={{textAlign: 'center'}}>
