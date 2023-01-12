@@ -11,12 +11,12 @@ ENV PATH /app/node_modules/.bin:$PATH
 COPY package.json ./
 COPY package-lock.json ./
 USER 0
-RUN npm install -g serve react-scripts
+RUN npm install -g next
 RUN npm install
 
 # add app
 COPY . ./
 EXPOSE 8080
-RUN npm run build
+RUN next build
 # start app
-CMD ["serve", "-s", "build", "-l", "8080"]
+CMD ["next","start", "-p", "8080"]
