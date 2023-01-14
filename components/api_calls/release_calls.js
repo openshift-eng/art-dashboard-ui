@@ -9,8 +9,7 @@ if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
 
 export async function getReleaseBranchesFromOcpBuildData() {
 
-
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_OCP_BUILD_DATA_OPENSHIFT_BRANCH_ENDPOINT, {
+    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_API_ENDPOINT + process.env.NEXT_PUBLIC_OCP_BUILD_DATA_OPENSHIFT_BRANCH_ENDPOINT, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
@@ -38,7 +37,7 @@ export async function remaining_git_requests() {
 
 export async function advisory_ids_for_branch(branch_name) {
 
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_CURRENT_ADVISORY_IDS_FOR_A_BRANCH_OCP_BUILD_DATA + branch_name, {
+    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_API_ENDPOINT + process.env.NEXT_PUBLIC_CURRENT_ADVISORY_IDS_FOR_A_BRANCH_OCP_BUILD_DATA + branch_name, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
@@ -52,7 +51,7 @@ export async function advisory_ids_for_branch(branch_name) {
 
 export async function advisory_details_for_advisory_id(advisory_id) {
 
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_ADVISORY_DETAILS_FOR_AN_ADVISORY_ID + advisory_id, {
+    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_API_ENDPOINT + process.env.NEXT_PUBLIC_ADVISORY_DETAILS_FOR_AN_ADVISORY_ID + advisory_id, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
