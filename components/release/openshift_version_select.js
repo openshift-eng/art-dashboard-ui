@@ -10,7 +10,6 @@ function OpenshiftVersionSelect() {
 
     const setDataFunc = () => {
         getReleaseBranchesFromOcpBuildData().then(loopData => {
-
             let selectData = [];
             loopData.forEach((openshiftVersionDetail) => {
                 selectData.push(openshiftVersionDetail["name"]);
