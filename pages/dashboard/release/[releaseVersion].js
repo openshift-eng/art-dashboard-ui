@@ -1,10 +1,10 @@
 import React, {useEffect} from "react";
-import {Layout, Menu, message, Typography} from "antd";
+import {Layout, Menu, message, Tag, Typography} from "antd";
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import {useRouter} from 'next/router'
 import Head from "next/head";
-import {RocketOutlined, ToolOutlined} from "@ant-design/icons";
+import {RocketOutlined, ToolOutlined, ReloadOutlined} from "@ant-design/icons";
 
 const {Title} = Typography;
 
@@ -51,10 +51,10 @@ function ReleaseHomePage() {
             label: <a href={"/dashboard"}><p style={{fontSize: "medium"}}>Release status</p></a>
         },
         {
-            key: "whatsNew",
-            icon: <ToolOutlined/>,
-            label: <p style={{fontSize: "medium"}}>Help</p>
-        },
+            key: "buildHistory",
+            icon: <ReloadOutlined/>,
+            label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
+        }
     ]
 
     return (
@@ -83,7 +83,12 @@ function ReleaseHomePage() {
                         </div>
                     </div>
                     <div className={"version-header"}>
-                        <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion}</code></Title>
+                        {
+                            releaseVersion === `openshift-${process.env.NEXT_PUBLIC_GA_VERSION}` ?
+                                <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion} (GA) </code></Title>
+                                :
+                                <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion}</code></Title>
+                        }
                         <OPENSHIFT_VERSION_SELECT branch={releaseVersion}/>
                     </div>
                     <RELEASE_BRANCH_DETAIL branch={releaseVersion}
