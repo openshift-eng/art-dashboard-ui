@@ -1,5 +1,1 @@
-FROM art-dash-ui:base
-RUN npm install -g serve
-COPY package*.json ./
-RUN npm install
-COPY . .
+# setup dev config
