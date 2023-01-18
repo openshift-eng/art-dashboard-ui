@@ -1,14 +1,27 @@
 import {CheckOutlined, CloseOutlined} from "@ant-design/icons";
-import {Empty, Pagination, Table, Tooltip} from "antd";
+import {Col, Empty, Pagination, Row, Table, Tooltip, Input, Select} from "antd";
 import React from "react";
 
+const {Search} = Input;
+const {Option} = Select;
 
 export default function BUILD_HISTORY_TABLE(props) {
 
 
     const columns = [
         {
-            title: 'Build',
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Build
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"Build Id"} onSearch={props.onBuildNoChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "build_0_id",
             key: "build_0_id",
@@ -32,7 +45,22 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         },
         {
-            title: "Status",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Status
+                        </Col>
+                        <Col span={24}>
+                            <Select style={{width: "100%"}} onChange={props.onBuildStatusChange}>
+                                <Option value="success">Success</Option>
+                                <Option value="failure">Failure</Option>
+                                <Option value="">Both</Option>
+                            </Select>
+                        </Col>
+                    </Row>
+                )
+            },
             dataIndex: "brew_faultCode",
             key: "brew_faultCode",
             align: "center",
@@ -55,7 +83,18 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         },
         {
-            title: "Task ID",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Task ID
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"Task Id"} onSearch={props.onTaskIdChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "brew_task_id",
             key: "brew_task_id",
@@ -69,13 +108,35 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         },
         {
-            title: "Package Name",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Package Name
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"Package Name"} onSearch={props.onPackageNameChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "dg_name",
             key: "dg_name"
         },
         {
-            title: "Version",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Version
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"Version"} onSearch={props.onVersionChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             key: "group",
             align: "center",
             dataIndex: "group",
@@ -86,7 +147,18 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         },
         {
-            title: "CGIT",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            CGIT
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"CGIT Id"} onSearch={props.onCgitChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "build_0_source",
             key: "build_0_source",
@@ -94,13 +166,24 @@ export default function BUILD_HISTORY_TABLE(props) {
 
                 const http_link = "http://pkgs.devel.redhat.com/cgit/" + record["dg_namespace"] + "/" + record["dg_name"] + "/tree/?id=" + record["dg_commit"];
                 return (
-                    <a href={http_link} target="_blank" rel="noopener noreferrer">{"#" + record["dg_commit"]}</a>
+                    <a href={http_link} target="_blank" rel="noopener noreferrer">{record["dg_commit"]}</a>
                 )
 
             }
         },
         {
-            title: "Source Commit",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Source Commit
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"Full Git SHA"} onSearch={props.onSourceCommitChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "label_io_openshift_build_commit_url",
             key: "label_io_openshift_build_commit_url",
@@ -108,7 +191,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 if (record["label_io_openshift_build_commit_url"] !== null)
                     return (
                         <a href={record["label_io_openshift_build_commit_url"]} target="_blank"
-                           rel="noopener noreferrer">{"#" + record["label_io_openshift_build_commit_url"].slice(-8)}</a>
+                           rel="noopener noreferrer">{record["label_io_openshift_build_commit_id"].slice(0,8)}</a>
                     )
                 else
                     return (
@@ -117,13 +200,24 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         },
         {
-            title: "Time",
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Time
+                        </Col>
+                        <Col span={24}>
+                            <Search placeholder={"eg: 2022-08-01 | 18:52:36\n"} onSearch={props.onTimeChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
             align: "center",
             dataIndex: "build_time_iso",
             key: "build_time_iso",
             render: (data) => {
                 return (
-                    data.substring(11, 16) + " | " + data.substring(0, 10)
+                     data.substring(0, 10)+ " | " +  data.substring(11, 19)
                 )
             }
         }
