@@ -22,7 +22,7 @@ export async function auto_complete_nvr() {
 
 export async function get_builds(page) {
 
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + `?ordering=-build_time_iso&page=${page}`, {
+    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + `?page=${page}`, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
