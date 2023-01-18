@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {get_builds} from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table"
-import {ReloadOutlined, RocketOutlined, ToolOutlined} from "@ant-design/icons";
+import {ReloadOutlined, RocketOutlined} from "@ant-design/icons";
 import Head from "next/head";
 import {Layout, Menu} from "antd";
 
@@ -42,11 +42,6 @@ export default function BUILD_HISTORY_HOME() {
             key: "buildHistory",
             icon: <ReloadOutlined/>,
             label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
-        },
-        {
-            key: "whatsNew",
-            icon: <ToolOutlined/>,
-            label: <p style={{fontSize: "medium"}}>Help</p>
         }
     ]
 

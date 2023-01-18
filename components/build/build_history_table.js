@@ -1,5 +1,5 @@
 import {CheckOutlined, CloseOutlined} from "@ant-design/icons";
-import {Empty, Pagination, Table, Tooltip, Row, Col} from "antd";
+import {Empty, Pagination, Table, Tooltip} from "antd";
 import React from "react";
 
 
@@ -40,22 +40,32 @@ export default function BUILD_HISTORY_TABLE(props) {
                 if (record["brew_faultCode"] === 0) {
                     return (
                         <div>
-                            <a href={process.env.NEXT_PUBLIC_BREW_TASK_LINK + record["brew_task_id"]}
-                               target="_blank" rel="noopener noreferrer"><CheckOutlined style={{color: "#52c41a"}}/></a>
+                            <CheckOutlined style={{color: "#52c41a"}}/>
                         </div>
                     )
                 } else {
                     return (
                         <div>
-                            <a href={process.env.NEXT_PUBLIC_BREW_TASK_LINK + record["brew_task_id"]}
-                               target="_blank" rel="noopener noreferrer">
-                                <Tooltip title={"Fault Code is " + record["brew_faultCode"]}>
-                                    <CloseOutlined style={{color: "#f55d42"}}/>
-                                </Tooltip>
-                            </a>
+                            <Tooltip title={"Fault Code is " + record["brew_faultCode"]}>
+                                <CloseOutlined style={{color: "#f55d42"}}/>
+                            </Tooltip>
                         </div>
                     )
                 }
+            }
+        },
+        {
+            title: "Task ID",
+            align: "center",
+            dataIndex: "brew_task_id",
+            key: "brew_task_id",
+            render: (text, record) => {
+                return (
+                    <div>
+                        <a href={process.env.NEXT_PUBLIC_BREW_TASK_LINK + record["brew_task_id"]}
+                           target="_blank" rel="noopener noreferrer">{record["brew_task_id"]}</a>
+                    </div>
+                )
             }
         },
         {
@@ -126,7 +136,8 @@ export default function BUILD_HISTORY_TABLE(props) {
                 <div>
                     <Table dataSource={props.data} columns={columns} pagination={false}/>
                     <div align={"right"} style={{paddingTop: "10px"}}>
-                        <Pagination onChange={props.onChange} total={props.totalCount} pageSize={15} showSizeChanger={false} />
+                        <Pagination onChange={props.onChange} total={props.totalCount} pageSize={15}
+                                    showSizeChanger={false}/>
                     </div>
                 </div>
 
