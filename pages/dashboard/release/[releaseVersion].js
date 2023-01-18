@@ -1,10 +1,10 @@
 import React, {useEffect} from "react";
-import {Layout, Menu, message, Tag, Typography} from "antd";
+import {Layout, Menu, message, Typography} from "antd";
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import {useRouter} from 'next/router'
 import Head from "next/head";
-import {RocketOutlined, ToolOutlined, ReloadOutlined} from "@ant-design/icons";
+import {RocketOutlined, ReloadOutlined} from "@ant-design/icons";
 
 const {Title} = Typography;
 
