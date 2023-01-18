@@ -20,9 +20,18 @@ export async function auto_complete_nvr() {
 
 }
 
-export async function get_builds(page) {
+export async function get_builds(searchParams) {
 
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + `?page=${page}`, {
+    let query = ""
+    for (const key in searchParams) {
+        query += `${key}=${searchParams[key]}&`
+    }
+
+    if (!(query === "")) {
+        query = "?" + query.substring(0, query.length - 1)  // Remove additional & at the end and add ? to the beginning
+    }
+
+    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + query, {
         method: "GET",
         headers: {
             'Accept': 'application/json',

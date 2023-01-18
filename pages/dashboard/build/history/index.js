@@ -8,19 +8,115 @@ import {Layout, Menu} from "antd";
 
 export default function BUILD_HISTORY_HOME() {
     const [data, setData] = useState([]);
+    const [searchParams, setSearchParams] = useState({})
     const [page, setPage] = useState(1);
-
+    const [buildNo, setBuildNo] = useState("");
+    const [packageName, setPackageName] = useState("");
+    const [buildStatus, setBuildStatus] = useState("");
+    const [taskId, setTaskId] = useState("");
+    const [version, setVersion] = useState("");
+    const [cgit, setCgit] = useState("");
+    const [sourceCommit, setSourceCommit] = useState("");
+    const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
 
     const {Footer, Sider} = Layout;
 
-    const onChange = (pageNo) => {
-        setPage(pageNo);
+    const onPageChange = (pageNo) => {
+        setPage(pageNo)
     }
 
-    const getData = () => {
+    const onBuildNoChange = (build) => {
+        setBuildNo(build.trim())
+    }
 
-        get_builds(page).then((data) => {
+    const onPackageNameChange = (pkg) => {
+        setPackageName(pkg.trim())
+    }
+
+    const onBuildStatusChange = (status) => {
+        setBuildStatus(status.trim())
+    }
+
+    const onTaskIdChange = (task) => {
+        setTaskId(task.trim())
+    }
+
+    const onVersionChange = (ver) => {
+        setVersion(ver.trim())
+    }
+
+    const onCgitChange = (cgitId) => {
+        setCgit(cgitId.trim())
+    }
+
+    const onSourceCommitChange = (commit) => {
+        setSourceCommit(commit.trim())
+    }
+
+    const onTimeChange = (data) => {
+        if (data) {
+            data = data.split("|")
+            setTime(`${data[0].trim()}T${data[1].trim()}Z`)
+        } else {
+            setTime("")
+        }
+
+    }
+
+
+    const getData = () => {
+        searchParams["page"] = page
+
+        if (buildNo !== "") {
+            searchParams["build_0_id"] = buildNo
+        } else {
+            delete searchParams["build_0_id"]
+        }
+
+        if (packageName !== "") {
+            searchParams["dg_name"] = packageName
+        } else {
+            delete searchParams["dg_name"]
+        }
+
+        if (buildStatus !== "") {
+            searchParams["brew_task_state"] = buildStatus
+        } else {
+            delete searchParams["brew_task_state"]
+        }
+
+        if (taskId !== "") {
+            searchParams["brew_task_id"] = taskId
+        } else {
+            delete searchParams["brew_task_id"]
+        }
+
+        if (version !== "") {
+            searchParams["group"] = `openshift-${version}`
+        } else {
+            delete searchParams["group"]
+        }
+
+        if (cgit !== "") {
+            searchParams["dg_commit"] = cgit
+        } else {
+            delete searchParams["dg_commit"]
+        }
+
+        if (sourceCommit !== "") {
+            searchParams["label_io_openshift_build_commit_id"] = sourceCommit
+        } else {
+            delete searchParams["label_io_openshift_build_commit_id"]
+        }
+
+        if (time !== "") {
+            searchParams["time_iso"] = time
+        } else {
+            delete searchParams["time_iso"]
+        }
+
+        get_builds(searchParams).then((data) => {
             setData(data["results"]);
             setTotalCount(data["count"]);
 
@@ -30,7 +126,7 @@ export default function BUILD_HISTORY_HOME() {
 
     useEffect(() => {
         getData()
-    }, [page])
+    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, time])
 
     const menuItems = [
         {
@@ -66,11 +162,20 @@ export default function BUILD_HISTORY_HOME() {
                         background: "white", height: "120px", float: "left"
                     }}>
                         <div className="center">
-                            <h1 style={{color: "#316DC1", margin: "20px", fontSize: "4.2rem", fontWeight: "normal"}}>OpenShift Release
+                            <h1 style={{
+                                color: "#316DC1",
+                                margin: "20px",
+                                fontSize: "4.2rem",
+                                fontWeight: "normal"
+                            }}>OpenShift Release
                                 Portal</h1>
                         </div>
                     </div>
-                    <BUILD_HISTORY_TABLE data={data} totalCount={totalCount} onChange={onChange}/>
+                    <BUILD_HISTORY_TABLE data={data} totalCount={totalCount} onChange={onPageChange}
+                                         onBuildNoChange={onBuildNoChange} onPackageNameChange={onPackageNameChange}
+                                         onBuildStatusChange={onBuildStatusChange} onTaskIdChange={onTaskIdChange}
+                                         onVersionChange={onVersionChange} onCgitChange={onCgitChange}
+                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}/>
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>
