@@ -24,13 +24,17 @@ export async function get_builds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        query += `${key}__icontains=${searchParams[key]}&`
+        if (key !== "time_iso")
+            query += `${key}__icontains=${searchParams[key]}&`
+        else
+            query += `${key}=${searchParams[key]}&`
     }
 
     if (!(query === "")) {
         query = "?" + query.substring(0, query.length - 1)  // Remove additional & at the end and add ? to the beginning
     }
 
+    console.log(query)
     const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + query, {
         method: "GET",
         headers: {

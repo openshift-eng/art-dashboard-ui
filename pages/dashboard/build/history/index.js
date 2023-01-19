@@ -57,7 +57,8 @@ export default function BUILD_HISTORY_HOME() {
     const onTimeChange = (data) => {
         if (data) {
             data = data.split("|")
-            setTime(`${data[0].trim()}T${data[1].trim()}Z`)
+            if (data.length === 2)
+                setTime(`${data[0].trim()}T${data[1].trim()}Z`)
         } else {
             setTime("")
         }
