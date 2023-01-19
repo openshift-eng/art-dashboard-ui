@@ -34,7 +34,6 @@ export async function get_builds(searchParams) {
         query = "?" + query.substring(0, query.length - 1)  // Remove additional & at the end and add ? to the beginning
     }
 
-    console.log(query)
     const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_BUILD_ENDPOINT + query, {
         method: "GET",
         headers: {
