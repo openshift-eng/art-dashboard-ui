@@ -24,7 +24,7 @@ export async function get_builds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        if (key !== "time_iso")
+        if (key !== "time_iso" && key !== "page")
             query += `${key}__icontains=${searchParams[key]}&`
         else
             query += `${key}=${searchParams[key]}&`
