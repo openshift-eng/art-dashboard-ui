@@ -18,4 +18,5 @@ RUN npm install
 COPY . ./
 EXPOSE 8080
 # start app
+USER 0
 CMD ["next","dev", "-p", "8080"]
