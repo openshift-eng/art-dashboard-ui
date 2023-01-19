@@ -24,7 +24,10 @@ export async function get_builds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        query += `${key}=${searchParams[key]}&`
+        if (key !== "time_iso" && key !== "page")
+            query += `${key}__icontains=${searchParams[key]}&`
+        else
+            query += `${key}=${searchParams[key]}&`
     }
 
     if (!(query === "")) {
