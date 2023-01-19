@@ -24,7 +24,7 @@ export async function get_builds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        query += `${key}=${searchParams[key]}&`
+        query += `${key}__icontains=${searchParams[key]}&`
     }
 
     if (!(query === "")) {
