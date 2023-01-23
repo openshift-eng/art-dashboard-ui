@@ -17,6 +17,9 @@ RUN npm install
 # add app
 COPY . ./
 EXPOSE 8080
+
+RUN chmod -R 0777 .next
+
 # start app
 USER 0
 CMD ["next","dev", "-p", "8080"]
