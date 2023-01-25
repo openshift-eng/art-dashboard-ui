@@ -17,6 +17,7 @@ export default function BUILD_HISTORY_HOME() {
     const [version, setVersion] = useState("");
     const [cgit, setCgit] = useState("");
     const [sourceCommit, setSourceCommit] = useState("");
+    const [jenkinsBuildNo, setJenkinsBuildNo] = useState("");
     const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
 
@@ -52,6 +53,10 @@ export default function BUILD_HISTORY_HOME() {
 
     const onSourceCommitChange = (commit) => {
         setSourceCommit(commit.trim())
+    }
+
+    const onJenkinsBuildChange = (data) => {
+        setJenkinsBuildNo(data.trim())
     }
 
     const onTimeChange = (data) => {
@@ -117,6 +122,12 @@ export default function BUILD_HISTORY_HOME() {
             delete searchParams["time_iso"]
         }
 
+        if (jenkinsBuildNo !== "") {
+            searchParams["jenkins_build_number"] = jenkinsBuildNo
+        } else {
+            delete searchParams["jenkins_build_number"]
+        }
+
         get_builds(searchParams).then((data) => {
             setData(data["results"]);
             setTotalCount(data["count"]);
@@ -127,7 +138,7 @@ export default function BUILD_HISTORY_HOME() {
 
     useEffect(() => {
         getData()
-    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, time])
+    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, jenkinsBuildNo, time])
 
     const menuItems = [
         {
@@ -176,7 +187,8 @@ export default function BUILD_HISTORY_HOME() {
                                          onBuildNoChange={onBuildNoChange} onPackageNameChange={onPackageNameChange}
                                          onBuildStatusChange={onBuildStatusChange} onTaskIdChange={onTaskIdChange}
                                          onVersionChange={onVersionChange} onCgitChange={onCgitChange}
-                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}/>
+                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}
+                                         onJenkinsBuildChange={onJenkinsBuildChange}/>
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>

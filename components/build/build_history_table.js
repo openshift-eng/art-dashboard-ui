@@ -191,12 +191,37 @@ export default function BUILD_HISTORY_TABLE(props) {
                 if (record["label_io_openshift_build_commit_url"] !== null)
                     return (
                         <a href={record["label_io_openshift_build_commit_url"]} target="_blank"
-                           rel="noopener noreferrer">{record["label_io_openshift_build_commit_id"].slice(0,8)}</a>
+                           rel="noopener noreferrer">{record["label_io_openshift_build_commit_id"].slice(0, 8)}</a>
                     )
                 else
                     return (
                         <p>Not Available</p>
                     )
+            }
+        },
+        {
+            title: () => {
+                return (
+                    <Row>
+                        <Col span={24} className="left">
+                            Jenkins Build
+                        </Col>
+                        <Col span={24}>
+                            <Search onSearch={props.onJenkinsBuildChange}/>
+                        </Col>
+                    </Row>
+                )
+            },
+            align: "center",
+            dataIndex: "jenkins_build_url",
+            key: "jenkins_build_url",
+            render: (data, record) => {
+
+                return (
+                    <a href={data} target="_blank"
+                       rel="noopener noreferrer">{record["jenkins_build_number"]}</a>
+                )
+
             }
         },
         {
@@ -217,7 +242,7 @@ export default function BUILD_HISTORY_TABLE(props) {
             key: "build_time_iso",
             render: (data) => {
                 return (
-                     data.substring(0, 10)+ " | " +  data.substring(11, 19)
+                    data.substring(0, 10) + " | " + data.substring(11, 19)
                 )
             }
         }
