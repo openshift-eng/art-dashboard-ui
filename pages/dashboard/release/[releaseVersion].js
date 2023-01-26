@@ -1,3 +1,4 @@
+// File name defined as [releaseVersion].js to get the value from the parent component.
 import React, {useEffect} from "react";
 import {Layout, Menu, message, Typography} from "antd";
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
@@ -78,7 +79,12 @@ function ReleaseHomePage() {
                         background: "white", height: "120px", float: "left"
                     }}>
                         <div className="center">
-                            <h1 style={{color: "#316DC1", margin: "20px", fontSize: "4.2rem", fontWeight: "normal"}}>OpenShift Release
+                            <h1 style={{
+                                color: "#316DC1",
+                                margin: "20px",
+                                fontSize: "4.2rem",
+                                fontWeight: "normal"
+                            }}>OpenShift Release
                                 Portal</h1>
                         </div>
                     </div>

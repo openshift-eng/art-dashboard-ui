@@ -9,20 +9,6 @@ if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
     server_endpoint = server_endpoint.replace(/\{0\}/g, process.env.NEXT_PUBLIC_OPENSHIFT_BUILD_NAMESPACE);
 }
 
-export async function auto_complete_nvr() {
-
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_AUTOCOMPLETE_FOR_NVR, {
-        method: "GET",
-        headers: {
-            'Accept': 'application/json',
-            "Content-Type": "application/json",
-        }
-    });
-
-    return await response.json();
-
-}
-
 export async function getBuilds(searchParams) {
 
     let query = ""
