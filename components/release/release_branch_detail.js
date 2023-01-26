@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../api_calls/release_calls";
-import {Empty, Typography} from "antd";
+import {Empty, Popover, Typography} from "antd";
 import RELEASE_BRANCH_DETAIL_TABLE from "./release_branch_detail_table";
+import {InfoCircleOutlined} from "@ant-design/icons";
 
 const {Title} = Typography;
 
@@ -11,6 +12,8 @@ function ReleaseBranchDetail(props) {
     const [overviewTableDataPrevious, setOverviewTableDataPrevious] = useState(undefined);
     const [advisoryDetails, setAdvisoryDetails] = useState(undefined);
     const [advisoryDetailsPrevious, setAdvisoryDetailsPrevious] = useState(undefined);
+    const [current, setCurrent] = useState(undefined)
+    const [previous, setPrevious] = useState(undefined)
 
 
     const generateDataForEachAdvisory = () => {
@@ -73,25 +76,34 @@ function ReleaseBranchDetail(props) {
     const getBranchData = (branch) => {
 
         advisory_ids_for_branch(branch).then((data) => {
+            const current = Object.keys(data)[0];
+            const previous = Object.keys(data)[1];
+
+            setCurrent(current);
+            setPrevious(previous);
 
             let table_data = [];
-            for (const key in data["current"]) {
-                if (data["current"].hasOwnProperty(key))
+            for (const key in data[current]) {
+
+                if (data[current].hasOwnProperty(key)) {
                     table_data.push({
                         type: key,
-                        id: data["current"][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data["current"][key]
+                        id: data[current][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[current][key]
                     })
+                }
+
             }
             setOverviewTableData(table_data);
 
             let table_data_previous = [];
-            for (const key in data["previous"]) {
-                if (data["previous"].hasOwnProperty(key))
+            for (const key in data[previous]) {
+
+                if (data[previous].hasOwnProperty(key))
                     table_data_previous.push({
                         type: key,
-                        id: data["previous"][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data["previous"][key]
+                        id: data[previous][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[previous][key]
                     })
             }
 
@@ -124,11 +136,24 @@ function ReleaseBranchDetail(props) {
         }
     }, [advisoryDetails, advisoryDetailsPrevious])
 
+    const popover = (value) => (
+        <div><a target="_blank" rel="noopener noreferrer"
+                href={`https://amd64.ocp.releases.ci.openshift.org/releasestream/4-stable/release/${value}`}>amd64</a>&nbsp;|&nbsp;
+            <a target="_blank" rel="noopener noreferrer"
+               href={`https://s390x.ocp.releases.ci.openshift.org/releasestream/4-stable-s390x/release/${value}`}>s390x</a>&nbsp;|&nbsp;
+            <a target="_blank" rel="noopener noreferrer"
+               href={`https://ppc64le.ocp.releases.ci.openshift.org/releasestream/4-stable-ppc64le/release/${value}`}>ppc64le</a>&nbsp;|&nbsp;
+            <a target="_blank" rel="noopener noreferrer"
+               href={`https://arm64.ocp.releases.ci.openshift.org/releasestream/4-stable-arm64/release/${value}`}>arm64</a>
+        </div>
+    );
 
     return (
         <div>
             <Title style={{paddingLeft: "40px"}} level={4}>
-                <code>{"Current Advisories"}</code>
+                <code> {current} <Popover content={popover(current)} trigger="hover">
+                    <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                </Popover> </code>
             </Title>
             {
                 advisoryDetails ?
@@ -142,11 +167,13 @@ function ReleaseBranchDetail(props) {
             <br/>
 
             <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}>
-                <code>{"Previous Advisories"}</code>
+                <code> {previous} <Popover content={popover(previous)} trigger="hover">
+                    <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                </Popover> </code>
             </Title>
 
             {
-                advisoryDetailsPrevious ?
+                advisoryDetailsPrevious && current !== previous ?
                     <>
                         <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetailsPrevious}/>
                     </>
