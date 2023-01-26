@@ -17,7 +17,7 @@ export default function BUILD_HISTORY_HOME() {
     const [version, setVersion] = useState("");
     const [cgit, setCgit] = useState("");
     const [sourceCommit, setSourceCommit] = useState("");
-    const [jenkinsBuildNo, setJenkinsBuildNo] = useState("");
+    const [jenkinsBuild, setJenkinsBuild] = useState("");
     const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
 
@@ -56,7 +56,7 @@ export default function BUILD_HISTORY_HOME() {
     }
 
     const onJenkinsBuildChange = (data) => {
-        setJenkinsBuildNo(data.trim())
+        setJenkinsBuild(data.trim())
     }
 
     const onTimeChange = (data) => {
@@ -122,10 +122,10 @@ export default function BUILD_HISTORY_HOME() {
             delete searchParams["time_iso"]
         }
 
-        if (jenkinsBuildNo !== "") {
-            searchParams["jenkins_build_number"] = jenkinsBuildNo
+        if (jenkinsBuild !== "") {
+            searchParams["jenkins_build_url"] = jenkinsBuild
         } else {
-            delete searchParams["jenkins_build_number"]
+            delete searchParams["jenkins_build_url"]
         }
 
         getBuilds(searchParams).then((data) => {
@@ -138,7 +138,7 @@ export default function BUILD_HISTORY_HOME() {
 
     useEffect(() => {
         getData()
-    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, jenkinsBuildNo, time])
+    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, jenkinsBuild, time])
 
     const menuItems = [
         {

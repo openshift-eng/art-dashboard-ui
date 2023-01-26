@@ -11,6 +11,8 @@ function ReleaseBranchDetail(props) {
     const [overviewTableDataPrevious, setOverviewTableDataPrevious] = useState(undefined);
     const [advisoryDetails, setAdvisoryDetails] = useState(undefined);
     const [advisoryDetailsPrevious, setAdvisoryDetailsPrevious] = useState(undefined);
+    const [current, setCurrent] = useState(undefined)
+    const [previous, setPrevious] = useState(undefined)
 
 
     const generateDataForEachAdvisory = () => {
@@ -73,25 +75,34 @@ function ReleaseBranchDetail(props) {
     const getBranchData = (branch) => {
 
         advisory_ids_for_branch(branch).then((data) => {
+            const current = Object.keys(data)[0];
+            const previous = Object.keys(data)[1];
+
+            setCurrent(current);
+            setPrevious(previous);
 
             let table_data = [];
-            for (const key in data["current"]) {
-                if (data["current"].hasOwnProperty(key))
+            for (const key in data[current]) {
+
+                if (data[current].hasOwnProperty(key)) {
                     table_data.push({
                         type: key,
-                        id: data["current"][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data["current"][key]
+                        id: data[current][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[current][key]
                     })
+                }
+
             }
             setOverviewTableData(table_data);
 
             let table_data_previous = [];
-            for (const key in data["previous"]) {
-                if (data["previous"].hasOwnProperty(key))
+            for (const key in data[previous]) {
+
+                if (data[previous].hasOwnProperty(key))
                     table_data_previous.push({
                         type: key,
-                        id: data["previous"][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data["previous"][key]
+                        id: data[previous][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[previous][key]
                     })
             }
 
@@ -128,7 +139,7 @@ function ReleaseBranchDetail(props) {
     return (
         <div>
             <Title style={{paddingLeft: "40px"}} level={4}>
-                <code>{"Current Advisories"}</code>
+                <code> {current} (latest) </code>
             </Title>
             {
                 advisoryDetails ?
@@ -142,11 +153,11 @@ function ReleaseBranchDetail(props) {
             <br/>
 
             <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}>
-                <code>{"Previous Advisories"}</code>
+                <code> {previous} </code>
             </Title>
 
             {
-                advisoryDetailsPrevious ?
+                advisoryDetailsPrevious && current !== previous?
                     <>
                         <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetailsPrevious}/>
                     </>

@@ -14,10 +14,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Build &nbsp;
-                            <Popover content={text}>
-                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                            </Popover>
+                            Build
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Build Id"} onSearch={props.onBuildNoChange}/>
@@ -90,10 +87,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Task ID &nbsp;
-                            <Popover content={text}>
-                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                            </Popover>
+                            Task ID
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Task Id"} onSearch={props.onTaskIdChange}/>
@@ -138,10 +132,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Version &nbsp;
-                            <Popover content={text}>
-                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                            </Popover>
+                            Version
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Version"} onSearch={props.onVersionChange}/>
@@ -163,10 +154,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            CGIT &nbsp;
-                            <Popover content={text}>
-                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                            </Popover>
+                            CGIT
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"CGIT Id"} onSearch={props.onCgitChange}/>
@@ -191,10 +179,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Source Commit &nbsp;
-                            <Popover content={text}>
-                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                            </Popover>
+                            Source Commit
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Full Git SHA"} onSearch={props.onSourceCommitChange}/>
@@ -223,12 +208,12 @@ export default function BUILD_HISTORY_TABLE(props) {
                     <Row>
                         <Col span={24} className="left">
                             Jenkins Build &nbsp;
-                            <Popover content={text}>
+                            <Popover content={"Authorized only for ART members"}>
                                 <InfoCircleOutlined style={{color: "#1677ff"}}/>
                             </Popover>
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Jenkins Build No"} onSearch={props.onJenkinsBuildChange}/>
+                            <Search placeholder={"Jenkins Build URL"} onSearch={props.onJenkinsBuildChange}/>
                         </Col>
                     </Row>
                 )
@@ -236,11 +221,10 @@ export default function BUILD_HISTORY_TABLE(props) {
             align: "center",
             dataIndex: "jenkins_build_url",
             key: "jenkins_build_url",
-            render: (data, record) => {
-
+            render: (data) => {
                 return (
                     <a href={data} target="_blank"
-                       rel="noopener noreferrer">{record["jenkins_build_number"]}</a>
+                       rel="noopener noreferrer">{data.split("/").at(-2)}</a>
                 )
 
             }
