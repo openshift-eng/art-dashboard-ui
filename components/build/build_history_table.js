@@ -1,12 +1,12 @@
-import {CheckOutlined, CloseOutlined} from "@ant-design/icons";
-import {Col, Empty, Pagination, Row, Table, Tooltip, Input, Select} from "antd";
+import {CheckOutlined, CloseOutlined, InfoCircleOutlined} from "@ant-design/icons";
+import {Col, Empty, Pagination, Row, Table, Tooltip, Input, Select, Popover} from "antd";
 import React from "react";
 
 const {Search} = Input;
 const {Option} = Select;
 
 export default function BUILD_HISTORY_TABLE(props) {
-
+    const text = "Partial search enabled. For exact search, enclose within quotes."
 
     const columns = [
         {
@@ -14,7 +14,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Build
+                            Build &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Build Id"} onSearch={props.onBuildNoChange}/>
@@ -53,8 +56,8 @@ export default function BUILD_HISTORY_TABLE(props) {
                         </Col>
                         <Col span={24}>
                             <Select style={{width: "100%"}} onChange={props.onBuildStatusChange}>
-                                <Option value="success">Success</Option>
-                                <Option value="failure">Failure</Option>
+                                <Option value="success"><Tooltip title={"Success"}><CheckOutlined style={{color: "#52c41a"}}/></Tooltip></Option>
+                                <Option value="failure"><Tooltip title={"Failure"}><CloseOutlined style={{color: "#f55d42"}}/></Tooltip></Option>
                                 <Option value="">Both</Option>
                             </Select>
                         </Col>
@@ -87,7 +90,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Task ID
+                            Task ID &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Task Id"} onSearch={props.onTaskIdChange}/>
@@ -112,7 +118,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Package Name
+                            Package Name &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Package Name"} onSearch={props.onPackageNameChange}/>
@@ -129,7 +138,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Version
+                            Version &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Version"} onSearch={props.onVersionChange}/>
@@ -151,7 +163,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            CGIT
+                            CGIT &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"CGIT Id"} onSearch={props.onCgitChange}/>
@@ -176,7 +191,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Source Commit
+                            Source Commit &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"Full Git SHA"} onSearch={props.onSourceCommitChange}/>
@@ -204,10 +222,13 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Jenkins Build
+                            Jenkins Build &nbsp;
+                            <Popover content={text}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
-                            <Search onSearch={props.onJenkinsBuildChange}/>
+                            <Search placeholder={"Jenkins Build No"} onSearch={props.onJenkinsBuildChange}/>
                         </Col>
                     </Row>
                 )
@@ -229,7 +250,10 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Time
+                            Time &nbsp;
+                            <Popover content={"Partial search not possible"}>
+                                <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                            </Popover>
                         </Col>
                         <Col span={24}>
                             <Search placeholder={"eg: 2022-08-01 | 18:52:36\n"} onSearch={props.onTimeChange}/>

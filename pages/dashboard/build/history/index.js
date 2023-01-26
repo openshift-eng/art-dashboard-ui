@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {get_builds} from "../../../../components/api_calls/build_calls";
+import {getBuilds} from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table"
 import {ReloadOutlined, RocketOutlined} from "@ant-design/icons";
 import Head from "next/head";
@@ -128,7 +128,7 @@ export default function BUILD_HISTORY_HOME() {
             delete searchParams["jenkins_build_number"]
         }
 
-        get_builds(searchParams).then((data) => {
+        getBuilds(searchParams).then((data) => {
             setData(data["results"]);
             setTotalCount(data["count"]);
 
