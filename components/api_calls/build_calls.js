@@ -23,14 +23,22 @@ export async function auto_complete_nvr() {
 
 }
 
-export async function get_builds(searchParams) {
+export async function getBuilds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        if (key !== "time_iso" && key !== "page")
-            query += `${key}__icontains=${searchParams[key]}&`
+        let value = searchParams[key]
+
+        if ((value[0] === "\"" && value[value.length - 1] === "\"") || (value[0] === "'" && value[value.length - 1] === "'")) {
+            value = value.substring(1, value.length - 1)
+            query += `${key}=${value}&`
+            continue
+        }
+
+        if (key !== "time_iso" && key !== "page" && key !== "brew_task_state")
+            query += `${key}__icontains=${value}&`
         else
-            query += `${key}=${searchParams[key]}&`
+            query += `${key}=${value}&`
     }
 
     if (!(query === "")) {
