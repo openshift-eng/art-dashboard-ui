@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {get_builds} from "../../../../components/api_calls/build_calls";
+import {getBuilds} from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table"
 import {ReloadOutlined, RocketOutlined} from "@ant-design/icons";
 import Head from "next/head";
@@ -17,6 +17,7 @@ export default function BUILD_HISTORY_HOME() {
     const [version, setVersion] = useState("");
     const [cgit, setCgit] = useState("");
     const [sourceCommit, setSourceCommit] = useState("");
+    const [jenkinsBuild, setJenkinsBuild] = useState("");
     const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
 
@@ -52,6 +53,10 @@ export default function BUILD_HISTORY_HOME() {
 
     const onSourceCommitChange = (commit) => {
         setSourceCommit(commit.trim())
+    }
+
+    const onJenkinsBuildChange = (data) => {
+        setJenkinsBuild(data.trim())
     }
 
     const onTimeChange = (data) => {
@@ -117,7 +122,13 @@ export default function BUILD_HISTORY_HOME() {
             delete searchParams["time_iso"]
         }
 
-        get_builds(searchParams).then((data) => {
+        if (jenkinsBuild !== "") {
+            searchParams["jenkins_build_url"] = jenkinsBuild
+        } else {
+            delete searchParams["jenkins_build_url"]
+        }
+
+        getBuilds(searchParams).then((data) => {
             setData(data["results"]);
             setTotalCount(data["count"]);
 
@@ -127,7 +138,7 @@ export default function BUILD_HISTORY_HOME() {
 
     useEffect(() => {
         getData()
-    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, time])
+    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, jenkinsBuild, time])
 
     const menuItems = [
         {
@@ -176,7 +187,8 @@ export default function BUILD_HISTORY_HOME() {
                                          onBuildNoChange={onBuildNoChange} onPackageNameChange={onPackageNameChange}
                                          onBuildStatusChange={onBuildStatusChange} onTaskIdChange={onTaskIdChange}
                                          onVersionChange={onVersionChange} onCgitChange={onCgitChange}
-                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}/>
+                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}
+                                         onJenkinsBuildChange={onJenkinsBuildChange}/>
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>

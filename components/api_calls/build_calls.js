@@ -4,30 +4,27 @@ if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
     server_endpoint = "http://localhost:8080"
 } else {
     server_endpoint = process.env.NEXT_PUBLIC_ART_DASH_SERVER_ROUTE + "/"
+
+    // OPENSHIFT_BUILD_NAMESPACE env variable is obtained inside pod during its run
+    server_endpoint = server_endpoint.replace(/\{0\}/g, process.env.NEXT_PUBLIC_OPENSHIFT_BUILD_NAMESPACE);
 }
 
-export async function auto_complete_nvr() {
-
-    const response = await fetch(server_endpoint + process.env.NEXT_PUBLIC_AUTOCOMPLETE_FOR_NVR, {
-        method: "GET",
-        headers: {
-            'Accept': 'application/json',
-            "Content-Type": "application/json",
-        }
-    });
-
-    return await response.json();
-
-}
-
-export async function get_builds(searchParams) {
+export async function getBuilds(searchParams) {
 
     let query = ""
     for (const key in searchParams) {
-        if (key !== "time_iso" && key !== "page")
-            query += `${key}__icontains=${searchParams[key]}&`
+        let value = searchParams[key]
+
+        if ((value[0] === "\"" && value[value.length - 1] === "\"") || (value[0] === "'" && value[value.length - 1] === "'")) {
+            value = value.substring(1, value.length - 1)
+            query += `${key}=${value}&`
+            continue
+        }
+
+        if (key !== "time_iso" && key !== "page" && key !== "brew_task_state")
+            query += `${key}__icontains=${value}&`
         else
-            query += `${key}=${searchParams[key]}&`
+            query += `${key}=${value}&`
     }
 
     if (!(query === "")) {

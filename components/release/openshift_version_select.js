@@ -39,7 +39,7 @@ function OpenshiftVersionSelect() {
     if (onSelectVersion === undefined) {
         return (
             <div align={"right"} style={{padding: "30px"}}>
-                <Select placeholder={"OpenShift Version"} onChange={onChangeFunc}>
+                <Select placeholder={<div style={{color: "black"}}>Openshift Version</div>} onChange={onChangeFunc}>
                     {generateSelectOptionFromStateDate(data)}
                 </Select>
             </div>
