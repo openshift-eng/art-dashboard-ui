@@ -21,6 +21,7 @@ function ReleaseBranchDetailTable(props) {
             table_row["doc_complete"] = data["advisory_details"][0]["doc_complete"];
             table_row["security_approved"] = data["advisory_details"][0]["security_approved"];
             table_row["qe_reviewer_id"] = data["advisory_details"][0]["qe_reviewer_id"];
+            table_row["advisory_type_main"] = data["advisory_details"][0]["advisory_type"]
 
             if (data["advisory_details"][0]["qe_reviewer_details"] !== null) {
                 table_row["qe_reviewer_email_address"] = data["advisory_details"][0]["qe_reviewer_details"]["email_address"];
@@ -65,7 +66,7 @@ function ReleaseBranchDetailTable(props) {
 
     const table_column = [
         {
-            title: "Advisory Type",
+            title: "Advisory",
             key: "advisory_type",
             dataIndex: "advisory_type",
             render: (data, record) => {
@@ -93,6 +94,19 @@ function ReleaseBranchDetailTable(props) {
                                     data}</Tooltip></a>
                             </div>
                         )
+                    }
+                },
+                {
+                    title: "Type",
+                    key: "advisory_type_main",
+                    dataIndex: "advisory_type_main",
+                    render: (data) => {
+                        return (
+                            <div>
+                                {data.toUpperCase()}
+                            </div>
+                        )
+
                     }
                 },
                 {
