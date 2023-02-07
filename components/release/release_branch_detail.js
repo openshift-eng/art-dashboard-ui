@@ -14,6 +14,8 @@ function ReleaseBranchDetail(props) {
     const [advisoryDetailsPrevious, setAdvisoryDetailsPrevious] = useState(undefined);
     const [current, setCurrent] = useState(undefined)
     const [previous, setPrevious] = useState(undefined)
+    const [currentJira, setCurrentJira] = useState(undefined)
+    const [previousJira, setPreviousJira] = useState(undefined)
 
 
     const generateDataForEachAdvisory = () => {
@@ -82,14 +84,17 @@ function ReleaseBranchDetail(props) {
             setCurrent(current);
             setPrevious(previous);
 
-            let table_data = [];
-            for (const key in data[current]) {
+            setCurrentJira(data[current][1])
+            setPreviousJira(data[previous][1])
 
-                if (data[current].hasOwnProperty(key)) {
+            let table_data = [];
+            for (const key in data[current][0]) {
+
+                if (data[current][0].hasOwnProperty(key)) {
                     table_data.push({
                         type: key,
-                        id: data[current][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[current][key]
+                        id: data[current][0][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[current][0][key]
                     })
                 }
 
@@ -97,13 +102,13 @@ function ReleaseBranchDetail(props) {
             setOverviewTableData(table_data);
 
             let table_data_previous = [];
-            for (const key in data[previous]) {
+            for (const key in data[previous][0]) {
 
-                if (data[previous].hasOwnProperty(key))
+                if (data[previous][0].hasOwnProperty(key))
                     table_data_previous.push({
                         type: key,
-                        id: data[previous][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[previous][key]
+                        id: data[previous][0][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[previous][0][key]
                     })
             }
 
@@ -150,11 +155,16 @@ function ReleaseBranchDetail(props) {
 
     return (
         <div>
-            <Title style={{paddingLeft: "40px"}} level={4}>
-                <code> {current} <Popover content={popover(current)} trigger="hover">
-                    <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                </Popover> </code>
-            </Title>
+            <div style={{paddingLeft: "40px", paddingTop: "40px"}}>
+                <Title level={4}>
+                    <code> {current} <Popover content={popover(current)} trigger="hover">
+                        <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                    </Popover> </code>
+                </Title>
+                <p style={{paddingLeft: "10px"}}>
+                    <a href={`https://issues.redhat.com/browse/${currentJira}`}>{currentJira}</a>
+                </p>
+            </div>
             {
                 advisoryDetails ?
                     <>
@@ -165,13 +175,16 @@ function ReleaseBranchDetail(props) {
 
             }
             <br/>
-
-            <Title style={{paddingLeft: "40px", paddingTop: "40px"}} level={4}>
-                <code> {previous} <Popover content={popover(previous)} trigger="hover">
-                    <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                </Popover> </code>
-            </Title>
-
+            <div style={{paddingLeft: "40px", paddingTop: "40px"}}>
+                <Title level={4}>
+                    <code> {previous} <Popover content={popover(previous)} trigger="hover">
+                        <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                    </Popover> </code>
+                </Title>
+                <p style={{paddingLeft: "10px"}}>
+                    <a href={`https://issues.redhat.com/browse/${previousJira}`}>{previousJira}</a>
+                </p>
+            </div>
             {
                 advisoryDetailsPrevious && current !== previous ?
                     <>
