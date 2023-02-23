@@ -19,7 +19,7 @@ export default function Home() {
                 </p>
 
                 <div className={styles.grid}>
-                    <a href="https://art-self-service-aos-art-web.apps.ocp4.prod.psi.redhat.com/new-content"
+                    <a href="/self-service/new-content"
                        className={styles.card}>
                         <h3>Request New Content&rarr;</h3>
                         <p>Add a new image or RPM to be released with OCP</p>
