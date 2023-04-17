@@ -31,19 +31,19 @@ function ReleaseBranchDetail(props) {
             let advisory_data = {};
 
             advisory_details_for_advisory_id(data.id).then(data_api => {
-                advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
-                advisory_data["bug_details"] = data_api["data"]["bugs"];
-                advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
-                advisory_data["type"] = data.type;
-                advisories_data.push(advisory_data);
-                count += 1;
+                if (data_api["data"]) {
+                    advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
+                    advisory_data["bug_details"] = data_api["data"]["bugs"];
+                    advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
+                    advisory_data["type"] = data.type;
+                    advisories_data.push(advisory_data);
+                    count += 1;
 
-                if (count === number_of_entries_in_overview_table_data) {
-                    setAdvisoryDetails(advisories_data);
+                    if (count === number_of_entries_in_overview_table_data) {
+                        setAdvisoryDetails(advisories_data);
+                    }
                 }
-
             });
-
         });
     }
 
@@ -60,19 +60,19 @@ function ReleaseBranchDetail(props) {
             let advisory_data = {};
 
             advisory_details_for_advisory_id(data.id).then(data_api => {
-                advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
-                advisory_data["bug_details"] = data_api["data"]["bugs"];
-                advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
-                advisory_data["type"] = data.type;
-                advisories_data.push(advisory_data);
-                count += 1;
-                if (number_of_entries_in_overview_table_data_previous === count) {
-                    setAdvisoryDetailsPrevious(advisories_data);
+                if (data_api["data"]) {
+                    advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
+                    advisory_data["bug_details"] = data_api["data"]["bugs"];
+                    advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
+                    advisory_data["type"] = data.type;
+                    advisories_data.push(advisory_data);
+                    count += 1;
+                    if (number_of_entries_in_overview_table_data_previous === count) {
+                        setAdvisoryDetailsPrevious(advisories_data);
+                    }
                 }
             });
-
         });
-
     }
 
     const getBranchData = (branch) => {
