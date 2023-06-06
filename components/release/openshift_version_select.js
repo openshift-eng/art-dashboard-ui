@@ -4,9 +4,8 @@ import {getReleaseBranchesFromOcpBuildData} from "../api_calls/release_calls";
 
 const {Option} = Select;
 
-function OpenshiftVersionSelect() {
+function OpenshiftVersionSelect({ onVersionChange, initialVersion, redirectOnSelect=false }) {
     const [data, setData] = useState([]);
-    const [onSelectVersion, setOnSelectVersion] = useState(undefined);
 
     const setDataFunc = () => {
         getReleaseBranchesFromOcpBuildData().then(loopData => {
@@ -20,14 +19,19 @@ function OpenshiftVersionSelect() {
     }
 
     const onChangeFunc = (value) => {
-        setOnSelectVersion(value);
+        if (redirectOnSelect) {
+            // Redirect to the version specific page
+            window.location.replace(`/dashboard/release/${value}`);
+        } else {
+            // Invoke the passed function
+            onVersionChange(value);
+        }
     }
 
     const generateSelectOptionFromStateDate = (stateData) => {
         return stateData.map((openshiftVersion) => {
-
             return (
-                <Option value={openshiftVersion}>{openshiftVersion}</Option>
+                <Option value={openshiftVersion} key={openshiftVersion}>{openshiftVersion}</Option>  // Add key prop
             )
         })
     }
@@ -36,18 +40,14 @@ function OpenshiftVersionSelect() {
         setDataFunc();
     }, [])
 
-    if (onSelectVersion === undefined) {
-        return (
-            <div align={"right"} style={{padding: "30px"}}>
-                <Select placeholder={<div style={{color: "black"}}>Openshift Version</div>} onChange={onChangeFunc}>
-                    {generateSelectOptionFromStateDate(data)}
-                </Select>
-            </div>
-
-        );
-    } else {
-        window.location.replace(`/dashboard/release/${onSelectVersion}`);
-    }
+    // Simplify the render function by removing the if-else
+    return (
+        <div align={"right"} style={{padding: "30px"}}>
+            <Select defaultValue={initialVersion} placeholder={<div style={{color: "black"}}>Openshift Version</div>} onChange={onChangeFunc}>
+                {generateSelectOptionFromStateDate(data)}
+            </Select>
+        </div>
+    );
 }
 
 export default OpenshiftVersionSelect;
