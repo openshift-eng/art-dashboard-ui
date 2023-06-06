@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {getBuilds} from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table"
-import {ReloadOutlined, RocketOutlined} from "@ant-design/icons";
+import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
 import Head from "next/head";
 import {Layout, Menu} from "antd";
 
@@ -150,6 +150,11 @@ export default function BUILD_HISTORY_HOME() {
             key: "buildHistory",
             icon: <ReloadOutlined/>,
             label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
+        },
+        {
+            key: "rpmImages",
+            icon: <FileImageOutlined/>,
+            label: <a href={"/dashboard/rpm_images"}><p style={{fontSize: "medium"}}>RPMs & Images</p></a>
         }
     ]
 

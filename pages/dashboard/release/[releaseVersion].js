@@ -5,7 +5,7 @@ import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_vers
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import {useRouter} from 'next/router'
 import Head from "next/head";
-import {RocketOutlined, ReloadOutlined} from "@ant-design/icons";
+import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
 
 const {Title} = Typography;
 
@@ -55,6 +55,11 @@ function ReleaseHomePage() {
             key: "buildHistory",
             icon: <ReloadOutlined/>,
             label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
+        },
+        {
+            key: "rpmImages",
+            icon: <FileImageOutlined/>, 
+            label: <a href={"/dashboard/rpm_images"}><p style={{fontSize: "medium"}}>RPMs & Images</p></a>
         }
     ]
 
@@ -95,7 +100,7 @@ function ReleaseHomePage() {
                                 :
                                 <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion}</code></Title>
                         }
-                        <OPENSHIFT_VERSION_SELECT branch={releaseVersion}/>
+                        <OPENSHIFT_VERSION_SELECT initialVersion={releaseVersion} redirectOnSelect />
                     </div>
                     <RELEASE_BRANCH_DETAIL branch={releaseVersion}
                                            destroyLoadingCallback={destroyLoading}/>
