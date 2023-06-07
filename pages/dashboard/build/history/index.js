@@ -153,7 +153,7 @@ export default function BUILD_HISTORY_HOME() {
         },
         {
             key: "rpmImages",
-            icon: <FileImageOutlined/>, // replace MyIcon with an appropriate icon
+            icon: <FileImageOutlined/>,
             label: <a href={"/dashboard/rpm_images"}><p style={{fontSize: "medium"}}>RPMs & Images</p></a>
         }
     ]
