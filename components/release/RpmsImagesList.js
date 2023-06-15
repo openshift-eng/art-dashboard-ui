@@ -51,7 +51,7 @@ export default function RpmsImagesList({ branch }) {
           placeholder="Search Image"
           onChange={e => setSearchedImage(e.target.value)}
         />
-        <Table dataSource={imagesData} columns={[{ title: 'Image Name', dataIndex: 'imageName', key: 'imageName' }]} pagination={{ pageSize: 40 }}/>
+        <Table dataSource={imagesData} columns={[{ title: 'Image Name', dataIndex: 'imageName', key: 'imageName' }]}/>
       </Col>
     </Row>
   );

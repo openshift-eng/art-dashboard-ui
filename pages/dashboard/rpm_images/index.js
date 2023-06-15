@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, message, Typography } from 'antd';
+import { Layout, Menu, Typography, Spin, Card } from 'antd';
 import { RocketOutlined, ReloadOutlined, FileImageOutlined } from '@ant-design/icons';
 import Head from 'next/head';
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import ImagesList from "../../../components/release/RpmsImagesList";
 import {getReleaseBranchesFromOcpBuildData} from "../../../components/api_calls/release_calls";
 
-const { Title, Text } = Typography;
 const { Footer, Sider } = Layout;
 
 function RpmImages() {
@@ -72,8 +71,14 @@ function RpmImages() {
                         </div>
                     </div>
 
-                    {selectedVersion && <ImagesList branch={selectedVersion} />}
-                    
+                    <div style={selectedVersion ? { marginLeft: '20px' } : { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                        {selectedVersion 
+                            ? <Card style={{ width: '100%' }}>
+                                <ImagesList branch={selectedVersion} />
+                              </Card>
+                            : <Spin size="large" /> // This will display a large loading spinner while `selectedVersion` is null
+                        }
+                    </div>             
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>
