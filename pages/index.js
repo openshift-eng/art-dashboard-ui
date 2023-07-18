@@ -47,6 +47,10 @@ export default function Home() {
                             Learn more about what ART team does.
                         </p>
                     </a>
+                    <a href="/private/privatePage" className={styles.card}>
+                        <h3>Private Page &rarr;</h3>
+                        <p>Only accessible to logged in ART members</p>
+                    </a>
                 </div>
             </main>
 

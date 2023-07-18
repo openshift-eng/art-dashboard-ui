@@ -8,14 +8,37 @@ if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
     server_endpoint = process.env.NEXT_PUBLIC_ART_DASH_SERVER_ROUTE;
 }
 
-export function makeApiCall(urlPath, method, headers = {}, params = {}) {
+// Function to get the CSRF token from the cookie
+function getCsrfToken() {
+    if (!document.cookie) {
+        return null;
+    }
+    const token = document.cookie.split(';')
+        .map(c => c.trim())
+        .filter(c => c.startsWith('csrftoken='));
+
+    if (token.length === 0) {
+        return null;
+    }
+    return decodeURIComponent(token[0].split('=')[1]);
+}
+
+export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}) {
     const url = `${server_endpoint}${urlPath}`;
-    
+
+    // Add the CSRF token to the headers
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+
     return axios({
         method: method,
         url: url,
         headers: headers,
-        params: params
+        params: params,
+        data: data,
+        withCredentials: true
     })
     .then(response => {
         console.log('Success:', response);

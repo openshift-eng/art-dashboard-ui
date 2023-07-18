@@ -1,0 +1,19 @@
+/* Login.module.css */
+.loginContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px; /* This will create a 20px gap between all direct child elements */
+    padding: 20px;
+}
+
+.loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.loginForm input {
+    margin-bottom: 10px;
+}
