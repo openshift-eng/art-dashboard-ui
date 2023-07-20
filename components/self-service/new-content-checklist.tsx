@@ -51,9 +51,9 @@ export function NewContentChecklist() {
       </Tooltip>
     </Box>
     <Box>
-      <FormControlLabel control={<Checkbox {...register("check_prodsec_review", { required: true })} />} label="A JIRA ticket for ProdSec review of component is already created" />
-      <Tooltip title={configData.check_prodsec_review_help}>
-        <IconButton color="primary" aria-label="help" href="https://source.redhat.com/groups/public/atomicopenshift/atomicopenshift_wiki/guidelines_for_requesting_new_content_managed_by_ocp_art#jive_content_id_ProdSec_review_of_component" target="_blank">
+      <FormControlLabel control={<Checkbox {...register("check_prodsec_review", { required: true })} />} label="You have performed a threat model assessment" />
+      <Tooltip title={`ProdSec no longer performs an assessment, instead requiring a self-assessment from this link`}>
+        <IconButton color="primary" aria-label="help" href="https://docs.engineering.redhat.com/display/PRODSEC/Request+a+SD+Elements+Threat+Model+for+new+OCP+components" target="_blank">
           <HelpIcon />
         </IconButton>
       </Tooltip>
