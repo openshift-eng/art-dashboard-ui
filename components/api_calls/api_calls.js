@@ -3,12 +3,22 @@ import axios from 'axios';
 let server_endpoint = null;
 
 if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
-    server_endpoint = "http://localhost:8080/";
+    server_endpoint = "http://localhost:8080";
 } else {
     server_endpoint = process.env.NEXT_PUBLIC_ART_DASH_SERVER_ROUTE;
 }
 
 export function makeApiCall(urlPath, method, headers = {}, params = {}) {
+    if (!server_endpoint || !urlPath) {
+        console.error("Server endpoint or URL path is not defined");
+        return;
+    }
+
+    // Ensure urlPath always starts with a '/'
+    if (!urlPath.startsWith('/')) {
+        urlPath = '/' + urlPath;
+    }
+
     const url = `${server_endpoint}${urlPath}`;
     
     return axios({
