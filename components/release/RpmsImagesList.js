@@ -4,7 +4,7 @@ import { Spin, Table, Row, Col, Input } from 'antd';
 
 const { Search } = Input;
 
-export default function RpmsImagesList({ branch }) {
+export default function RpmsImagesList({ branch, onLoaded }) { // Accept onLoaded as prop
   const [rpmsImagesData, setRpmsImagesData] = useState(null);
   const [searchedRpm, setSearchedRpm] = useState('');
   const [searchedImage, setSearchedImage] = useState('');
@@ -13,9 +13,10 @@ export default function RpmsImagesList({ branch }) {
     fetchRpmsImages(branch)
       .then(data => {
         setRpmsImagesData(data.payload);
+        onLoaded(); // Call onLoaded function after setting the data
       })
       .catch(error => console.error('Error:', error));
-  }, [branch]);
+  }, [branch, onLoaded]); // Add onLoaded to dependency array
 
   if (!rpmsImagesData) {
     return <Spin />;
@@ -37,8 +38,10 @@ export default function RpmsImagesList({ branch }) {
 
   return (
     <Row gutter={16}>
+      <Col span={24}>
+        <h2>RPMs and Images the ART Team is Currently Building</h2>
+      </Col>
       <Col span={12}>
-        <h2>RPMS</h2>
         <Search
           placeholder="Search RPM"
           onChange={e => setSearchedRpm(e.target.value)}
@@ -46,7 +49,6 @@ export default function RpmsImagesList({ branch }) {
         <Table dataSource={rpmsData} columns={[{ title: 'RPM Name', dataIndex: 'rpmName', key: 'rpmName' }]} />
       </Col>
       <Col span={12}>
-        <h2>Images</h2>
         <Search
           placeholder="Search Image"
           onChange={e => setSearchedImage(e.target.value)}
