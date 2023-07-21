@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Typography, Spin, Card } from 'antd';
+import { Layout, Menu, Typography, Spin, Card, message } from 'antd';
 import { RocketOutlined, ReloadOutlined, FileImageOutlined } from '@ant-design/icons';
 import Head from 'next/head';
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
@@ -7,18 +7,16 @@ import ImagesList from "../../../components/release/RpmsImagesList";
 import {getReleaseBranchesFromOcpBuildData} from "../../../components/api_calls/release_calls";
 
 const { Footer, Sider } = Layout;
+const { Title } = Typography;
+
+message.config({
+    maxCount: 2
+});
 
 function RpmImages() {
     const [selectedVersion, setSelectedVersion] = useState(null);
     const [initialVersion, setInitialVersion] = useState(null);
-
-    useEffect(() => {
-        getReleaseBranchesFromOcpBuildData().then(loopData => {
-            const versions = loopData.map(detail => detail["name"]);
-            setInitialVersion(versions[0]); // set initial version to the latest version
-            setSelectedVersion(versions[0]); // start loading data for the latest version
-        });
-    }, []);
+    const [loadingData, setLoadingData] = useState(true); // New loading state
 
     const menuItems = [
         {
@@ -37,6 +35,31 @@ function RpmImages() {
             label: <a href={"/dashboard/rpm_images"}><p style={{fontSize: "medium"}}>RPMs & Images</p></a>
         },
     ];
+
+    useEffect(() => {
+        getReleaseBranchesFromOcpBuildData().then(loopData => {
+            const versions = loopData.map(detail => detail["name"]);
+            setInitialVersion(versions[0]); // set initial version to the latest version
+            setSelectedVersion(versions[0]); // start loading data for the latest version
+        });
+
+        // Display the loading message without calling handleLoaded here
+        message.loading({
+            content: "Loading Data",
+            duration: 0,
+            style: {position: "fixed", left: "50%", top: "20%"}
+        });
+    }, []);
+
+    const handleLoaded = () => {
+        message.destroy();
+        message.success({
+            content: "Loaded",
+            duration: 2,
+            style: {position: "fixed", left: "50%", top: "20%", color: "#316DC1"}
+        });
+        setLoadingData(false); // set loadingData to false when data is loaded
+    };
 
     return (
         <div>
@@ -62,23 +85,29 @@ function RpmImages() {
 
                     <div className={"version-header"} style={{ display: 'flex', justifyContent: 'space-between', padding: '30px' }}>
                         {selectedVersion && 
-                            <h2 className="ant-typography" style={{ paddingLeft: '20px' }}>
-                                <code>{selectedVersion} </code>
-                            </h2>
+                            <Title level={2} style={{ paddingLeft: '20px' }}>
+                                <code>
+                                    {selectedVersion === `openshift-${process.env.NEXT_PUBLIC_GA_VERSION}` ?
+                                        `${selectedVersion} (GA)`
+                                        :
+                                        selectedVersion
+                                    }
+                                </code>
+                            </Title>
                         }
                         <div align="right">
                         <OPENSHIFT_VERSION_SELECT initialVersion={initialVersion} onVersionChange={setSelectedVersion} />
                         </div>
                     </div>
-
+                    
                     <div style={selectedVersion ? { marginLeft: '20px' } : { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                         {selectedVersion 
                             ? <Card style={{ width: '100%' }}>
-                                <ImagesList branch={selectedVersion} />
-                              </Card>
-                            : <Spin size="large" /> // This will display a large loading spinner while `selectedVersion` is null
+                                <ImagesList branch={selectedVersion} onLoaded={handleLoaded} />
+                            </Card>
+                            : <Spin size="large" /> 
                         }
-                    </div>             
+                    </div>      
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>
