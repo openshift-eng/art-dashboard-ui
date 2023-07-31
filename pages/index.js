@@ -1,38 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import styles from '../styles/Home.module.css';
-import LoginButton from '../components/login/LoginButton'; // Import the LoginButton component
 import Head from 'next/head'
-import { notification } from 'antd';
+import styles from '../styles/Home.module.css';
 
 export default function Home() {
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const router = useRouter();
-
-    useEffect(() => {
-      // If the 'loginRequired' query parameter is present, open the notification
-      if (router.query.loginRequired) {
-          setIsLoginModalOpen(true);
-          notification.config({
-              placement: 'bottomRight',
-          });
-          notification.open({
-              message: 'Login Required',
-              description: 'You need to log in to view this page.',
-          });
-      }
-  }, [router.query]);;
-  
-  return (
-      <div className={styles.container}>
-          <Head>
-              <title>ART Self Service</title>
-              <link rel="icon" href="/redhat-logo.png"/>
-          </Head>
-
-          <header>
-              <LoginButton isLoginModalOpen={isLoginModalOpen} setIsLoginModalOpen={setIsLoginModalOpen} />
-          </header>
+    return (
+        <div className={styles.container}>
+            <Head>
+                <title>ART Self Service</title>
+                <link rel="icon" href="/redhat-logo.png"/>
+            </Head>
 
             <main>
                 <h1 className={styles.title}>
