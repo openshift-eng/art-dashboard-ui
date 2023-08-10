@@ -18,7 +18,7 @@ export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {
         return;
     }
 
-    if (!server_endpoint.endsWith('/') && !urlPath.startsWith('/')) {
+    if (!urlPath.startsWith('/')) {
         urlPath = '/' + urlPath;
     }
 

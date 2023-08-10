@@ -1,5 +1,4 @@
 import { makeApiCall } from '../../components/api_calls/api_calls';
-import Head from 'next/head'; 
 
 export async function getServerSideProps(context) {
     const { req, res } = context;
