@@ -25,6 +25,11 @@ export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {
 
     const url = `${server_endpoint}${urlPath}`;
     
+    // If it's a server-side call, forward the cookies from the incoming request
+    if (req) {
+        headers.Cookie = req.headers.cookie;
+    }
+
     return axios({
         method: method,
         url: url,

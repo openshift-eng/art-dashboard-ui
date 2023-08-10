@@ -64,7 +64,7 @@ export default function Login() {
                 });
                 notification.success({ message: 'Logged in successfully!' });
                 const nextRoute = router.query.next || '/private/privatePage';
-                router.push(nextRoute);
+                window.location.href = nextRoute;
             } else if (response.status === 401) {
                 notification.error({ message: 'Wrong credentials' });
             } else {
