@@ -27,10 +27,8 @@ export async function getServerSideProps(context) {
 function PrivatePageComponent() {
     return (
         <div>
-            <Head>
                 <title>Private Page</title>
                 <link rel="icon" href="/redhat-logo.png"/>
-            </Head>
             <h1>Private Page</h1>
             <p>Only accessible to logged in ART members</p>
         </div>
