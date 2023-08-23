@@ -12,6 +12,12 @@ if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
     server_endpoint = process.env.NEXT_PUBLIC_ART_DASH_SERVER_ROUTE;
 }
 
+function getCookie(cookies, name) {
+    const value = `; ${cookies}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
 
 export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}, req = null) {
     if (!server_endpoint || !urlPath) {
@@ -22,13 +28,21 @@ export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {
         urlPath = '/' + urlPath;
     }
 
+    // Use the provided request object's cookies (if available) for server-side calls
+    if (req) {
+        const token = getCookie(req.headers.cookie, 'token');
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+    } else {
+        // For client-side calls, use the document object to fetch the cookie
+        const token = getCookie(document.cookie, 'token');
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+    }
 
     const url = `${server_endpoint}${urlPath}`;
-    
-    // If it's a server-side call, forward the cookies from the incoming request
-    if (req) {
-        headers.Cookie = req.headers.cookie;
-    }
 
     return axios({
         method: method,

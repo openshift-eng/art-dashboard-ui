@@ -56,8 +56,8 @@ export default function Login() {
         try {
             const response = await makeApiCall('api/v1/login', 'POST', data);
             if (response.detail === 'Login successful') {
-                const sessionData = { isLoggedIn: true };
-                localStorage.setItem('sessionData', JSON.stringify(sessionData));
+                const token = response.token;
+                document.cookie = `token=${token}; path=/`;  // Store the token in a cookie
 
                 notification.config({
                     placement: 'bottomRight',
