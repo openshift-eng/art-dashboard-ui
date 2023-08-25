@@ -73,7 +73,6 @@ export default function BUILD_HISTORY_HOME() {
 
     const getData = () => {
         searchParams["page"] = page
-
         if (buildNo !== "") {
             searchParams["build_0_id"] = buildNo
         } else {
@@ -131,9 +130,7 @@ export default function BUILD_HISTORY_HOME() {
         getBuilds(searchParams).then((data) => {
             setData(data["results"]);
             setTotalCount(data["count"]);
-
         });
-
     }
 
     useEffect(() => {

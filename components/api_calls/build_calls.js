@@ -21,6 +21,6 @@ export async function getBuilds(searchParams) {
         "Content-Type": "application/json"
     };
 
-    return makeApiCall(process.env.NEXT_PUBLIC_BUILD_ENDPOINT, 'GET', headers, params)
+    return makeApiCall(process.env.NEXT_PUBLIC_BUILD_ENDPOINT, 'GET', {}, headers, params)
         .catch(error => console.error('Error:', error));
 }
