@@ -9,7 +9,6 @@ export async function getServerSideProps(context) {
 
     // If the user is not authenticated or the request failed, redirect to the login page
     if (result.detail !== 'Authenticated') {
-        console.log('Redirecting to login page due to:', result.detail);
         return {
             redirect: {
                 destination: `/?loginRequired=true&next=${actualPath}`,
