@@ -3,19 +3,18 @@ import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../api_
 import {Empty, Popover, Typography} from "antd";
 import RELEASE_BRANCH_DETAIL_TABLE from "./release_branch_detail_table";
 import {InfoCircleOutlined} from "@ant-design/icons";
+import { Pagination } from 'antd';
 
 const {Title} = Typography;
 
 
 function ReleaseBranchDetail(props) {
     const [overviewTableData, setOverviewTableData] = useState(undefined);
-    const [overviewTableDataPrevious, setOverviewTableDataPrevious] = useState(undefined);
     const [advisoryDetails, setAdvisoryDetails] = useState(undefined);
-    const [advisoryDetailsPrevious, setAdvisoryDetailsPrevious] = useState(undefined);
-    const [current, setCurrent] = useState(undefined)
-    const [previous, setPrevious] = useState(undefined)
-    const [currentJira, setCurrentJira] = useState(undefined)
-    const [previousJira, setPreviousJira] = useState(undefined)
+    const [current, setCurrent] = useState(undefined);
+    const [currentJira, setCurrentJira] = useState(undefined);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
 
     const generateDataForEachAdvisory = () => {
@@ -47,76 +46,37 @@ function ReleaseBranchDetail(props) {
         });
     }
 
-    const generateDataForEachAdvisoryPrevious = () => {
-        setAdvisoryDetailsPrevious([]);
-        let advisories_data = []
-
-        const number_of_entries_in_overview_table_data_previous = overviewTableDataPrevious.length;
-
-        let count = 0;
-
-        overviewTableDataPrevious.forEach((data, index) => {
-
-            let advisory_data = {};
-
-            advisory_details_for_advisory_id(data.id).then(data_api => {
-                if (data_api["data"]) {
-                    advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
-                    advisory_data["bug_details"] = data_api["data"]["bugs"];
-                    advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
-                    advisory_data["type"] = data.type;
-                    advisories_data.push(advisory_data);
-                    count += 1;
-                    if (number_of_entries_in_overview_table_data_previous === count) {
-                        setAdvisoryDetailsPrevious(advisories_data);
-                    }
-                }
-            });
-        });
-    }
 
     const getBranchData = (branch) => {
-
         advisory_ids_for_branch(branch).then((data) => {
-            const current = Object.keys(data)[0];
-            const previous = Object.keys(data)[1];
-
-            setCurrent(current);
-            setPrevious(previous);
-
-            setCurrentJira(data[current][1])
-            setPreviousJira(data[previous][1])
-
+            const allAdvisories = Object.keys(data);
+            
+            // Sort advisories here, e.g., in ascending order of advisory ID
+            allAdvisories.sort((a, b) => a - b);
+                    
+            setCurrent(allAdvisories[currentPage - 1]);
+            setCurrentJira(data[allAdvisories[currentPage - 1]][1]);
+            setTotalPages(allAdvisories.length);
+    
             let table_data = [];
-            for (const key in data[current][0]) {
-
-                if (data[current][0].hasOwnProperty(key)) {
+            for (const key in data[allAdvisories[currentPage - 1]][0]) {
+                if (data[allAdvisories[currentPage - 1]][0].hasOwnProperty(key)) {
                     table_data.push({
                         type: key,
-                        id: data[current][0][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[current][0][key]
-                    })
+                        id: data[allAdvisories[currentPage - 1]][0][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[allAdvisories[currentPage - 1]][0][key]
+                    });
                 }
-
             }
             setOverviewTableData(table_data);
+        });
+    };
+    
 
-            let table_data_previous = [];
-            for (const key in data[previous][0]) {
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
 
-                if (data[previous][0].hasOwnProperty(key))
-                    table_data_previous.push({
-                        type: key,
-                        id: data[previous][0][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[previous][0][key]
-                    })
-            }
-
-            setOverviewTableDataPrevious(table_data_previous);
-
-        })
-
-    }
     useEffect(() => {
         if (overviewTableData) {
             generateDataForEachAdvisory();
@@ -124,22 +84,15 @@ function ReleaseBranchDetail(props) {
     }, [overviewTableData])
 
     useEffect(() => {
-        if (overviewTableDataPrevious) {
-            generateDataForEachAdvisoryPrevious();
-        }
-    }, [overviewTableDataPrevious])
+        getBranchData(props.branch);
+    }, [props.branch, currentPage]);
+
 
     useEffect(() => {
-        if (props.branch) {
-            getBranchData(props.branch);
-        }
-    }, [props.branch])
-
-    useEffect(() => {
-        if (advisoryDetails && advisoryDetailsPrevious && advisoryDetails.length > 0 && advisoryDetailsPrevious.length > 0) {
+        if (advisoryDetails && advisoryDetails.length > 0 ) {
             props.destroyLoadingCallback();
         }
-    }, [advisoryDetails, advisoryDetailsPrevious])
+    }, [advisoryDetails])
 
     const popover = (value) => (
         <div><a target="_blank" rel="noopener noreferrer"
@@ -168,36 +121,14 @@ function ReleaseBranchDetail(props) {
             {
                 advisoryDetails ?
                     <>
-                        <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetails}/>
+                        <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetails} currentPage={currentPage} totalPages={totalPages}/>
+                        <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} showSizeChanger={false}/>
                     </>
                     :
                     <Empty/>
-
-            }
-            <br/>
-            <div style={{paddingLeft: "40px", paddingTop: "40px"}}>
-                <Title level={4}>
-                    <code> {previous} <Popover content={popover(previous)} trigger="hover">
-                        <InfoCircleOutlined style={{color: "#1677ff"}}/>
-                    </Popover> </code>
-                </Title>
-                <p style={{paddingLeft: "10px"}}>
-                    <a href={`https://issues.redhat.com/browse/${previousJira}`}>{previousJira}</a>
-                </p>
-            </div>
-            {
-                advisoryDetailsPrevious && current !== previous ?
-                    <>
-                        <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetailsPrevious}/>
-                    </>
-                    :
-                    <Empty/>
-
             }
         </div>
     )
-
-
 }
 
 export default ReleaseBranchDetail;
