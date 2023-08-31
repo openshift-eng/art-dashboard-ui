@@ -50,35 +50,28 @@ function ReleaseBranchDetail(props) {
     const getBranchData = (branch) => {
         advisory_ids_for_branch(branch).then((data) => {
             const allAdvisories = Object.keys(data);
+            
+            // Sort advisories here, e.g., in ascending order of advisory ID
             allAdvisories.sort((a, b) => a - b);
-    
-            const startIndex = (currentPage - 1) * 2;
-            const endIndex = startIndex + 2;
-            const currentAdvisories = allAdvisories.slice(startIndex, endIndex);
-    
-            setCurrent(currentAdvisories[0]);
-            setCurrentJira(data[currentAdvisories[0]][1]);
+                    
+            setCurrent(allAdvisories[currentPage - 1]);
+            setCurrentJira(data[allAdvisories[currentPage - 1]][1]);
+            setTotalPages(allAdvisories.length);
     
             let table_data = [];
-            currentAdvisories.forEach(advisory => {
-                if (data[advisory][0]) {
-                    for (const key in data[advisory][0]) {
-                        if (data[advisory][0].hasOwnProperty(key)) {
-                            table_data.push({
-                                type: key,
-                                id: data[advisory][0][key],
-                                advisory_link: "https://errata.devel.redhat.com/advisory/" + data[advisory][0][key]
-                            });
-                        }
-                    }
+            for (const key in data[allAdvisories[currentPage - 1]][0]) {
+                if (data[allAdvisories[currentPage - 1]][0].hasOwnProperty(key)) {
+                    table_data.push({
+                        type: key,
+                        id: data[allAdvisories[currentPage - 1]][0][key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[allAdvisories[currentPage - 1]][0][key]
+                    });
                 }
-            });
-            
+            }
             setOverviewTableData(table_data);
-            setTotalPages(Math.ceil(allAdvisories.length / 2));
         });
     };
-
+    
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
@@ -88,17 +81,18 @@ function ReleaseBranchDetail(props) {
         if (overviewTableData) {
             generateDataForEachAdvisory();
         }
-    }, [overviewTableData]);
+    }, [overviewTableData])
 
     useEffect(() => {
         getBranchData(props.branch);
     }, [props.branch, currentPage]);
 
+
     useEffect(() => {
-        if (advisoryDetails && advisoryDetails.length > 0) {
+        if (advisoryDetails && advisoryDetails.length > 0 ) {
             props.destroyLoadingCallback();
         }
-    }, [advisoryDetails]);
+    }, [advisoryDetails])
 
     const popover = (value) => (
         <div><a target="_blank" rel="noopener noreferrer"
