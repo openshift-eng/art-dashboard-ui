@@ -17,35 +17,36 @@ function ReleaseBranchDetail(props) {
     const [totalPages, setTotalPages] = useState(1);
 
 
+    const FIXED_ORDER = ["Extras", "Image", "Metadata", "Microshift", "Rpm"];
+
     const generateDataForEachAdvisory = () => {
         setAdvisoryDetails([]);
-        let advisories_data = []
-
-        const number_of_entries_in_overview_table_data = overviewTableData.length;
-
-        let count = 0;
-
-        overviewTableData.forEach((data, index) => {
-
-            let advisory_data = {};
-
-            advisory_details_for_advisory_id(data.id).then(data_api => {
+        const promises = overviewTableData.map((data, index) => {
+            return advisory_details_for_advisory_id(data.id).then(data_api => {
                 if (data_api["data"]) {
-                    advisory_data["advisory_details"] = data_api["data"]["advisory_details"];
-                    advisory_data["bug_details"] = data_api["data"]["bugs"];
-                    advisory_data["bug_summary"] = data_api["data"]["bug_summary"];
-                    advisory_data["type"] = data.type;
-                    advisories_data.push(advisory_data);
-                    count += 1;
-
-                    if (count === number_of_entries_in_overview_table_data) {
-                        setAdvisoryDetails(advisories_data);
-                    }
+                    return {
+                        advisory_details: data_api["data"]["advisory_details"],
+                        bug_details: data_api["data"]["bugs"],
+                        bug_summary: data_api["data"]["bug_summary"],
+                        type: data.type
+                    };
                 }
+                return null;
             });
         });
-    }
-
+    
+        Promise.all(promises).then((advisories_data) => {
+            advisories_data = advisories_data.filter(item => item !== null); // Remove nulls if any
+            
+            // Explicitly sort based on FIXED_ORDER
+            advisories_data.sort((a, b) => {
+                return FIXED_ORDER.indexOf(a.type) - FIXED_ORDER.indexOf(b.type);
+            });
+            
+            console.log("Sorted advisories_data: ", advisories_data);  // Debugging line
+            setAdvisoryDetails(advisories_data);
+        });
+    };
 
     const getBranchData = (branch) => {
         advisory_ids_for_branch(branch).then((data) => {
