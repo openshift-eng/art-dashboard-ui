@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {getBuilds} from "../../../../components/api_calls/build_calls";
-import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table"
+import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table";
 import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
 import Head from "next/head";
 import {Layout, Menu} from "antd";
-
+import {useRouter} from 'next/router';
 
 export default function BUILD_HISTORY_HOME() {
     const [data, setData] = useState([]);
@@ -20,6 +20,7 @@ export default function BUILD_HISTORY_HOME() {
     const [jenkinsBuild, setJenkinsBuild] = useState("");
     const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
+    const router = useRouter();
 
     const {Footer, Sider} = Layout;
 
@@ -28,115 +29,111 @@ export default function BUILD_HISTORY_HOME() {
     }
 
     const onBuildNoChange = (build) => {
-        setBuildNo(build.trim())
+        setBuildNo(build.trim());
+        updateURLWithFilters({ build_0_id: build.trim() });
     }
 
-    const onPackageNameChange = (pkg) => {
-        setPackageName(pkg.trim())
+    const onPackageNameChange = (name) => {
+        setPackageName(name.trim());
+        updateURLWithFilters({ dg_name: name.trim() });
     }
 
     const onBuildStatusChange = (status) => {
-        setBuildStatus(status.trim())
-    }
+        setBuildStatus(status.trim());
+        updateURLWithFilters({ ...searchParams, brew_task_state: status.trim() });
+    };
 
     const onTaskIdChange = (task) => {
-        setTaskId(task.trim())
+        setTaskId(task.trim());
+        updateURLWithFilters({ ...searchParams, brew_task_id: task.trim() });
     }
 
     const onVersionChange = (ver) => {
-        setVersion(ver.trim())
+        setVersion(ver.trim());
+        updateURLWithFilters({ ...searchParams, group: `openshift-${ver.trim()}` });
     }
 
     const onCgitChange = (cgitId) => {
-        setCgit(cgitId.trim())
+        setCgit(cgitId.trim());
+        updateURLWithFilters({ ...searchParams, dg_commit: cgitId.trim() });
     }
 
     const onSourceCommitChange = (commit) => {
-        setSourceCommit(commit.trim())
+        setSourceCommit(commit.trim());
+        updateURLWithFilters({ ...searchParams, label_io_openshift_build_commit_id: commit.trim() });
     }
 
     const onJenkinsBuildChange = (data) => {
-        setJenkinsBuild(data.trim())
+        setJenkinsBuild(data.trim());
+        updateURLWithFilters({ ...searchParams, jenkins_build_url: data.trim() });
     }
 
     const onTimeChange = (data) => {
         if (data) {
             data = data.split("|")
-            if (data.length === 2)
-                setTime(`${data[0].trim()}T${data[1].trim()}Z`)
+            if (data.length === 2) {
+                const isoTime = `${data[0].trim()}T${data[1].trim()}Z`;
+                setTime(isoTime);
+                updateURLWithFilters({ ...searchParams, time_iso: isoTime });
+            }
         } else {
-            setTime("")
+            setTime("");
+            updateURLWithFilters({ ...searchParams, time_iso: "" });
         }
-
     }
 
-
-    const getData = () => {
-        searchParams["page"] = page
-        if (buildNo !== "") {
-            searchParams["build_0_id"] = buildNo
-        } else {
-            delete searchParams["build_0_id"]
-        }
-
-        if (packageName !== "") {
-            searchParams["dg_name"] = packageName
-        } else {
-            delete searchParams["dg_name"]
-        }
-
-        if (buildStatus !== "") {
-            searchParams["brew_task_state"] = buildStatus
-        } else {
-            delete searchParams["brew_task_state"]
-        }
-
-        if (taskId !== "") {
-            searchParams["brew_task_id"] = taskId
-        } else {
-            delete searchParams["brew_task_id"]
-        }
-
-        if (version !== "") {
-            searchParams["group"] = `openshift-${version}`
-        } else {
-            delete searchParams["group"]
-        }
-
-        if (cgit !== "") {
-            searchParams["dg_commit"] = cgit
-        } else {
-            delete searchParams["dg_commit"]
-        }
-
-        if (sourceCommit !== "") {
-            searchParams["label_io_openshift_build_commit_id"] = sourceCommit
-        } else {
-            delete searchParams["label_io_openshift_build_commit_id"]
-        }
-
-        if (time !== "") {
-            searchParams["time_iso"] = time
-        } else {
-            delete searchParams["time_iso"]
-        }
-
-        if (jenkinsBuild !== "") {
-            searchParams["jenkins_build_url"] = jenkinsBuild
-        } else {
-            delete searchParams["jenkins_build_url"]
-        }
-
-        getBuilds(searchParams).then((data) => {
-            setData(data["results"]);
-            setTotalCount(data["count"]);
-        });
+    const updateURLWithFilters = (updatedParams) => {
+        const mergedParams = { ...searchParams, ...updatedParams };
+        const newURL = new URL(window.location.href);
+        newURL.search = new URLSearchParams(mergedParams).toString();
+        window.history.pushState({}, '', newURL.toString());
+        setSearchParams(mergedParams);
     }
 
     useEffect(() => {
-        getData()
-    }, [page, buildNo, packageName, buildStatus, taskId, version, cgit, sourceCommit, jenkinsBuild, time])
+        const initializeStateFromURL = () => {
+            const params = new URLSearchParams(window.location.search);
+            let loadedParams = {};
+            for (const [key, value] of params.entries()) {
+                loadedParams[key] = value;
+            }
 
+            setSearchParams(loadedParams);
+            setBuildNo(loadedParams["build_0_id"] || "");
+            setPackageName(loadedParams["dg_name"] || "");
+            setBuildStatus(loadedParams["brew_task_state"] || "");
+            setTaskId(loadedParams["brew_task_id"] || "");
+            setVersion(loadedParams["group"] ? loadedParams["group"].replace('openshift-', '') : "");
+            setCgit(loadedParams["dg_commit"] || "");
+            setSourceCommit(loadedParams["label_io_openshift_build_commit_id"] || "");
+            setTime(loadedParams["time_iso"] || "");
+            setJenkinsBuild(loadedParams["jenkins_build_url"] || "");
+        };
+
+        const handleRouteChange = (url) => {
+            initializeStateFromURL();
+        };
+
+        router.events.on('routeChangeComplete', handleRouteChange);
+        initializeStateFromURL();
+
+        return () => {
+            router.events.off('routeChangeComplete', handleRouteChange);
+        };
+    }, [router]);
+
+    
+    useEffect(() => {
+        const getData = () => {
+            getBuilds(searchParams).then((data) => {
+                setData(data["results"]);
+                setTotalCount(data["count"]);
+            });
+        };
+    
+        getData();
+    }, [searchParams, page]);
+    
     const menuItems = [
         {
             key: "releaseStatusMenuItem",
