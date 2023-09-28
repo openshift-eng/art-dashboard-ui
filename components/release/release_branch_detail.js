@@ -43,7 +43,6 @@ function ReleaseBranchDetail(props) {
                 return FIXED_ORDER.indexOf(a.type) - FIXED_ORDER.indexOf(b.type);
             });
             
-            console.log("Sorted advisories_data: ", advisories_data);  // Debugging line
             setAdvisoryDetails(advisories_data);
         });
     };

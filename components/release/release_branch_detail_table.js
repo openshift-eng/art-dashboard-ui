@@ -229,7 +229,10 @@ function ReleaseBranchDetailTable(props) {
 
                             return (
                                 <div key={index}>
-                                    <Badge count={bug_status["count"]}>
+                                    <Badge
+                                        count={bug_status["count"]}
+                                        overflowCount={99999}
+                                    >
                                         <Tag color={color} key={bug_status["bug_status"]}>
                                             {bug_status["bug_status"]}
                                         </Tag>

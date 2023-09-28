@@ -1,4 +1,4 @@
-import axios from 'axios';
+const axios = require('axios');
 
 // Setting axios defaults for CSRF token
 axios.defaults.xsrfCookieName = 'csrftoken';
@@ -19,7 +19,7 @@ function getCookie(cookies, name) {
     return null;
 }
 
-export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}, req = null) {
+function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}, req = null) {
     if (!server_endpoint || !urlPath) {
         return;
     }
@@ -28,18 +28,17 @@ export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {
         urlPath = '/' + urlPath;
     }
 
-    // Use the provided request object's cookies (if available) for server-side calls
+    let token;
     if (req) {
-        const token = getCookie(req.headers.cookie, 'token');
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-    } else {
-        // For client-side calls, use the document object to fetch the cookie
-        const token = getCookie(document.cookie, 'token');
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
+        // Server-side
+        token = getCookie(req.headers.cookie, 'token');
+    } else if (typeof document !== 'undefined') {
+        // Client-side
+        token = getCookie(document.cookie, 'token');
+    }
+
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
     }
 
     const url = `${server_endpoint}${urlPath}`;
@@ -60,3 +59,7 @@ export function makeApiCall(urlPath, method, data = {}, headers = {}, params = {
         return { detail: 'Request failed' };
     });
 }
+
+module.exports = {
+    makeApiCall
+};
