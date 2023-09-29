@@ -1,17 +1,19 @@
 // File name defined as [releaseVersion].js to get the value from the parent component.
-import React, {useEffect} from "react";
+import React, { useEffect, useState } from "react";
 import {Layout, Menu, message, Typography} from "antd";
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import {useRouter} from 'next/router'
 import Head from "next/head";
 import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
+import { gaVersion } from "../../../components/api_calls/release_calls";
 
 const {Title} = Typography;
 
 function ReleaseHomePage() {
     const router = useRouter()
     const {releaseVersion} = router.query
+    const [gaVersionValue, setGaVersion] = useState(null);
 
     const {Footer, Sider} = Layout;
 
@@ -42,8 +44,14 @@ function ReleaseHomePage() {
 
     useEffect(() => {
         displayLoading();
-    }, [])
-
+        gaVersion()
+        .then(response => {
+            setGaVersion(response.payload);  // Adjusted this to use the correct property
+        })
+        .catch(error => {
+            console.error('Failed to fetch GA version:', error);
+        });
+    }, []);    
 
     const menuItems = [
         {
@@ -94,12 +102,12 @@ function ReleaseHomePage() {
                         </div>
                     </div>
                     <div className={"version-header"}>
-                        {
-                            releaseVersion === `openshift-${process.env.NEXT_PUBLIC_GA_VERSION}` ?
-                                <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion} (GA) </code></Title>
-                                :
-                                <Title style={{paddingLeft: 20}} level={2}><code>{releaseVersion}</code></Title>
-                        }
+                    {
+                        releaseVersion === `openshift-${gaVersionValue}` ?
+                            <Title style={{ paddingLeft: 20 }} level={2}><code>{releaseVersion} (GA) </code></Title>
+                            :
+                            <Title style={{ paddingLeft: 20 }} level={2}><code>{releaseVersion}</code></Title>
+                    }
                         <OPENSHIFT_VERSION_SELECT initialVersion={releaseVersion} redirectOnSelect />
                     </div>
                     <RELEASE_BRANCH_DETAIL branch={releaseVersion}

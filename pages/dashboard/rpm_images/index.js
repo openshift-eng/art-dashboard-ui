@@ -5,6 +5,7 @@ import Head from 'next/head';
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import ImagesList from "../../../components/release/RpmsImagesList";
 import {getReleaseBranchesFromOcpBuildData} from "../../../components/api_calls/release_calls";
+import { gaVersion } from "../../../components/api_calls/release_calls";
 
 const { Footer, Sider } = Layout;
 const { Title } = Typography;
@@ -17,6 +18,7 @@ function RpmImages() {
     const [selectedVersion, setSelectedVersion] = useState(null);
     const [initialVersion, setInitialVersion] = useState(null);
     const [loadingData, setLoadingData] = useState(true); // New loading state
+    const [gaVersionValue, setGaVersionValue] = useState(null);
 
     const menuItems = [
         {
@@ -42,14 +44,22 @@ function RpmImages() {
             setInitialVersion(versions[0]); // set initial version to the latest version
             setSelectedVersion(versions[0]); // start loading data for the latest version
         });
-
-        // Display the loading message without calling handleLoaded here
+    
+        gaVersion()
+            .then(response => {
+                setGaVersionValue(response.payload);
+            })
+            .catch(error => {
+                console.error('Failed to fetch GA version:', error);
+            });
+    
         message.loading({
             content: "Loading Data",
             duration: 0,
             style: {position: "fixed", left: "50%", top: "20%"}
         });
     }, []);
+    
 
     const handleLoaded = () => {
         message.destroy();
@@ -84,21 +94,22 @@ function RpmImages() {
                     </div>
 
                     <div className={"version-header"} style={{ display: 'flex', justifyContent: 'space-between', padding: '30px' }}>
-                        {selectedVersion && 
-                            <Title level={2} style={{ paddingLeft: '20px' }}>
-                                <code>
-                                    {selectedVersion === `openshift-${process.env.NEXT_PUBLIC_GA_VERSION}` ?
-                                        `${selectedVersion} (GA)`
-                                        :
-                                        selectedVersion
-                                    }
-                                </code>
-                            </Title>
-                        }
-                        <div align="right">
-                        <OPENSHIFT_VERSION_SELECT initialVersion={initialVersion} onVersionChange={setSelectedVersion} />
-                        </div>
+                    {selectedVersion && gaVersionValue && 
+                        <Title level={2} style={{ paddingLeft: '20px' }}>
+                            <code>
+                                {selectedVersion === `openshift-${gaVersionValue}` ?
+                                    `${selectedVersion} (GA)`
+                                    :
+                                    selectedVersion
+                                }
+                            </code>
+                        </Title>
+                    }
+                    <div align="right">
+                    <OPENSHIFT_VERSION_SELECT initialVersion={initialVersion} onVersionChange={setSelectedVersion} />
                     </div>
+                </div>
+
                     
                     <div style={selectedVersion ? { marginLeft: '20px' } : { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                         {selectedVersion 
