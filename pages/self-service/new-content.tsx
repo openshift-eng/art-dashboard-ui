@@ -15,7 +15,9 @@ export default function NewContent() {
         <title>Add ART definition for OCP component</title>
       </Head>
       <Container maxWidth="xl">
-        <Typography component="h1" variant="h5" sx={{ mt: 6 }}>[BETA] Request a new image or rpm to be managed by ART and released with OCP</Typography>
+        <Typography component="h1" variant="h5" sx={{ mt: 6 }}>
+          Request a new image or rpm to be managed by ART and released with OCP
+        </Typography>
         <Box sx={{ mt: 6 }}>
           <NewContentWizard />
         </Box>
