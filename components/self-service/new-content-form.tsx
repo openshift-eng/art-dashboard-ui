@@ -105,7 +105,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     <Box>
       <TextField fullWidth label="Bug Component" variant="outlined"
         required
-        {...register("bugComponent", { required: true, pattern: /^[\w-]+$/ })}
+        {...register("bugComponent", { required: true, pattern: /^[\w-\/\s]+$/ })}
         error={errors.bugComponent !== undefined}
         helperText="What is the Jira or Bugzilla component of your OpenShift component?" />
     </Box>
