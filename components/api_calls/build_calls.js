@@ -6,14 +6,18 @@ export async function getBuilds(searchParams) {
     for (const key in searchParams) {
         let value = searchParams[key];
 
-        if ((value[0] === "\"" && value[value.length - 1] === "\"") || (value[0] === "'" && value[value.length - 1] === "'")) {
-            value = value.substring(1, value.length - 1);
+        // Check if the value is enclosed in double or single quotes using regex.
+        const isEnclosedInQuotes = /^["'][a-zA-Z0-9-]+["']$/.test(value);
+        
+        if (isEnclosedInQuotes) {
+            value = value.substring(1, value.length - 1); // Strip the quotes
+            params[key] = value; // Exact match
+        } else {
+            if (key === "time_iso" || key === "page" || key === "brew_task_state")
+                params[key] = value; // Exact match for the excepted keys
+            else
+                params[`${key}__icontains`] = value; // Partial match
         }
-
-        if (key !== "time_iso" && key !== "page" && key !== "brew_task_state")
-            params[`${key}__icontains`] = value;
-        else
-            params[key] = value;
     }
 
     const headers = {
