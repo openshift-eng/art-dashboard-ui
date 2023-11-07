@@ -15,6 +15,7 @@ function ReleaseBranchDetail(props) {
     const [currentJira, setCurrentJira] = useState(undefined);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [allAdvisories, setAllAdvisories] = useState([]);
 
 
     const FIXED_ORDER = ["Extras", "Image", "Metadata", "Microshift", "Rpm"];
@@ -49,26 +50,34 @@ function ReleaseBranchDetail(props) {
 
     const getBranchData = (branch) => {
         advisory_ids_for_branch(branch).then((data) => {
-            const allAdvisories = Object.keys(data);
-            
-            // Sort advisories here, e.g., in ascending order of advisory ID
-            allAdvisories.sort((a, b) => a - b);
-                    
+            const allAdvisories = Object.keys(data).sort((a, b) => a - b);
+
             setCurrent(allAdvisories[currentPage - 1]);
             setCurrentJira(data[allAdvisories[currentPage - 1]][1]);
             setTotalPages(allAdvisories.length);
-    
+            
+            const overviewData = data[allAdvisories[currentPage - 1]][0];
             let table_data = [];
-            for (const key in data[allAdvisories[currentPage - 1]][0]) {
-                if (data[allAdvisories[currentPage - 1]][0].hasOwnProperty(key)) {
+            for (const key in overviewData) {
+                if (overviewData.hasOwnProperty(key)) {
                     table_data.push({
                         type: key,
-                        id: data[allAdvisories[currentPage - 1]][0][key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + data[allAdvisories[currentPage - 1]][0][key]
+                        id: overviewData[key],
+                        advisory_link: "https://errata.devel.redhat.com/advisory/" + overviewData[key]
                     });
                 }
             }
+            if (!branch) { // Guard clause to check if branch is undefined or empty
+                console.error('Branch is undefined or empty. Cannot fetch data.');
+                return;
+            }
+            const advisories = Object.keys(data).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+
+            // Update the state variable for all advisories
+            setAllAdvisories(advisories);
+
             setOverviewTableData(table_data);
+        }).catch(error => {
         });
     };
     
@@ -84,7 +93,9 @@ function ReleaseBranchDetail(props) {
     }, [overviewTableData])
 
     useEffect(() => {
-        getBranchData(props.branch);
+        if (props.branch && currentPage) {
+            getBranchData(props.branch);
+        }
     }, [props.branch, currentPage]);
 
 
@@ -122,7 +133,10 @@ function ReleaseBranchDetail(props) {
                 advisoryDetails ?
                     <>
                         <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetails} currentPage={currentPage} totalPages={totalPages}/>
-                        <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} showSizeChanger={false}/>
+                        <Pagination current={currentPage} onChange={handlePageChange} showSizeChanger={false}
+                        total={allAdvisories.length} // The total number of pages is the length of allAdvisories
+                        pageSize={1} // We're showing one release per page
+                        />
                     </>
                     :
                     <Empty/>
