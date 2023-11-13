@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useCallback} from "react";
 import {getBuilds} from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table";
 import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
@@ -28,47 +28,55 @@ export default function BUILD_HISTORY_HOME() {
         setPage(pageNo)
     }
 
-    const onBuildNoChange = (build) => {
+    const updateURLWithFilters = useCallback((updatedParams) => {
+        const mergedParams = { ...searchParams, ...updatedParams };
+        const newURL = new URL(window.location.href);
+        newURL.search = new URLSearchParams(mergedParams).toString();
+        window.history.pushState({}, '', newURL.toString());
+        setSearchParams(mergedParams);
+    }, [searchParams]);
+
+    const onBuildNoChange = useCallback((build) => {
         setBuildNo(build.trim());
         updateURLWithFilters({ build_0_id: build.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onPackageNameChange = (name) => {
+    const onPackageNameChange = useCallback((name) => {
         setPackageName(name.trim());
         updateURLWithFilters({ dg_name: name.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onBuildStatusChange = (status) => {
-        setBuildStatus(status.trim());
-        updateURLWithFilters({ ...searchParams, brew_task_state: status.trim() });
-    };
+    const onBuildStatusChange = useCallback((status) => {
+        setBuildStatus(status);
+        updateURLWithFilters({ ...searchParams, brew_task_state: status });
+    }, [updateURLWithFilters]);
 
-    const onTaskIdChange = (task) => {
+    const onTaskIdChange = useCallback((task) => {
         setTaskId(task.trim());
         updateURLWithFilters({ ...searchParams, brew_task_id: task.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onVersionChange = (ver) => {
+    const onVersionChange = useCallback((ver) => {
         setVersion(ver.trim());
         updateURLWithFilters({ ...searchParams, group: `openshift-${ver.trim()}` });
-    }
+    }, [updateURLWithFilters]);
 
-    const onCgitChange = (cgitId) => {
+    const onCgitChange = useCallback((cgitId) => {
         setCgit(cgitId.trim());
         updateURLWithFilters({ ...searchParams, dg_commit: cgitId.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onSourceCommitChange = (commit) => {
+    const onSourceCommitChange = useCallback((commit) => {
         setSourceCommit(commit.trim());
         updateURLWithFilters({ ...searchParams, label_io_openshift_build_commit_id: commit.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onJenkinsBuildChange = (data) => {
+    const onJenkinsBuildChange = useCallback((data) => {
         setJenkinsBuild(data.trim());
         updateURLWithFilters({ ...searchParams, jenkins_build_url: data.trim() });
-    }
+    }, [updateURLWithFilters]);
 
-    const onTimeChange = (data) => {
+    const onTimeChange = useCallback((data) => {
         if (data) {
             data = data.split("|")
             if (data.length === 2) {
@@ -80,58 +88,47 @@ export default function BUILD_HISTORY_HOME() {
             setTime("");
             updateURLWithFilters({ ...searchParams, time_iso: "" });
         }
-    }
-
-    const updateURLWithFilters = (updatedParams) => {
-        const mergedParams = { ...searchParams, ...updatedParams };
-        const newURL = new URL(window.location.href);
-        newURL.search = new URLSearchParams(mergedParams).toString();
-        window.history.pushState({}, '', newURL.toString());
-        setSearchParams(mergedParams);
-    }
+    }, [updateURLWithFilters]);
 
     useEffect(() => {
-        const initializeStateFromURL = () => {
-            const params = new URLSearchParams(window.location.search);
-            let loadedParams = {};
-            for (const [key, value] of params.entries()) {
-                loadedParams[key] = value;
-            }
+        const params = new URLSearchParams(window.location.search);
+        let loadedParams = {};
+        for (const [key, value] of params.entries()) {
+            loadedParams[key] = value;
+        }
 
-            setSearchParams(loadedParams);
-            setBuildNo(loadedParams["build_0_id"] || "");
-            setPackageName(loadedParams["dg_name"] || "");
-            setBuildStatus(loadedParams["brew_task_state"] || "");
-            setTaskId(loadedParams["brew_task_id"] || "");
-            setVersion(loadedParams["group"] ? loadedParams["group"].replace('openshift-', '') : "");
-            setCgit(loadedParams["dg_commit"] || "");
-            setSourceCommit(loadedParams["label_io_openshift_build_commit_id"] || "");
-            setTime(loadedParams["time_iso"] || "");
-            setJenkinsBuild(loadedParams["jenkins_build_url"] || "");
-        };
+        setSearchParams(loadedParams);
 
-        const handleRouteChange = (url) => {
-            initializeStateFromURL();
-        };
-
-        router.events.on('routeChangeComplete', handleRouteChange);
-        initializeStateFromURL();
-
-        return () => {
-            router.events.off('routeChangeComplete', handleRouteChange);
-        };
+        // Set each state variable based on URL parameters
+        setBuildNo(loadedParams["build_0_id"] || "");
+        setPackageName(loadedParams["dg_name"] || "");
+        setBuildStatus(loadedParams["brew_task_state"] || "");
+        setTaskId(loadedParams["brew_task_id"] || "");
+        setVersion(loadedParams["group"] ? loadedParams["group"].replace('openshift-', '') : "");
+        setCgit(loadedParams["dg_commit"] || "");
+        setSourceCommit(loadedParams["label_io_openshift_build_commit_id"] || "");
+        setJenkinsBuild(loadedParams["jenkins_build_url"] || "");
+        setTime(loadedParams["time_iso"] || "");
     }, [router]);
 
     
     useEffect(() => {
+        let isMounted = true; // flag to check component mount status
+    
         const getData = () => {
             getBuilds(searchParams).then((data) => {
-                setData(data["results"]);
-                setTotalCount(data["count"]);
+                if (isMounted) {
+                    setData(data["results"]);
+                    setTotalCount(data["count"]);
+                }
             });
         };
     
         getData();
+    
+        return () => {
+            isMounted = false; // cleanup function to update flag when component unmounts
+        };
     }, [searchParams, page]);
     
     const menuItems = [
@@ -182,12 +179,14 @@ export default function BUILD_HISTORY_HOME() {
                                 Portal</h1>
                         </div>
                     </div>
-                    <BUILD_HISTORY_TABLE data={data} totalCount={totalCount} onChange={onPageChange}
-                                         onBuildNoChange={onBuildNoChange} onPackageNameChange={onPackageNameChange}
-                                         onBuildStatusChange={onBuildStatusChange} onTaskIdChange={onTaskIdChange}
-                                         onVersionChange={onVersionChange} onCgitChange={onCgitChange}
-                                         onSourceCommitChange={onSourceCommitChange} onTimeChange={onTimeChange}
-                                         onJenkinsBuildChange={onJenkinsBuildChange}/>
+                    <BUILD_HISTORY_TABLE data={data} buildNo={buildNo} buildStatus={buildStatus} taskId={taskId} packageName={packageName} 
+                                         version={version} cgit={cgit} sourceCommit={sourceCommit} jenkinsBuild={jenkinsBuild} 
+                                         time={time} totalCount={totalCount} 
+                                         onChange={onPageChange} onBuildNoChange={onBuildNoChange}
+                                         onPackageNameChange={onPackageNameChange} onBuildStatusChange={onBuildStatusChange}
+                                         onTaskIdChange={onTaskIdChange} onVersionChange={onVersionChange}
+                                         onCgitChange={onCgitChange} onSourceCommitChange={onSourceCommitChange}
+                                         onTimeChange={onTimeChange} onJenkinsBuildChange={onJenkinsBuildChange}/>
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>

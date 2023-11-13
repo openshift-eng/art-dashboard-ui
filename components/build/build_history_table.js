@@ -1,12 +1,20 @@
 import {CheckOutlined, CloseOutlined, InfoCircleOutlined} from "@ant-design/icons";
 import {Col, Empty, Pagination, Row, Table, Tooltip, Input, Select, Popover} from "antd";
-import React from "react";
+import React, {useState, useEffect} from "react";
 
 const {Search} = Input;
 const {Option} = Select;
 
 export default function BUILD_HISTORY_TABLE(props) {
     const text = "Partial search enabled. For exact search, enclose within quotes."
+    const [buildNoInput, setBuildNoInput] = useState(props.buildNo);
+    const [taskIdInput, setTaskIdInput] = useState(props.taskId);
+    const [packageNameInput, setPackageNameInput] = useState(props.packageName);
+    const [versionInput, setVersionInput] = useState(props.version);
+    const [cgitInput, setCgitInput] = useState(props.cgit);
+    const [sourceCommitInput, setSourceCommitInput] = useState(props.sourceCommit);
+    const [jenkinsBuildInput, setJenkinsBuildInput] = useState(props.jenkinsBuild);
+    const [timeInput, setTimeInput] = useState(props.time);
 
     const columns = [
         {
@@ -17,7 +25,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             Build
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Build Id"} onSearch={props.onBuildNoChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Build Id"} onSearch={() => props.onBuildNoChange(buildNoInput)} value={buildNoInput} onChange={(e) => setBuildNoInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -52,7 +62,7 @@ export default function BUILD_HISTORY_TABLE(props) {
                             Status
                         </Col>
                         <Col span={24}>
-                            <Select style={{width: "100%"}} onChange={props.onBuildStatusChange}>
+                            <Select style={{width: "100%"}} value={props.buildStatus} onChange={props.onBuildStatusChange }>
                                 <Option value="success"><Tooltip title={"Success"}><CheckOutlined style={{color: "#52c41a"}}/></Tooltip></Option>
                                 <Option value="failure"><Tooltip title={"Failure"}><CloseOutlined style={{color: "#f55d42"}}/></Tooltip></Option>
                                 <Option value="">Both</Option>
@@ -90,7 +100,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             Task ID
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Task Id"} onSearch={props.onTaskIdChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Task Id"} onSearch={() => props.onTaskIdChange(taskIdInput)} value={taskIdInput} onChange={(e) => setTaskIdInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -118,7 +130,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             </Popover>
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Package Name"} onSearch={props.onPackageNameChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Package Name"} onSearch={() => props.onPackageNameChange(packageNameInput)} value={packageNameInput} onChange={(e) => setPackageNameInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -135,7 +149,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             Version
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Version"} onSearch={props.onVersionChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Version"} onSearch={() => props.onVersionChange(versionInput)} value={versionInput} onChange={(e) => setVersionInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -157,7 +173,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             CGIT
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"CGIT Id"} onSearch={props.onCgitChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"CGIT Id"} onSearch={() => props.onCgitChange(cgitInput)} value={cgitInput} onChange={(e) => setCgitInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -182,7 +200,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             Source Commit
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Full Git SHA"} onSearch={props.onSourceCommitChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Full Git SHA"} onSearch={() => props.onSourceCommitChange(sourceCommitInput)} value={sourceCommitInput} onChange={(e) => setSourceCommitInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -213,7 +233,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             </Popover>
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"Jenkins Build URL"} onSearch={props.onJenkinsBuildChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"Jenkins Build URL"} onSearch={() => props.onJenkinsBuildChange(jenkinsBuildInput)} value={jenkinsBuildInput} onChange={(e) => setJenkinsBuildInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -240,7 +262,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                             </Popover>
                         </Col>
                         <Col span={24}>
-                            <Search placeholder={"eg: 2022-08-01 | 18:52:36\n"} onSearch={props.onTimeChange}/>
+                            <Tooltip title="Press Enter to apply the filter">
+                                <Search placeholder={"eg: 2022-08-01 | 18:52:36"} onSearch={() => props.onTimeChange(timeInput)} value={timeInput} onChange={(e) => setTimeInput(e.target.value)}/>
+                            </Tooltip>
                         </Col>
                     </Row>
                 )
@@ -255,6 +279,17 @@ export default function BUILD_HISTORY_TABLE(props) {
             }
         }
     ]
+
+    useEffect(() => {
+        setBuildNoInput(props.buildNo);
+        setTaskIdInput(props.taskId);
+        setPackageNameInput(props.packageName)
+        setVersionInput(props.version)
+        setCgitInput(props.cgit)
+        setSourceCommitInput(props.sourceCommit)
+        setJenkinsBuildInput(props.jenkinsBuild)
+        setTimeInput(props.time)
+    }, [props.buildNo, props.taskId, props.packageName, props.version, props.cgit, props.sourceCommit, props.jenkinsBuild, props.time]);
 
 
     return (
