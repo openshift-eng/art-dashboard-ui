@@ -10,7 +10,7 @@ export default function BUILD_HISTORY_HOME() {
     const [data, setData] = useState([]);
     const [searchParams, setSearchParams] = useState({})
     const [page, setPage] = useState(1);
-    const [buildNo, setBuildNo] = useState("");
+    const [nvr, setNvr] = useState(""); // Updated from buildNo to nvr
     const [packageName, setPackageName] = useState("");
     const [buildStatus, setBuildStatus] = useState("");
     const [taskId, setTaskId] = useState("");
@@ -21,24 +21,39 @@ export default function BUILD_HISTORY_HOME() {
     const [time, setTime] = useState("");
     const [totalCount, setTotalCount] = useState(undefined);
     const router = useRouter();
+    const [streamOnly, setStreamOnly] = useState(false);
 
     const {Footer, Sider} = Layout;
 
     const onPageChange = (pageNo) => {
-        setPage(pageNo)
+        setPage(pageNo);
+        updateURLWithFilters({ ...searchParams, page: pageNo }); // Update searchParams with the new page number
     }
 
+
     const updateURLWithFilters = useCallback((updatedParams) => {
+        // Merge the current searchParams with the new parameters
         const mergedParams = { ...searchParams, ...updatedParams };
+    
+        // Filter out empty or null parameters
+        Object.keys(mergedParams).forEach(key => {
+            if (mergedParams[key] === "" || mergedParams[key] == null) {
+                delete mergedParams[key];
+            }
+        });
+    
+        // Construct the new URL with the filtered parameters
         const newURL = new URL(window.location.href);
         newURL.search = new URLSearchParams(mergedParams).toString();
         window.history.pushState({}, '', newURL.toString());
+    
+        // Update the searchParams state
         setSearchParams(mergedParams);
     }, [searchParams]);
 
-    const onBuildNoChange = useCallback((build) => {
-        setBuildNo(build.trim());
-        updateURLWithFilters({ build_0_id: build.trim() });
+    const onNvrChange = useCallback((nvrValue) => { // Updated from onBuildNoChange to onNvrChange
+        setNvr(nvrValue.trim());
+        updateURLWithFilters({ build_0_nvr: nvrValue.trim() }); // Updated to use build_0_nvr
     }, [updateURLWithFilters]);
 
     const onPackageNameChange = useCallback((name) => {
@@ -56,10 +71,25 @@ export default function BUILD_HISTORY_HOME() {
         updateURLWithFilters({ ...searchParams, brew_task_id: task.trim() });
     }, [updateURLWithFilters]);
 
-    const onVersionChange = useCallback((ver) => {
-        setVersion(ver.trim());
-        updateURLWithFilters({ ...searchParams, group: `openshift-${ver.trim()}` });
-    }, [updateURLWithFilters]);
+    const onVersionChange = (ver) => {
+        const trimmedVer = ver.trim();
+        let updatedParams = { ...searchParams };
+        
+        if (trimmedVer) {
+            updatedParams.group = `openshift-${trimmedVer}`;
+        } else {
+            delete updatedParams.group; // Remove 'group' key if version is cleared
+        }
+    
+        // Update the URL
+        const newURL = new URL(window.location.href);
+        newURL.search = new URLSearchParams(updatedParams).toString();
+        window.history.pushState({}, '', newURL.toString());
+    
+        // Now update the state
+        setSearchParams(updatedParams);
+        setVersion(trimmedVer);
+    };
 
     const onCgitChange = useCallback((cgitId) => {
         setCgit(cgitId.trim());
@@ -90,17 +120,12 @@ export default function BUILD_HISTORY_HOME() {
         }
     }, [updateURLWithFilters]);
 
+    // useEffect for initializing state from URL params
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        let loadedParams = {};
-        for (const [key, value] of params.entries()) {
-            loadedParams[key] = value;
-        }
+        const loadedParams = Object.fromEntries(params.entries());
 
-        setSearchParams(loadedParams);
-
-        // Set each state variable based on URL parameters
-        setBuildNo(loadedParams["build_0_id"] || "");
+        setNvr(loadedParams["build_0_nvr"] || "");
         setPackageName(loadedParams["dg_name"] || "");
         setBuildStatus(loadedParams["brew_task_state"] || "");
         setTaskId(loadedParams["brew_task_id"] || "");
@@ -109,17 +134,19 @@ export default function BUILD_HISTORY_HOME() {
         setSourceCommit(loadedParams["label_io_openshift_build_commit_id"] || "");
         setJenkinsBuild(loadedParams["jenkins_build_url"] || "");
         setTime(loadedParams["time_iso"] || "");
+
+        // Initialize searchParams based on URL params
+        setSearchParams(loadedParams);
     }, [router]);
 
-    
     useEffect(() => {
-        let isMounted = true; // flag to check component mount status
+        let isMounted = true;
     
         const getData = () => {
-            getBuilds(searchParams).then((data) => {
-                if (isMounted) {
-                    setData(data["results"]);
-                    setTotalCount(data["count"]);
+            getBuilds(searchParams, streamOnly).then((fetchedData) => {
+                if (isMounted && fetchedData && Array.isArray(fetchedData["results"])) {
+                    setData(fetchedData["results"]);
+                    setTotalCount(fetchedData["results"].length);
                 }
             });
         };
@@ -127,10 +154,15 @@ export default function BUILD_HISTORY_HOME() {
         getData();
     
         return () => {
-            isMounted = false; // cleanup function to update flag when component unmounts
+            isMounted = false;
         };
-    }, [searchParams, page]);
+    }, [searchParams, streamOnly]);
+
     
+    const handleStreamToggle = (checked) => {
+        setStreamOnly(checked);
+    };
+
     const menuItems = [
         {
             key: "releaseStatusMenuItem",
@@ -179,14 +211,15 @@ export default function BUILD_HISTORY_HOME() {
                                 Portal</h1>
                         </div>
                     </div>
-                    <BUILD_HISTORY_TABLE data={data} buildNo={buildNo} buildStatus={buildStatus} taskId={taskId} packageName={packageName} 
+                    <BUILD_HISTORY_TABLE data={data} nvr={nvr} buildStatus={buildStatus} taskId={taskId} packageName={packageName} 
                                          version={version} cgit={cgit} sourceCommit={sourceCommit} jenkinsBuild={jenkinsBuild} 
-                                         time={time} totalCount={totalCount} 
-                                         onChange={onPageChange} onBuildNoChange={onBuildNoChange}
+                                         time={time} totalCount={totalCount} streamOnly={streamOnly} 
+                                         onChange={onPageChange} onNvrChange={onNvrChange}
                                          onPackageNameChange={onPackageNameChange} onBuildStatusChange={onBuildStatusChange}
                                          onTaskIdChange={onTaskIdChange} onVersionChange={onVersionChange}
                                          onCgitChange={onCgitChange} onSourceCommitChange={onSourceCommitChange}
-                                         onTimeChange={onTimeChange} onJenkinsBuildChange={onJenkinsBuildChange}/>
+                                         onTimeChange={onTimeChange} onJenkinsBuildChange={onJenkinsBuildChange}
+                                         onStreamToggle={handleStreamToggle} />
                     <Footer style={{textAlign: 'center'}}>
                         RedHat © 2023
                     </Footer>
