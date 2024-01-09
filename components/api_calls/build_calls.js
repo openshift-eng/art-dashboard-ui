@@ -1,22 +1,29 @@
 import { makeApiCall } from './api_calls';
 
-export async function getBuilds(searchParams) {
+export async function getBuilds(searchParams, streamOnly) {
     let params = {};
+
+    if (streamOnly !== undefined) {
+        params.stream_only = streamOnly;
+    }
 
     for (const key in searchParams) {
         let value = searchParams[key];
 
         // Check if the value is enclosed in double or single quotes using regex.
-        const isEnclosedInQuotes = /^["'][a-zA-Z0-9-]+["']$/.test(value);
+        const isEnclosedInQuotes = /^["'][a-zA-Z0-9-_.]+["']$/.test(value);
         
         if (isEnclosedInQuotes) {
-            value = value.substring(1, value.length - 1); // Strip the quotes
-            params[key] = value; // Exact match
+            // Exact match: strip the quotes and add to params
+            value = value.substring(1, value.length - 1);
+            params[key] = value;
         } else {
-            if (key === "time_iso" || key === "page" || key === "brew_task_state")
-                params[key] = value; // Exact match for the excepted keys
-            else
-                params[`${key}__icontains`] = value; // Partial match
+            // For specific keys, use exact match; for others, use partial match
+            if (["time_iso", "page", "brew_task_state"].includes(key)) {
+                params[key] = value;
+            } else {
+                params[`${key}__icontains`] = value; // Partial match for other keys
+            }
         }
     }
 
@@ -25,6 +32,7 @@ export async function getBuilds(searchParams) {
         "Content-Type": "application/json"
     };
 
+    // Make the API call with the adjusted params
     return makeApiCall(process.env.NEXT_PUBLIC_BUILD_ENDPOINT, 'GET', {}, headers, params)
         .catch(error => console.error('Error:', error));
 }
