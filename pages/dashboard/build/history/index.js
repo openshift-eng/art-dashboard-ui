@@ -1,17 +1,17 @@
-import React, {useEffect, useState, useCallback} from "react";
-import {getBuilds} from "../../../../components/api_calls/build_calls";
+import React, { useEffect, useState, useCallback } from "react";
+import { getBuilds } from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table";
-import {RocketOutlined, ReloadOutlined, FileImageOutlined} from "@ant-design/icons";
+import { RocketOutlined, ReloadOutlined, FileImageOutlined } from "@ant-design/icons";
 import Head from "next/head";
-import {Layout, Menu} from "antd";
-import {useRouter} from 'next/router';
+import { Layout, Menu } from "antd";
+import { useRouter } from 'next/router';
 
 export default function BUILD_HISTORY_HOME() {
     const [data, setData] = useState([]);
     const [searchParams, setSearchParams] = useState({})
     const [page, setPage] = useState(1);
     const [nvr, setNvr] = useState(""); // Updated from buildNo to nvr
-    const [packageName, setPackageName] = useState("");
+    const [DistgitName, setDistgitName] = useState("");
     const [buildStatus, setBuildStatus] = useState("");
     const [taskId, setTaskId] = useState("");
     const [version, setVersion] = useState("");
@@ -23,7 +23,7 @@ export default function BUILD_HISTORY_HOME() {
     const router = useRouter();
     const [streamOnly, setStreamOnly] = useState(false);
 
-    const {Footer, Sider} = Layout;
+    const { Footer, Sider } = Layout;
 
     const onPageChange = (pageNo) => {
         setPage(pageNo);
@@ -34,19 +34,19 @@ export default function BUILD_HISTORY_HOME() {
     const updateURLWithFilters = useCallback((updatedParams) => {
         // Merge the current searchParams with the new parameters
         const mergedParams = { ...searchParams, ...updatedParams };
-    
+
         // Filter out empty or null parameters
         Object.keys(mergedParams).forEach(key => {
             if (mergedParams[key] === "" || mergedParams[key] == null) {
                 delete mergedParams[key];
             }
         });
-    
+
         // Construct the new URL with the filtered parameters
         const newURL = new URL(window.location.href);
         newURL.search = new URLSearchParams(mergedParams).toString();
         window.history.pushState({}, '', newURL.toString());
-    
+
         // Update the searchParams state
         setSearchParams(mergedParams);
     }, [searchParams]);
@@ -56,8 +56,8 @@ export default function BUILD_HISTORY_HOME() {
         updateURLWithFilters({ build_0_nvr: nvrValue.trim() }); // Updated to use build_0_nvr
     }, [updateURLWithFilters]);
 
-    const onPackageNameChange = useCallback((name) => {
-        setPackageName(name.trim());
+    const onDistgitNameChange = useCallback((name) => {
+        setDistgitName(name.trim());
         updateURLWithFilters({ dg_name: name.trim() });
     }, [updateURLWithFilters]);
 
@@ -74,18 +74,18 @@ export default function BUILD_HISTORY_HOME() {
     const onVersionChange = (ver) => {
         const trimmedVer = ver.trim();
         let updatedParams = { ...searchParams };
-        
+
         if (trimmedVer) {
             updatedParams.group = `openshift-${trimmedVer}`;
         } else {
             delete updatedParams.group; // Remove 'group' key if version is cleared
         }
-    
+
         // Update the URL
         const newURL = new URL(window.location.href);
         newURL.search = new URLSearchParams(updatedParams).toString();
         window.history.pushState({}, '', newURL.toString());
-    
+
         // Now update the state
         setSearchParams(updatedParams);
         setVersion(trimmedVer);
@@ -126,7 +126,7 @@ export default function BUILD_HISTORY_HOME() {
         const loadedParams = Object.fromEntries(params.entries());
 
         setNvr(loadedParams["build_0_nvr"] || "");
-        setPackageName(loadedParams["dg_name"] || "");
+        setDistgitName(loadedParams["dg_name"] || "");
         setBuildStatus(loadedParams["brew_task_state"] || "");
         setTaskId(loadedParams["brew_task_id"] || "");
         setVersion(loadedParams["group"] ? loadedParams["group"].replace('openshift-', '') : "");
@@ -141,7 +141,7 @@ export default function BUILD_HISTORY_HOME() {
 
     useEffect(() => {
         let isMounted = true;
-    
+
         const getData = () => {
             getBuilds(searchParams, streamOnly).then((fetchedData) => {
                 if (isMounted && fetchedData && Array.isArray(fetchedData["results"])) {
@@ -150,15 +150,15 @@ export default function BUILD_HISTORY_HOME() {
                 }
             });
         };
-    
+
         getData();
-    
+
         return () => {
             isMounted = false;
         };
     }, [searchParams, streamOnly]);
 
-    
+
     const handleStreamToggle = (checked) => {
         setStreamOnly(checked);
     };
@@ -166,18 +166,18 @@ export default function BUILD_HISTORY_HOME() {
     const menuItems = [
         {
             key: "releaseStatusMenuItem",
-            icon: <RocketOutlined/>,
-            label: <a href={"/dashboard"}><p style={{fontSize: "medium"}}>Release status</p></a>
+            icon: <RocketOutlined />,
+            label: <a href={"/dashboard"}><p style={{ fontSize: "medium" }}>Release status</p></a>
         },
         {
             key: "buildHistory",
-            icon: <ReloadOutlined/>,
-            label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
+            icon: <ReloadOutlined />,
+            label: <a href={"/dashboard/build/history"}><p style={{ fontSize: "medium" }}>Build History</p></a>
         },
         {
             key: "rpmImages",
-            icon: <FileImageOutlined/>,
-            label: <a href={"/dashboard/rpm_images"}><p style={{fontSize: "medium"}}>RPMs & Images</p></a>
+            icon: <FileImageOutlined />,
+            label: <a href={"/dashboard/rpm_images"}><p style={{ fontSize: "medium" }}>RPMs & Images</p></a>
         }
     ]
 
@@ -186,12 +186,12 @@ export default function BUILD_HISTORY_HOME() {
         <div>
             <Head>
                 <title>ART Dashboard</title>
-                <link rel="icon" href="/redhat-logo.png"/>
+                <link rel="icon" href="/redhat-logo.png" />
             </Head>
             <Layout>
                 <Sider collapsed={false}>
-                    <div style={{paddingTop: "10px"}}>
-                        <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} items={menuItems}/>
+                    <div style={{ paddingTop: "10px" }}>
+                        <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} items={menuItems} />
 
                     </div>
                 </Sider>
@@ -211,16 +211,16 @@ export default function BUILD_HISTORY_HOME() {
                                 Portal</h1>
                         </div>
                     </div>
-                    <BUILD_HISTORY_TABLE data={data} nvr={nvr} buildStatus={buildStatus} taskId={taskId} packageName={packageName} 
-                                         version={version} cgit={cgit} sourceCommit={sourceCommit} jenkinsBuild={jenkinsBuild} 
-                                         time={time} totalCount={totalCount} streamOnly={streamOnly} 
-                                         onChange={onPageChange} onNvrChange={onNvrChange}
-                                         onPackageNameChange={onPackageNameChange} onBuildStatusChange={onBuildStatusChange}
-                                         onTaskIdChange={onTaskIdChange} onVersionChange={onVersionChange}
-                                         onCgitChange={onCgitChange} onSourceCommitChange={onSourceCommitChange}
-                                         onTimeChange={onTimeChange} onJenkinsBuildChange={onJenkinsBuildChange}
-                                         onStreamToggle={handleStreamToggle} />
-                    <Footer style={{textAlign: 'center'}}>
+                    <BUILD_HISTORY_TABLE data={data} nvr={nvr} buildStatus={buildStatus} taskId={taskId} DistgitName={DistgitName}
+                        version={version} cgit={cgit} sourceCommit={sourceCommit} jenkinsBuild={jenkinsBuild}
+                        time={time} totalCount={totalCount} streamOnly={streamOnly}
+                        onChange={onPageChange} onNvrChange={onNvrChange}
+                        onDistgitNameChange={onDistgitNameChange} onBuildStatusChange={onBuildStatusChange}
+                        onTaskIdChange={onTaskIdChange} onVersionChange={onVersionChange}
+                        onCgitChange={onCgitChange} onSourceCommitChange={onSourceCommitChange}
+                        onTimeChange={onTimeChange} onJenkinsBuildChange={onJenkinsBuildChange}
+                        onStreamToggle={handleStreamToggle} />
+                    <Footer style={{ textAlign: 'center' }}>
                         RedHat © 2023
                     </Footer>
                 </Layout>

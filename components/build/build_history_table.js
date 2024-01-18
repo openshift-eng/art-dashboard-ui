@@ -9,7 +9,7 @@ export default function BUILD_HISTORY_TABLE(props) {
     const text = "Partial search enabled. For exact search, enclose within quotes."
     const [nvrInput, setNvrInput] = useState(props.nvr);
     const [taskIdInput, setTaskIdInput] = useState(props.taskId);
-    const [packageNameInput, setPackageNameInput] = useState(props.packageName);
+    const [DistgitNameInput, setDistgitNameInput] = useState(props.DistgitName);
     const [versionInput, setVersionInput] = useState(props.version);
     const [cgitInput, setCgitInput] = useState(props.cgit);
     const [sourceCommitInput, setSourceCommitInput] = useState(props.sourceCommit);
@@ -48,9 +48,9 @@ export default function BUILD_HISTORY_TABLE(props) {
                 const buildId = record.build_0_id; // Get the build ID from the record
                 const url = `${process.env.NEXT_PUBLIC_BREW_BUILD_LINK}${buildId}`; // Construct the URL using the build ID
                 return (
-                  <a href={url} target="_blank" rel="noopener noreferrer">
-                    {nvr ? nvr : 'Not Available'}
-                  </a>
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                        {nvr ? nvr : 'Not Available'}
+                    </a>
                 );
             }
         },
@@ -124,14 +124,14 @@ export default function BUILD_HISTORY_TABLE(props) {
                 return (
                     <Row>
                         <Col span={24} className="left">
-                            Package Name &nbsp;
+                            Distgit Name &nbsp;
                             <Popover content={text}>
                                 <InfoCircleOutlined style={{ color: "#1677ff" }} />
                             </Popover>
                         </Col>
                         <Col span={24}>
                             <Tooltip title="Press Enter to apply the filter">
-                                <Search placeholder={"Package Name"} onSearch={() => props.onPackageNameChange(packageNameInput)} value={packageNameInput} onChange={(e) => setPackageNameInput(e.target.value)} />
+                                <Search placeholder={"Distgit Name"} onSearch={() => props.onDistgitNameChange(DistgitNameInput)} value={DistgitNameInput} onChange={(e) => setDistgitNameInput(e.target.value)} />
                             </Tooltip>
                         </Col>
                     </Row>
@@ -283,13 +283,13 @@ export default function BUILD_HISTORY_TABLE(props) {
     useEffect(() => {
         setNvrInput(props.nvr);
         setTaskIdInput(props.taskId);
-        setPackageNameInput(props.packageName);
+        setDistgitNameInput(props.DistgitName);
         setVersionInput(props.version);
         setCgitInput(props.cgit);
         setSourceCommitInput(props.sourceCommit);
         setJenkinsBuildInput(props.jenkinsBuild);
         setTimeInput(props.time);
-    }, [props.nvr, props.taskId, props.packageName, props.version, props.cgit, props.sourceCommit, props.jenkinsBuild, props.time]);
+    }, [props.nvr, props.taskId, props.DistgitName, props.version, props.cgit, props.sourceCommit, props.jenkinsBuild, props.time]);
 
 
     return (
