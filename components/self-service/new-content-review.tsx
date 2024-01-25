@@ -19,10 +19,6 @@ export default function NewContentReview() {
           <TableCell>{inputs.componentType}</TableCell>
         </TableRow>
         <TableRow>
-          <TableCell>Distgit Repository</TableCell>
-          <TableCell>{inputs.distgit}</TableCell>
-        </TableRow>
-        <TableRow>
           <TableCell>Product Manager</TableCell>
           <TableCell>{inputs.productManager}</TableCell>
         </TableRow>
@@ -54,16 +50,68 @@ export default function NewContentReview() {
             <TableCell>{(inputs.imageType === "cvo-payload" || inputs.imageType === "olm-managed") ? inputs.approvalLink : "(Not Required)"}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell>Delivery Repository</TableCell>
-            <TableCell>{inputs.deliveryRepo}</TableCell>
-          </TableRow>
-          <TableRow>
             <TableCell>Dockerfile Path</TableCell>
             <TableCell>{inputs.dockerfilePath}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Arches</TableCell>
             <TableCell>{inputs.arches.has('all') ? 'all' : Array.from(inputs.arches).join(', ')}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Name</TableCell>
+            <TableCell>{inputs.deliveryRepo}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Display Name</TableCell>
+            <TableCell>{inputs.deliveryRepoDisplayName}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Summary</TableCell>
+            <TableCell>{inputs.deliveryRepoSummary}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Description</TableCell>
+            <TableCell>{inputs.deliveryRepoDescription}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Image Usage Type</TableCell>
+            <TableCell>{inputs.deliveryRepoImageType}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Name</TableCell>
+            <TableCell>{inputs.deliveryRepo}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Release Category</TableCell>
+            <TableCell>{inputs.deliveryRepoReleaseCategory}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Host Level Access</TableCell>
+            <TableCell>{inputs.deliveryRepoHostLevelAccess}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Image Owner</TableCell>
+            <TableCell>{inputs.deliveryRepoImageOwner}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Product Manager</TableCell>
+            <TableCell>{inputs.deliveryRepoProductManager}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Program Manager</TableCell>
+            <TableCell>{inputs.deliveryRepoProgramManager}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository QE Owner</TableCell>
+            <TableCell>{inputs.deliveryRepoQeOwner}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Documentation Owner</TableCell>
+            <TableCell>{inputs.deliveryRepoDocOwner}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Errata Writer</TableCell>
+            <TableCell>{inputs.deliveryRepoErrataWriter}</TableCell>
           </TableRow>
         </TableBody>
       ) : (
