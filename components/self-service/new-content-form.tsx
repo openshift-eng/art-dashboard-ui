@@ -76,13 +76,6 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       </FormControl>
     </Box>
     <Box>
-      <TextField fullWidth label="Dist-git Repository" variant="outlined"
-        required
-        {...register("distgit", { required: true, pattern: /^[\w-]+$/ })}
-        error={errors.distgit !== undefined}
-        helperText="Type `openshift-enterprise-hyperkube` for distgit repo `containers/openshift-enterprise-hyperkube`" />
-    </Box>
-    <Box>
       <TextField fullWidth label="Product Manager" variant="outlined"
         required
         {...register("productManager", { required: true })}
@@ -171,11 +164,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         ) : (<></>)
       }
       <Box>
-        <TextField label="Delivery Repository" variant="outlined" fullWidth
+        <TextField label="Delivery Repository Name" variant="outlined" fullWidth
           required
           {...register("deliveryRepo", { required: true, pattern: /^openshift\d+\/[\w-]+$/ })}
           error={errors.deliveryRepo !== undefined}
-          helperText="What is the comet delivery repo for this image (e.g. openshift4/ose-foo-bar-rhel8)?" />
+          helperText="What is the proposed comet delivery repo name for this image (e.g. openshift4/ose-foo-bar-rhel8)?" />
       </Box>
       <Box>
         <TextField label="Dockerfile Path" variant="outlined" fullWidth

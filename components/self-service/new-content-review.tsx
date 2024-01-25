@@ -54,7 +54,7 @@ export default function NewContentReview() {
             <TableCell>{(inputs.imageType === "cvo-payload" || inputs.imageType === "olm-managed") ? inputs.approvalLink : "(Not Required)"}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell>Delivery Repository</TableCell>
+            <TableCell>Delivery Repository Name</TableCell>
             <TableCell>{inputs.deliveryRepo}</TableCell>
           </TableRow>
           <TableRow>

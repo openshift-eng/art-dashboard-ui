@@ -42,15 +42,6 @@ export function NewContentChecklist() {
       </Tooltip>
     </Box>
     <Box>
-      <FormControlLabel control={<Checkbox {...register("check_distgit", { required: true })} />} label="I have requested a dist-git repository and delivery repository in Comet for my image/rpm" />
-      <Tooltip title={`Before ART can build your image or RPM it must be populated in dist-git and (for image) added to the delivery repos managed by EXD SP.
-                  Click the help icon for more information.`}>
-        <IconButton color="primary" aria-label="help" href="https://source.redhat.com/groups/public/atomicopenshift/atomicopenshift_wiki/requesting_a_new_image_or_rpm_to_be_managed_by_art" target="_blank">
-          <HelpIcon />
-        </IconButton>
-      </Tooltip>
-    </Box>
-    <Box>
       <FormControlLabel control={<Checkbox {...register("check_prodsec_review", { required: true })} />} label="You have performed a threat model assessment" />
       <Tooltip title={`ProdSec no longer performs an assessment, instead requiring a self-assessment from this link`}>
         <IconButton color="primary" aria-label="help" href="https://docs.engineering.redhat.com/display/PRODSEC/Request+a+SD+Elements+Threat+Model+for+new+OCP+components" target="_blank">
