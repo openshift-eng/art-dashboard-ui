@@ -20,8 +20,13 @@ function OpenshiftVersionSelect({ onVersionChange, initialVersion, redirectOnSel
 
     const onChangeFunc = (value) => {
         if (redirectOnSelect) {
-            // Redirect to the version specific page
-            window.location.replace(`/dashboard/release/${value}`);
+            if (value !== initialVersion) {
+                // Redirect to the version-specific page
+                window.location.replace(`/dashboard/release/${value}`);
+            } else {
+                // If the selected version is the same as the initial version, invoke the onVersionChange function
+                onVersionChange(value);
+            }
         } else {
             // Invoke the passed function
             onVersionChange(value);

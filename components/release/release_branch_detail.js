@@ -1,26 +1,49 @@
-import React, {useEffect, useState} from "react";
-import {advisory_details_for_advisory_id, advisory_ids_for_branch} from "../api_calls/release_calls";
-import {Empty, Popover, Typography} from "antd";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { advisory_details_for_advisory_id, advisory_ids_for_branch } from "../api_calls/release_calls";
+import { Empty, Popover, Typography, message } from "antd";
 import RELEASE_BRANCH_DETAIL_TABLE from "./release_branch_detail_table";
-import {InfoCircleOutlined} from "@ant-design/icons";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { Pagination } from 'antd';
+import { useRouter } from 'next/router'
 
-const {Title} = Typography;
-
+const { Title } = Typography;
 
 function ReleaseBranchDetail(props) {
     const [overviewTableData, setOverviewTableData] = useState(undefined);
     const [advisoryDetails, setAdvisoryDetails] = useState(undefined);
     const [current, setCurrent] = useState(undefined);
     const [currentJira, setCurrentJira] = useState(undefined);
-    const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [allAdvisories, setAllAdvisories] = useState([]);
-
+    const router = useRouter();
+    const [currentPage, setCurrentPage] = useState(null);
+    const currentRef = useRef(current);
+    const [isRouterReady, setIsRouterReady] = useState(false);
+    const [isAdvisoryDetailsLoading, setIsAdvisoryDetailsLoading] = useState(false);
+    const [isBranchDataLoading, setIsBranchDataLoading] = useState(false);
 
     const FIXED_ORDER = ["Extras", "Image", "Metadata", "Microshift", "Rpm"];
 
-    const generateDataForEachAdvisory = () => {
+    // Display loading message
+    const displayLoading = useCallback(() => {
+        message.loading({
+            content: "Loading Data",
+            duration: 0,
+            style: { position: "fixed", left: "50%", top: "20%" }
+        });
+    }, []);
+
+    // Destroy loading message
+    const destroyLoading = useCallback(() => {
+        message.destroy();
+        message.success({
+            content: "Loaded",
+            duration: 2,
+            style: { position: "fixed", left: "50%", top: "20%", color: "#316DC1" }
+        });
+    }, []);
+
+    const generateDataForEachAdvisory = useCallback(() => {
+        setIsAdvisoryDetailsLoading(true); // Set loading state to true at the beginning
         setAdvisoryDetails([]);
         const promises = overviewTableData.map((data, index) => {
             return advisory_details_for_advisory_id(data.id).then(data_api => {
@@ -35,114 +58,147 @@ function ReleaseBranchDetail(props) {
                 return null;
             });
         });
-    
-        Promise.all(promises).then((advisories_data) => {
-            advisories_data = advisories_data.filter(item => item !== null); // Remove nulls if any
-            
-            // Explicitly sort based on FIXED_ORDER
-            advisories_data.sort((a, b) => {
-                return FIXED_ORDER.indexOf(a.type) - FIXED_ORDER.indexOf(b.type);
+
+        Promise.all(promises)
+            .then((advisories_data) => {
+                advisories_data = advisories_data.filter(item => item !== null); // Remove nulls if any
+
+                // Explicitly sort based on FIXED_ORDER
+                advisories_data.sort((a, b) => {
+                    return FIXED_ORDER.indexOf(a.type) - FIXED_ORDER.indexOf(b.type);
+                });
+
+                setAdvisoryDetails(advisories_data);
+            })
+            .finally(() => {
+                setIsAdvisoryDetailsLoading(false); // Set loading state to false at the end
             });
-            
-            setAdvisoryDetails(advisories_data);
-        });
-    };
+    }, [overviewTableData]);
 
-    const getBranchData = (branch) => {
-        advisory_ids_for_branch(branch).then((data) => {
-            const allAdvisories = Object.keys(data).sort((a, b) => a - b);
+    const getBranchData = useCallback(async (branch, page) => {
+        const targetPage = page || currentPage;
+        if (!branch || page === undefined) return;
 
-            setCurrent(allAdvisories[currentPage - 1]);
-            setCurrentJira(data[allAdvisories[currentPage - 1]][1]);
-            setTotalPages(allAdvisories.length);
-            
-            const overviewData = data[allAdvisories[currentPage - 1]][0];
-            let table_data = [];
-            for (const key in overviewData) {
-                if (overviewData.hasOwnProperty(key)) {
-                    table_data.push({
-                        type: key,
-                        id: overviewData[key],
-                        advisory_link: "https://errata.devel.redhat.com/advisory/" + overviewData[key]
-                    });
-                }
-            }
-            if (!branch) { // Guard clause to check if branch is undefined or empty
-                console.error('Branch is undefined or empty. Cannot fetch data.');
-                return;
-            }
-            const advisories = Object.keys(data).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        setIsBranchDataLoading(true); // Start loading
+        displayLoading();
 
-            // Update the state variable for all advisories
-            setAllAdvisories(advisories);
+        try {
+            const data = await advisory_ids_for_branch(branch);
 
-            setOverviewTableData(table_data);
-        }).catch(error => {
-        });
-    };
-    
+            const currentVersionKey = Object.keys(data)[page - 1];
+            setCurrentJira(data[currentVersionKey][1]);
+            setTotalPages(Object.keys(data).length);
 
-    const handlePageChange = (page) => {
-        setCurrentPage(page);
-    };
+            const tableData = Object.entries(data[currentVersionKey][0]).map(([type, id]) => ({
+                type: type,
+                id: id,
+                advisory_link: "https://errata.devel.redhat.com/advisory/" + id
+            }));
+            setOverviewTableData(tableData);
+
+            // Set current version after fetching data
+            setCurrent(currentVersionKey);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setIsBranchDataLoading(false); // End loading
+        }
+    }, [currentPage, displayLoading]);
+
+    // Handle page changes
+    const handlePageChange = useCallback(newPage => {
+        router.replace({
+            pathname: router.pathname,
+            query: { ...router.query, page: newPage }
+        }, undefined, { shallow: true });
+    }, [router]);
 
     useEffect(() => {
-        if (overviewTableData) {
+        // Update the ref when current changes
+        currentRef.current = current;
+    }, [current]);
+
+    useEffect(() => {
+        if (!router.isReady) {
+            return;
+        }
+        setIsRouterReady(true);
+        const newPage = parseInt(router.query.page, 10);
+        if (!isNaN(newPage)) {
+            setCurrentPage(newPage); // Update currentPage with URL's query parameter
+        } else {
+            setCurrentPage(1); // Fallback to page 1 if no valid page in URL
+        }
+    }, [router.isReady, router.query.page]);
+
+    // Effect for data fetching
+    useEffect(() => {
+        if (props.branch && currentPage !== null && isRouterReady) {
+            setIsBranchDataLoading(true); // Start branch data loading
+            setIsAdvisoryDetailsLoading(true); // Start advisory details loading
+            displayLoading();
+            getBranchData(props.branch, currentPage);
+        }
+    }, [props.branch, currentPage, getBranchData, isRouterReady]);
+
+    useEffect(() => {
+        // This effect is for handling the cleanup/loading messages.
+        if (advisoryDetails && advisoryDetails.length > 0) {
+            destroyLoading();
+        }
+    }, [advisoryDetails]);
+
+    useEffect(() => {
+        // This effect is responsible for processing data once the overviewTableData is set/updated.
+        if (current && overviewTableData) {
             generateDataForEachAdvisory();
         }
-    }, [overviewTableData])
+    }, [current, overviewTableData]);
 
+    // Effect for handling loading state
     useEffect(() => {
-        if (props.branch && currentPage) {
-            getBranchData(props.branch);
+        // Check if both data fetching and processing are complete
+        if (!isBranchDataLoading && !isAdvisoryDetailsLoading) {
+            destroyLoading(); // Hide the loading message
         }
-    }, [props.branch, currentPage]);
-
-
-    useEffect(() => {
-        if (advisoryDetails && advisoryDetails.length > 0 ) {
-            props.destroyLoadingCallback();
-        }
-    }, [advisoryDetails])
+    }, [isBranchDataLoading, isAdvisoryDetailsLoading]);
 
     const popover = (value) => (
         <div><a target="_blank" rel="noopener noreferrer"
-                href={`https://amd64.ocp.releases.ci.openshift.org/releasestream/4-stable/release/${value}`}>amd64</a>&nbsp;|&nbsp;
+            href={`https://amd64.ocp.releases.ci.openshift.org/releasestream/4-stable/release/${value}`}>amd64</a>&nbsp;|&nbsp;
             <a target="_blank" rel="noopener noreferrer"
-               href={`https://s390x.ocp.releases.ci.openshift.org/releasestream/4-stable-s390x/release/${value}`}>s390x</a>&nbsp;|&nbsp;
+                href={`https://s390x.ocp.releases.ci.openshift.org/releasestream/4-stable-s390x/release/${value}`}>s390x</a>&nbsp;|&nbsp;
             <a target="_blank" rel="noopener noreferrer"
-               href={`https://ppc64le.ocp.releases.ci.openshift.org/releasestream/4-stable-ppc64le/release/${value}`}>ppc64le</a>&nbsp;|&nbsp;
+                href={`https://ppc64le.ocp.releases.ci.openshift.org/releasestream/4-stable-ppc64le/release/${value}`}>ppc64le</a>&nbsp;|&nbsp;
             <a target="_blank" rel="noopener noreferrer"
-               href={`https://arm64.ocp.releases.ci.openshift.org/releasestream/4-stable-arm64/release/${value}`}>arm64</a>
+                href={`https://arm64.ocp.releases.ci.openshift.org/releasestream/4-stable-arm64/release/${value}`}>arm64</a>
         </div>
     );
 
     return (
         <div>
-            <div style={{paddingLeft: "40px", paddingTop: "40px"}}>
+            <div style={{ paddingLeft: "40px", paddingTop: "40px" }}>
                 <Title level={4}>
-                    <code> {current} <Popover content={popover(current)} trigger="hover">
-                        <InfoCircleOutlined style={{color: "#1677ff"}}/>
+                    <code> {current ? current : props.branch} <Popover content={popover(current)} trigger="hover">
+                        <InfoCircleOutlined style={{ color: "#1677ff" }} />
                     </Popover> </code>
                 </Title>
-                <p style={{paddingLeft: "10px"}}>
+                <p style={{ paddingLeft: "10px" }}>
                     <a href={`https://issues.redhat.com/browse/${currentJira}`}>{currentJira}</a>
                 </p>
             </div>
             {
                 advisoryDetails ?
                     <>
-                        <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetails} currentPage={currentPage} totalPages={totalPages}/>
-                        <Pagination current={currentPage} onChange={handlePageChange} showSizeChanger={false}
-                        total={allAdvisories.length} // The total number of pages is the length of allAdvisories
-                        pageSize={1} // We're showing one release per page
-                        />
+                        <RELEASE_BRANCH_DETAIL_TABLE data={advisoryDetails} currentPage={currentPage} totalPages={totalPages} />
+                        <Pagination current={currentPage} onChange={handlePageChange} total={totalPages} showSizeChanger={false}
+                            pageSize={1} />
                     </>
                     :
-                    <Empty/>
+                    <Empty />
             }
         </div>
-    )
+    );
 }
 
 export default ReleaseBranchDetail;
