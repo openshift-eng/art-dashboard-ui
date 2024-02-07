@@ -12,33 +12,33 @@ export function NewContentStep({ activeStep }: { activeStep: number }) {
     case 0:
       return (
         <Box sx={{ m: 4 }}>
-          <Typography component="h1" variant="h6" sx={{ my: 2 }}>Step 1: Finish the following checklist</Typography>
+          <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 1: Finish the following checklist</Typography>
           <NewContentChecklist />
         </Box>
       )
     case 1:
       return (
         <Box sx={{ m: 4 }}>
-          <Typography component="h1" variant="h6" sx={{ my: 2 }}>Step 2: Fill the onboarding form</Typography>
+          <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 2: Fill the onboarding form</Typography>
           <NewContentForm onSubmit={(data: any) => console.log(data)} />
         </Box>)
     case 2:
       return (
         <Box sx={{ m: 4 }}>
-          <Typography component="h1" variant="h6" sx={{ my: 2 }}>Step 3: Special note for ART</Typography>
+          <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 3: Special note for ART</Typography>
           <NewContentNote />
         </Box>)
     case 3:
       return (
         <Box sx={{ m: 4 }}>
-          <Typography component="h1" variant="h6" sx={{ my: 2 }}>Step 4: Review your input</Typography>
+          <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 4: Review your input</Typography>
           <NewContentReview />
         </Box>
       )
     case 4:
       return (
         <Box sx={{ m: 4 }}>
-          <Typography component="h1" variant="h6" sx={{ my: 2 }}>Step 5: Done</Typography>
+          <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 5: Done</Typography>
           <NewContentDone />
         </Box>
       )

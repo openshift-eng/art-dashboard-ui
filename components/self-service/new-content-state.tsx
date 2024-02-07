@@ -17,6 +17,19 @@ export type Inputs = {
   arches: Set<string>,
   rpmPackageName?: string,
   specfilePath?: string,
+  deliveryRepoDescription?: string,
+  deliveryRepoDocOwner?: string,
+  deliveryRepoErrataWriter?: string,
+  deliveryRepoHostLevelAccess?: string,
+  deliveryRepoProductManager?: string,
+  deliveryRepoProgramManager?: string,
+  deliveryRepoQeOwner?: string,
+  deliveryRepoReleaseCategory?: string,
+  deliveryRepoSummary?: string,
+  deliveryRepoUsageType?: string,
+  deliveryRepoDisplayName?: string,
+  deliveryRepoImageType?: string,
+  deliveryRepoImageOwner?: string,
 };
 
 export type NewContentState = {

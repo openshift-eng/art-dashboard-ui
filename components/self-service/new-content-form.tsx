@@ -54,6 +54,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       '& > :not(style)': { mx: 2, my: 3, maxWidth: 'sm' },
     }}
   >
+    <Typography component="h1" variant="h5" sx={{ my: 2 }}>General</Typography>
     <Box>
       <FormControl>
         <FormLabel id="component-type-group-label">Component Type</FormLabel>
@@ -74,13 +75,6 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
           )}
         />
       </FormControl>
-    </Box>
-    <Box>
-      <TextField fullWidth label="Dist-git Repository" variant="outlined"
-        required
-        {...register("distgit", { required: true, pattern: /^[\w-]+$/ })}
-        error={errors.distgit !== undefined}
-        helperText="Type `openshift-enterprise-hyperkube` for distgit repo `containers/openshift-enterprise-hyperkube`" />
     </Box>
     <Box>
       <TextField fullWidth label="Product Manager" variant="outlined"
@@ -171,13 +165,6 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         ) : (<></>)
       }
       <Box>
-        <TextField label="Delivery Repository" variant="outlined" fullWidth
-          required
-          {...register("deliveryRepo", { required: true, pattern: /^openshift\d+\/[\w-]+$/ })}
-          error={errors.deliveryRepo !== undefined}
-          helperText="What is the comet delivery repo for this image (e.g. openshift4/ose-foo-bar-rhel8)?" />
-      </Box>
-      <Box>
         <TextField label="Dockerfile Path" variant="outlined" fullWidth
           required
           {...register("dockerfilePath", { required: true })}
@@ -196,6 +183,109 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
           </Box>
         </FormGroup>
       </FormControl>
+
+
+      <Typography component="h1" variant="h5" sx={{ my: 2 }}>Delivery (Comet) Repository details</Typography>
+
+      <Box>
+        <TextField label="Repository Name" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepo", { required: true, pattern: /^openshift\d+\/[\w-]+$/ })}
+                   error={errors.deliveryRepo !== undefined}
+                   helperText="What is the proposed comet delivery repo name for this image (e.g. openshift4/ose-foo-bar-rhel8)?" />
+      </Box>
+
+
+      <Typography component="h1" variant="h6" sx={{ my: 2 }}>Display Data</Typography>
+
+      <Box>
+        <TextField label="Display Name" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoDisplayName", { required: true })}
+                   error={errors.deliveryRepoDisplayName !== undefined}
+                   helperText="Human-readable name for the repository" />
+      </Box>
+      <Box>
+        <TextField label="Summary" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoSummary", { required: true })}
+                   error={errors.deliveryRepoSummary !== undefined}
+                   helperText="A brief description used for search results" />
+      </Box>
+      <Box>
+        <TextField label="Repository Description" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoDescription", { required: true})}
+                   error={errors.deliveryRepoDescription !== undefined}
+                   helperText="A brief description used for search results, on the Comet page https://comet.engineering.redhat.com/" />
+      </Box>
+      <Box>
+        <TextField label="Image Usage Type" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoUsageType", { required: true })}
+                   error={errors.deliveryRepoUsageType !== undefined}
+                   helperText="Select the type that best describes how your image should be used. Descriptions available here (https://docs.google.com/document/d/1oLzKgCXblERauGj2r3_WI-um69jXZfZ9O8pPLambYRQ/edit#heading=h.lny10ape9aig). Can be used to filter in RHEC, and affects provided usage instructions." />
+      </Box>
+      <Box>
+        <TextField label="Release Category" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoReleaseCategory", { required: true})}
+                   error={errors.deliveryRepoReleaseCategory !== undefined}
+                   helperText="Release category indicates the support level for an image, determines the signing key used when publishing to a registry, and is often indicated in the repository path. More information here (https://mojo.redhat.com/docs/DOC-974065)" />
+      </Box>
+      <Box>
+        <TextField label="Host Level Access" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoHostLevelAccess", { required: true})}
+                   error={errors.deliveryRepoHostLevelAccess !== undefined}
+                   helperText="'Unprivileged' is isolated from the host. 'Privileged' runs as root on the host." />
+      </Box>
+
+      <Typography component="h1" variant="h6" sx={{ my: 2 }}>Ownership</Typography>
+
+      <Box>
+        <TextField label="Image Owner" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoImageOwner", { required: true})}
+                   error={errors.deliveryRepoImageOwner !== undefined}
+                   helperText="Email(s) of developer(s) responsible for image builds in this repository. Can be comma separated." />
+      </Box>
+      <Box>
+        <TextField label="Product Manager" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoProductManager", { required: true})}
+                   error={errors.deliveryRepoProductManager !== undefined}
+                   helperText="Email(s) of primary stakeholder(s) for this repository. Can be comma separated." />
+      </Box>
+      <Box>
+        <TextField label="Program Manager" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoProgramManager", { required: true})}
+                   error={errors.deliveryRepoProgramManager !== undefined}
+                   helperText="Email(s) of manager(s) responsible for coordination of this repository’s product team. Can be comma separated." />
+      </Box>
+      <Box>
+        <TextField label="QE Owner" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoQeOwner", { required: true})}
+                   error={errors.deliveryRepoQeOwner !== undefined}
+                   helperText="Email(s) of engineer(s) responsible for testing image builds in this repository. Can be comma separated." />
+      </Box>
+      <Box>
+        <TextField label="Documentation Owner" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoDocOwner", { required: true})}
+                   error={errors.deliveryRepoDocOwner !== undefined}
+                   helperText="Email(s) of Customer Content Services contact(s) responsible for providing documentation for this repository. Can be comma separated." />
+      </Box>
+      <Box>
+        <TextField label="Errata Writer" variant="outlined" fullWidth
+                   required
+                   {...register("deliveryRepoErrataWriter", { required: true})}
+                   error={errors.deliveryRepoErrataWriter !== undefined}
+                   helperText="Email(s) of Customer Content Services contact(s) responsible for writing Errata text for this repository. Can be comma separated." />
+      </Box>
+
     </>) : (<>
       {/* RPM-specific fields */}
       <Box>

@@ -57,6 +57,29 @@ export default function NewContentDone() {
     }
   };
 
+  const generateHBYaml = () => {
+    const result: Record<string, any> = {
+      honey_badger_meta: {
+        "display-name": inputs.deliveryRepoDisplayName,
+        image_type: inputs.deliveryRepoImageType,
+        owner: inputs.deliveryRepoImageOwner,
+        delivery_repo_name: inputs.deliveryRepo,
+        description: inputs.deliveryRepoDescription,
+        doc_owner: inputs.deliveryRepoDocOwner,
+        errata_writer: inputs.deliveryRepoErrataWriter,
+        host_level_access: inputs.deliveryRepoHostLevelAccess,
+        product_manager: inputs.deliveryRepoProductManager,
+        program_manager: inputs.deliveryRepoProgramManager,
+        qe_owner: inputs.deliveryRepoQeOwner,
+        release_category: inputs.deliveryRepoReleaseCategory,
+        summary: inputs.deliveryRepoSummary,
+        usage_type: inputs.deliveryRepoUsageType,
+      }
+    };
+    return YAML.stringify(result);
+  };
+
+
   const generateYaml = () => {
     const result: Record<string, any> = {
       meta: {
@@ -89,6 +112,11 @@ export default function NewContentDone() {
       <pre>
         {generateYaml()}
       </pre>
+
+      <pre>
+        {generateHBYaml()}
+      </pre>
+
     </Box>
     <Box sx={{ py: 2 }}>
       <Button
