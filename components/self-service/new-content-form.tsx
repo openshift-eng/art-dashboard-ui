@@ -110,7 +110,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         error={errors.owners !== undefined}
         helperText="What are the email addresses (mailing lists are preferred!) of the owners? Who should be notified of events relevant to the builds (e.g. if they cannot be built)? Addresses must end with @redhat.com. You can use comma to separate multiple addresses." />
     </Box>
-    {values.componentType == 'image' ? (<>
+    {values.componentType === 'image' ? (<>
       {/* Image-specific fields */}
       <FormControl>
         <FormLabel id="image-type-group-label">Image Type</FormLabel>
@@ -147,19 +147,55 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         />
       </FormControl>
       {
+        values.imageType === "operand" ? (
+            <Box>
+              <Controller
+                  control={control}
+                  name="associatedOperator"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                      <TextField label="Associated Operator" variant="outlined" fullWidth
+                                 required
+                                 {...field}
+                                 error={errors.associatedOperator !== undefined}
+                                 helperText={"Which operator is this operand associated to?"} />
+                  )}
+              />
+            </Box>
+        ) : (<></>)
+      }
+      {
+        values.imageType === "cvo-payload" ? (
+            <Box>
+              <Controller
+                  control={control}
+                  name="payloadName"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                      <TextField label="Payload Name" variant="outlined" fullWidth
+                                 required
+                                 {...field}
+                                 error={errors.payloadName !== undefined}
+                                 helperText={"Name of the release payload"} />
+                  )}
+              />
+            </Box>
+        ) : (<></>)
+      }
+      {
         values.imageType === "cvo-payload" || values.imageType === "olm-managed" ? (
           <Box>
             <Controller
-              control={control}
-              name="approvalLink"
-              rules={{ required: true }}
-              render={({ field }) => (
-                <TextField label="Approval Link" variant="outlined" fullWidth
-                  required
-                  {...field}
-                  error={errors.approvalLink !== undefined}
-                  helperText={configData.cvo_payload_approval_help} />
-              )}
+                control={control}
+                name="approvalLink"
+                rules={{ required: true }}
+                render={({ field }) => (
+                    <TextField label="Staff Engineer Approval" variant="outlined" fullWidth
+                               required
+                               {...field}
+                               error={errors.approvalLink !== undefined}
+                               helperText={"Link to staff engineer approval"} />
+                )}
             />
           </Box>
         ) : (<></>)
@@ -192,7 +228,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                    required
                    {...register("deliveryRepo", { required: true, pattern: /^openshift\d+\/[\w-]+$/ })}
                    error={errors.deliveryRepo !== undefined}
-                   helperText="What is the proposed comet delivery repo name for this image (e.g. openshift4/ose-foo-bar-rhel8)?" />
+                   helperText="What is the proposed comet delivery repo name for this image (e.g. openshift4/foo-bar-rhel9)?" />
       </Box>
 
 
@@ -220,18 +256,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                    helperText="A brief description used for search results, on the Comet page https://comet.engineering.redhat.com/" />
       </Box>
       <Box>
-        <TextField label="Image Usage Type" variant="outlined" fullWidth
-                   required
-                   {...register("deliveryRepoUsageType", { required: true })}
-                   error={errors.deliveryRepoUsageType !== undefined}
-                   helperText="Select the type that best describes how your image should be used. Descriptions available here (https://docs.google.com/document/d/1oLzKgCXblERauGj2r3_WI-um69jXZfZ9O8pPLambYRQ/edit#heading=h.lny10ape9aig). Can be used to filter in RHEC, and affects provided usage instructions." />
-      </Box>
-      <Box>
         <TextField label="Release Category" variant="outlined" fullWidth
                    required
                    {...register("deliveryRepoReleaseCategory", { required: true})}
                    error={errors.deliveryRepoReleaseCategory !== undefined}
-                   helperText="Release category indicates the support level for an image, determines the signing key used when publishing to a registry, and is often indicated in the repository path. More information here (https://mojo.redhat.com/docs/DOC-974065)" />
+                   helperText="GA or Tech-Preview. Release category indicates the support level for an image, determines the signing key used when publishing to a registry, and is often indicated in the repository path. More information here (https://source.redhat.com/groups/public/release-engineering/release_engineering_rcm_wiki/product_dimensions_for_release_engineering)" />
       </Box>
       <Box>
         <TextField label="Host Level Access" variant="outlined" fullWidth
@@ -280,14 +309,26 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       </Box>
       <Box>
         <TextField label="Errata Writer" variant="outlined" fullWidth
-                   required
                    {...register("deliveryRepoErrataWriter", { required: true})}
-                   error={errors.deliveryRepoErrataWriter !== undefined}
-                   helperText="Email(s) of Customer Content Services contact(s) responsible for writing Errata text for this repository. Can be comma separated." />
+                   helperText="[OPTIONAL] If different from Documentation Writer. Email(s) of Customer Content Services contact(s) responsible for writing Errata text for this repository. Can be comma separated." />
       </Box>
 
     </>) : (<>
       {/* RPM-specific fields */}
+      <Box>
+        <Controller
+            control={control}
+            name="approvalLink"
+            rules={{ required: true }}
+            render={({ field }) => (
+                <TextField label="Staff Engineer Approval" variant="outlined" fullWidth
+                           required
+                           {...field}
+                           error={errors.approvalLink !== undefined}
+                           helperText={"Link to staff engineer approval"} />
+            )}
+        />
+      </Box>
       <Box>
         <TextField label="RPM Package Name" variant="outlined" fullWidth
           required

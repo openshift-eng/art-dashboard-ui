@@ -32,10 +32,9 @@ export function NewContentChecklist() {
       </Tooltip>
     </Box>
     <Box>
-      <FormControlLabel control={<Checkbox {...register("check_operator_hub", { required: true })} />} label="If this is an image, it is not an operator destined for OperatorHub" />
+      <FormControlLabel control={<Checkbox {...register("check_operator_hub", { required: true })} />} label="Is this an Operator destined for Operator Hub? Talk to ART before proceeding." />
       <Tooltip title={`OperatorHub, aka Marketplace, App Registry, and various other names - you are shipping your operator
-                  through the marketplace/OperatorHub if it is not one of the operators deployed by the CVO (cluster version operator) but instead by OLM.
-                  Click the help icon for more information.`}>
+                  through the marketplace/OperatorHub if it is not one of the operators deployed by the CVO (cluster version operator) but instead by OLM. Reach out to @release-artists on #forum-ocp-art`}>
         <IconButton color="primary" aria-label="help" href={configData.cpaas_doc_help_link} target="_blank">
           <HelpIcon />
         </IconButton>

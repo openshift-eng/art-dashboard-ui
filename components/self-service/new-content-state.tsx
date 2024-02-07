@@ -26,10 +26,11 @@ export type Inputs = {
   deliveryRepoQeOwner?: string,
   deliveryRepoReleaseCategory?: string,
   deliveryRepoSummary?: string,
-  deliveryRepoUsageType?: string,
   deliveryRepoDisplayName?: string,
   deliveryRepoImageType?: string,
   deliveryRepoImageOwner?: string,
+  payloadName?: string,
+  associatedOperator?: string,
 };
 
 export type NewContentState = {

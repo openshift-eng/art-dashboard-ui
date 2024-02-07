@@ -66,14 +66,13 @@ export default function NewContentDone() {
         delivery_repo_name: inputs.deliveryRepo,
         description: inputs.deliveryRepoDescription,
         doc_owner: inputs.deliveryRepoDocOwner,
-        errata_writer: inputs.deliveryRepoErrataWriter,
+        errata_writer: inputs.deliveryRepoErrataWriter !== undefined ? inputs.deliveryRepoErrataWriter : inputs.deliveryRepoDocOwner,
         host_level_access: inputs.deliveryRepoHostLevelAccess,
         product_manager: inputs.deliveryRepoProductManager,
         program_manager: inputs.deliveryRepoProgramManager,
         qe_owner: inputs.deliveryRepoQeOwner,
         release_category: inputs.deliveryRepoReleaseCategory,
         summary: inputs.deliveryRepoSummary,
-        usage_type: inputs.deliveryRepoUsageType,
       }
     };
     return YAML.stringify(result);
@@ -83,6 +82,7 @@ export default function NewContentDone() {
   const generateYaml = () => {
     const result: Record<string, any> = {
       meta: {
+        payload_name: inputs.payloadName,
         component_type: inputs.componentType,
         distgit_repo: `${distgit_ns}/${inputs.distgit}`,
         product_manager: inputs.productManager,
@@ -92,6 +92,7 @@ export default function NewContentDone() {
         image_type: inputs.componentType === 'image' ? inputs.imageType : undefined,
         approval_link: inputs.approvalLink,
         config_file: `${inputs.componentType}s/${inputs.distgit}.yml`,
+        associated_operator: inputs.associatedOperator
       },
       config_snippet: inputs.componentType === 'image' ? generateImageConfig() : generateRpmConfig(),
     };
