@@ -13,13 +13,20 @@ export default function NewContentDone() {
   const repo_url = 'git@github.com:openshift-priv/' + web_url?.substring(web_url.lastIndexOf('/')+ 1) + '.git';
   const owners = inputs.owners?.split(',').map(s => s.trim());
 
+  let distgitName = inputs.deliveryRepo?.replace(/^openshift\d+\//, "");
+  // Remove 'ose' from the start of the string
+  distgitName = distgitName.replace(/^ose-/, '');
+
+  // Remove 'rhel' followed by a number at the end of the string
+  distgitName = distgitName.replace(/-rhel\d+$/, '');
+
   const generateImageConfig = () => {
     const imageName = inputs.deliveryRepo?.replace(/^openshift\d+\//, "openshift/");
     return {
       mode: 'wip',
       name: imageName,
       delivery_repo: inputs.deliveryRepo,
-      for_payload: inputs.imageType === "cvo-payload",
+      for_payload: inputs.imageType === "cvo-payload" || inputs.hasOperatorLabel,
       content: {
         source: {
           git: {
@@ -84,7 +91,7 @@ export default function NewContentDone() {
       meta: {
         payload_name: inputs.payloadName,
         component_type: inputs.componentType,
-        distgit_repo: `${distgit_ns}/${inputs.distgit}`,
+        distgit_repo: `${distgit_ns}/${distgitName}`,
         product_manager: inputs.productManager,
         prodsec_review_jira: inputs.prodSecReviewJira,
         bug_component: inputs.bugComponent,
@@ -108,7 +115,7 @@ export default function NewContentDone() {
     <Box>
       <Typography>Please <Button variant="text" target="_blank" href="https://issues.redhat.com/secure/CreateIssue!default.jspa">create a Jira ticket</Button> for the <strong>ART</strong> component with the following content:</Typography>
       <Typography component="h6" sx={{ mt: 2 }}><b>Summary</b></Typography>
-      <Typography>[BuildAuto] Add OCP component - {distgit_ns}/{inputs.distgit}</Typography>
+      <Typography>[BuildAuto] Add OCP component - {distgit_ns}/{distgitName}</Typography>
       <Typography component="h6" sx={{ mt: 2 }}><b>Description</b></Typography>
       <pre>
         {generateYaml()}
