@@ -101,14 +101,14 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         required
         {...register("bugComponent", { required: true, pattern: /^[\w-\/\s]+$/ })}
         error={errors.bugComponent !== undefined}
-        helperText="What is the Jira or Bugzilla component of your OpenShift component?" />
+        helperText="What is the OCPBUGS JIRA component name of your OpenShift component?" />
     </Box>
     <Box>
       <TextField fullWidth label="Email Addresses of the Owners" variant="outlined"
         required
         {...register("owners", { required: true, pattern: /^[\w.+-]+@redhat\.com(,\s*[\w.+-]+@redhat\.com)*$/ })}
         error={errors.owners !== undefined}
-        helperText="What are the email addresses (mailing lists are preferred!) of the owners? Who should be notified of events relevant to the builds (e.g. if they cannot be built)? Addresses must end with @redhat.com. You can use comma to separate multiple addresses." />
+        helperText="What are the email addresses (mailing lists are preferred!) of the owners? Who should be notified of events relevant to the builds (e.g. if they cannot be built)? Addresses must end with @redhat.com. You can use comma to separate multiple addresses. These choices can be updated at any time with a pull request to github.com/openshift-eng/ocp-build-data (example: https://github.com/openshift-eng/ocp-build-data/blob/28759bf97c56e19ce60fdd5b9002fa10eed98ae3/images/cloud-event-proxy.yml#L31-L34)" />
     </Box>
     {values.componentType === 'image' ? (<>
       {/* Image-specific fields */}
@@ -172,11 +172,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                   name="payloadName"
                   rules={{ required: true }}
                   render={({ field }) => (
-                      <TextField label="Payload Name" variant="outlined" fullWidth
+                      <TextField label="Payload Component Name" variant="outlined" fullWidth
                                  required
                                  {...field}
                                  error={errors.payloadName !== undefined}
-                                 helperText={"Name of the release payload"} />
+                                 helperText={"Name of the component within the release payload (e.g. \"cluster-authentication-operator\", \"csi-driver-nfs\", etc). Naming must follow these conventions: https://github.com/openshift/release/blob/master/core-services/image-mirroring/openshift/GUIDELINES.md#segmentation-ordering\""} />
                   )}
               />
             </Box>
@@ -194,7 +194,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                                required
                                {...field}
                                error={errors.approvalLink !== undefined}
-                               helperText={"Link to staff engineer approval"} />
+                               helperText={"Have a staff engineer (@aos-staff-engineers on Slack) comment in your feature JIRA ticket that the identified components should be included in the release payload. Provide a hyperlink to this comment."} />
                 )}
             />
           </Box>
