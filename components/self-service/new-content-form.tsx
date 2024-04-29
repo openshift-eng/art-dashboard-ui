@@ -215,7 +215,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
           helperText="Where in your repo is the Dockerfile ART should use for this image? e.g. /images/foo/Dockerfile or /Dockerfile.ocp" />
 
         <FormControl sx={{ m: 2 }} component="fieldset" variant="standard">
-          <FormControlLabel control={<Checkbox name='hasOperatorReleaseLabel' onChange={handleChangeOperator} />} label="Does your Dockerfile have 'io.openshift.release.operator=true' label?" />
+          <FormControlLabel control={<Checkbox name='hasOperatorReleaseLabel' onChange={handleChangeOperator} />} label="Does the Dockerfile have 'io.openshift.release.operator=true' label or will this be referenced by an operator that does?" />
         </FormControl>
 
       </Box>
