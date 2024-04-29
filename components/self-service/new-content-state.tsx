@@ -31,6 +31,7 @@ export type Inputs = {
   deliveryRepoImageOwner?: string,
   payloadName?: string,
   associatedOperator?: string,
+  hasOperatorLabel: boolean,
 };
 
 export type NewContentState = {
@@ -84,6 +85,7 @@ export function NewContentStateProvider({ children }: { children: ReactNode }) {
     // deliveryRepo: "openshift4/ose-foo-bar-rhel9",
     // dockerfilePath: "/Dockerfile",
     arches: new Set(["all"]),
+    hasOperatorLabel: false,
     // distgit: "foo",
     // productManager: "someone",
     // sourceRepo: "https://github.com/openshift/foo.git",

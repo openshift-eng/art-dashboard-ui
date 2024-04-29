@@ -11,6 +11,7 @@ import * as React from 'react';
 import { Inputs, useNewContentState } from './new-content-state'
 import HelpIcon from '@mui/icons-material/Help';
 import frontendConfig from "../../frontend.config.json"
+import { useState } from 'react';
 
 export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?: SubmitHandler<Inputs>, defaultValues?: Inputs }) {
   const { activeStep, handleNext, handleBack, inputs, setInputs } = useNewContentState();
@@ -25,6 +26,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       onSubmit(data)
     }
     handleNext();
+  };
+  const handleChangeOperator = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+    let current = getValues().hasOperatorLabel;
+    setValue("hasOperatorLabel", !current)
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +186,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                   )}
               />
             </Box>
+
         ) : (<></>)
       }
       {
@@ -206,6 +213,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
           {...register("dockerfilePath", { required: true })}
           error={errors.dockerfilePath !== undefined}
           helperText="Where in your repo is the Dockerfile ART should use for this image? e.g. /images/foo/Dockerfile or /Dockerfile.ocp" />
+
+        <FormControl sx={{ m: 2 }} component="fieldset" variant="standard">
+          <FormControlLabel control={<Checkbox name='hasOperatorReleaseLabel' onChange={handleChangeOperator} />} label="Does your Dockerfile have 'io.openshift.release.operator=true' label?" />
+        </FormControl>
+
       </Box>
       <FormControl sx={{ m: 2 }} component="fieldset" variant="standard">
         <FormLabel component="legend">Architectures</FormLabel>
