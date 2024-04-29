@@ -87,7 +87,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       <TextField fullWidth label="ProdSec Review Jira" variant="outlined"
         {...register("prodSecReviewJira")}
         error={errors.prodSecReviewJira !== undefined}
-        helperText={configData.prodsec_review_jira_help} />
+        helperText="Reach out to the ProdSec OpenShift SME (currently Hardik Vyas <hvyas@redhat.com>) to determine what audit/review process is necessary. What is the ProdSec review Jira you filed?" />
     </Box>
     <Box>
       <TextField fullWidth label="Source GitHub Repository" variant="outlined"
