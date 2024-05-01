@@ -113,7 +113,7 @@ export default function NewContentDone() {
     }}
   >
     <Box>
-      <Typography>Please<Button variant="text" target="_blank" href="https://issues.redhat.com/secure/CreateIssue!default.jspa">create a Jira ticket</Button>for the <strong>ART</strong> component and send it to <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack, with the following content:</Typography>
+      <Typography>Please<Button variant="text" target="_blank" href="https://issues.redhat.com/secure/CreateIssue!default.jspa">create a Jira ticket</Button>for the <strong>ART</strong> project and send it to <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack, with the following content:</Typography>
       <Typography component="h6" sx={{ mt: 2 }}><b>Summary</b></Typography>
       <Typography>[BuildAuto] Add OCP component - {distgit_ns}/{distgitName}</Typography>
       <Typography component="h6" sx={{ mt: 2 }}><b>Description</b></Typography>
