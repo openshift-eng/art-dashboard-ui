@@ -80,6 +80,12 @@ export default function NewContentDone() {
         qe_owner: inputs.deliveryRepoQeOwner,
         release_category: inputs.deliveryRepoReleaseCategory,
         summary: inputs.deliveryRepoSummary,
+        application_categories: inputs.deliveryRepoApplicationCategories,
+        usage_type: inputs.deliveryRepoImageUsageType,
+        multistream: inputs.deliveryRepoContentStructure === 'multistream',
+        content_stream_tags: inputs.deliveryRepoContentStructure == 'multistream' ? inputs.deliveryRepoContentStreams.split(',').map((version) => 'v' + version.trim()) : ['latest'],
+        use_latest: inputs.deliveryRepoContentStructure !== 'multistream',
+        vendor_label: 'redhat',
       }
     };
     return YAML.stringify(result);

@@ -90,6 +90,25 @@ export default function NewContentReview() {
             <TableCell>{inputs.deliveryRepoHostLevelAccess}</TableCell>
           </TableRow>
           <TableRow>
+            <TableCell>Delivery Repository Application Categories</TableCell>
+            <TableCell>{Array.from(inputs.deliveryRepoApplicationCategories).join(', ')}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Image Usage Type</TableCell>
+            <TableCell>{inputs.deliveryRepoImageUsageType}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Delivery Repository Content Structure</TableCell>
+            <TableCell>{inputs.deliveryRepoContentStructure === 'multistream' ? 'Multiple content streams' : 'Single Content stream'}</TableCell>
+          </TableRow>
+          {inputs.deliveryRepoContentStructure === 'multistream' ? (
+              <TableRow>
+                <TableCell>Delivery Repository Content Streams</TableCell>
+                <TableCell>{inputs.deliveryRepoContentStreams}</TableCell>
+              </TableRow>
+            ) : (<></>)
+          }
+          <TableRow>
             <TableCell>Delivery Repository Image Owner</TableCell>
             <TableCell>{inputs.deliveryRepoImageOwner}</TableCell>
           </TableRow>
