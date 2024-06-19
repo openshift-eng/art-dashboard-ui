@@ -5,6 +5,12 @@ import FormLabel from '@mui/material/FormLabel'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Radio from '@mui/material/Radio'
 import TextField from '@mui/material/TextField'
+import Select from '@mui/material/Select'
+import { SelectChangeEvent } from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
+import ListItemText from '@mui/material/ListItemText'
+import FormHelperText from '@mui/material/FormHelperText'
+import InputLabel from '@mui/material/InputLabel'
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { Button, Checkbox, FormGroup, IconButton, Tooltip, Typography } from '@mui/material'
 import * as React from 'react';
@@ -12,6 +18,58 @@ import { Inputs, useNewContentState } from './new-content-state'
 import HelpIcon from '@mui/icons-material/Help';
 import frontendConfig from "../../frontend.config.json"
 import { useState } from 'react';
+
+
+const applicationCategories = [
+  'API Management',
+  'Accounting',
+  'Application Delivery',
+  'Application Server',
+  'Automation',
+  'Backup & Recovery',
+  'Business Intelligence',
+  'Business Process Management',
+  'Capacity Management',
+  'Cloud Management',
+  'Collaboration/Groupware/Messaging',
+  'Configuration Management',
+  'Container Platform / Management',
+  'Content Management/Authoring',
+  'Customer Relationship Management',
+  'Data Store',
+  'Database & Data  Management',
+  'Developer Tools',
+  'Enterprise Resource Planning',
+  'Identity Management',
+  'Integration',
+  'Logging & Metrics',
+  'Management',
+  'Messaging',
+  'Middleware',
+  'Migration',
+  'Mobile Application Development Platform (MADP)',
+  'Monitoring',
+  'Network Management',
+  'Networking',
+  'Operating System',
+  'Other',
+  'Performance Management',
+  'Policy Enforcement',
+  'Programming Languages & Runtimes',
+  'Scheduling',
+  'Search',
+  'Security',
+  'Storage',
+  'Virtualization Platform',
+  'Web Services',
+];
+
+const usageTypeHelperText = [
+  ["Component image", "A container that is deployed as part of a larger piece of software, and not meant to function on its own."],
+  ["Operator bundle", "An Operator bundle contains all of the metadata and configuration files that describe an operator “data” image (operator controller), and all of its dependent containers (operands)."],
+  ["Operator image", "An operator container image that controls other container images (sometimes called operands)."],
+  ["Standalone image", "Standalone images (a.k.a. “application images”) are what end users consume. Use cases range from databases and web servers to applications and services buses."],
+]
 
 export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?: SubmitHandler<Inputs>, defaultValues?: Inputs }) {
   const { activeStep, handleNext, handleBack, inputs, setInputs } = useNewContentState();
@@ -33,7 +91,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     setValue("hasOperatorLabel", !current)
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeArches = (event: React.ChangeEvent<HTMLInputElement>) => {
     let current = getValues().arches;
     let arch = event.target.name.toLowerCase()
     if (event.target.checked) {
@@ -49,6 +107,16 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }
     setValue("arches", current)
   };
+
+  const [selectedAppCategories, setSelectedAppCategories] = React.useState([]);
+
+  const handleChangeAppCategories = (event: SelectChangeEvent<string[]>) => {
+    let newCategories = event.target.value as string[]
+    if (newCategories.length <= 3) {
+      setValue("deliveryRepoApplicationCategories", new Set(newCategories));
+      setSelectedAppCategories(newCategories);
+    }
+};
 
   const values = watch();
 
@@ -222,12 +290,12 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       <FormControl sx={{ m: 2 }} component="fieldset" variant="standard">
         <FormLabel component="legend">Architectures</FormLabel>
         <FormGroup>
-          <FormControlLabel control={<Checkbox name='all' checked={values.arches.has('all')} onChange={handleChange} />} label="All (follows future architectures)" />
+          <FormControlLabel control={<Checkbox name='all' checked={values.arches.has('all')} onChange={handleChangeArches} />} label="All (follows future architectures)" />
           <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
-            <FormControlLabel control={<Checkbox name='x86_64' checked={values.arches.has('x86_64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChange} />} label="x86_64 (amd64)" />
-            <FormControlLabel control={<Checkbox name='s390x' checked={values.arches.has('s390x') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChange} />} label="s390x" />
-            <FormControlLabel control={<Checkbox name='ppc64le' checked={values.arches.has('ppc64le') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChange} />} label="ppc64le" />
-            <FormControlLabel control={<Checkbox name='aarch64' checked={values.arches.has('aarch64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChange} />} label="aarch64 (arm64)" />
+            <FormControlLabel control={<Checkbox name='x86_64' checked={values.arches.has('x86_64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="x86_64 (amd64)" />
+            <FormControlLabel control={<Checkbox name='s390x' checked={values.arches.has('s390x') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="s390x" />
+            <FormControlLabel control={<Checkbox name='ppc64le' checked={values.arches.has('ppc64le') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="ppc64le" />
+            <FormControlLabel control={<Checkbox name='aarch64' checked={values.arches.has('aarch64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="aarch64 (arm64)" />
           </Box>
         </FormGroup>
       </FormControl>
@@ -281,6 +349,86 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                    error={errors.deliveryRepoHostLevelAccess !== undefined}
                    helperText="'Unprivileged' is isolated from the host. 'Privileged' runs as root on the host." />
       </Box>
+      <FormControl sx={{ m: 2 }} component="fieldset" variant="outlined" required fullWidth>
+        <InputLabel id="application-category">Application Categories</InputLabel>
+        <Select
+          label="application-category"
+          multiple
+          value={selectedAppCategories}
+          onChange={handleChangeAppCategories}
+          renderValue={(selected: string[]) => (
+            <div style={{ display: 'flex', flexDirection: "column", flexWrap: 'wrap', whiteSpace: "normal" }}>
+              {selected.join(', ')}
+            </div>
+          )}
+        >
+          {applicationCategories.map((category) => (
+            <MenuItem key={category} value={category}>
+              <Checkbox checked={getValues().deliveryRepoApplicationCategories.has(category)} />
+              <ListItemText primary={category} />
+            </MenuItem>
+          ))}
+        </Select>
+        <FormHelperText>The type(s) of applications this repository is used for (Maximum of 3 can be selected)</FormHelperText>
+      </FormControl>
+      <Box>
+        <FormControl>
+          <FormLabel id="image-usage-type">Image Usage Type</FormLabel>
+          <Controller
+            control={control}
+            name="deliveryRepoImageUsageType"
+            rules={{ required: true }}
+            render={({ field }) => (
+              <RadioGroup
+                aria-labelledby="image-usage-type"
+                {...field}
+              >
+                {usageTypeHelperText.map(([usageType, helperText]) => (
+                  <FormControlLabel control={<Radio value={usageType} />} label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography>{usageType}</Typography>
+                      <Tooltip title={helperText}>
+                        <HelpIcon color='primary' sx={{ mx: 1 }} />
+                      </Tooltip>
+                    </Box>
+                  } />
+                ))}
+              </RadioGroup>
+            )}
+          />
+        </FormControl>
+      </Box>
+      <Box>
+        <FormControl>
+          <FormLabel id="content-structure">Content Structure</FormLabel>
+          <Controller
+            control={control}
+            name="deliveryRepoContentStructure"
+            rules={{ required: true }}
+            render={({ field }) => (
+              <RadioGroup
+                aria-labelledby="content-structure"
+                defaultValue="singlestream"
+                {...field}
+              >
+                <FormControlLabel control={<Radio value="singlestream" />} label="Single content stream" />
+                <FormControlLabel control={<Radio value="multistream" />} label="Multiple content streams" />
+              </RadioGroup>
+            )}
+          />
+        </FormControl>
+      </Box>
+      {
+        values.deliveryRepoContentStructure === "multistream" ? (
+            <Box>
+              <TextField label="Content Streams" variant="outlined" fullWidth
+                         required
+                         {...register("deliveryRepoContentStreams", { required: true, pattern: /^(\d+\.\d+)(,\s*\d+\.\d+)*$/ })}
+                         error={errors.deliveryRepoContentStreams !== undefined}
+                         helperText="Comma separate all maintained releases within this repository (typically x.y)." />
+            </Box>
+        ) : (<></>)
+      }
 
       <Typography component="h1" variant="h6" sx={{ my: 2 }}>Ownership</Typography>
 
