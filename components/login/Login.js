@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { makeApiCall } from '../api_calls/api_calls';
-import styles from 'styles/Login.module.css';
+import styles from '../../styles/Login.module.css';
 import { notification, Button } from 'antd';
 
 export default function Login() {
