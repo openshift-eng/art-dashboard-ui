@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Login from './Login';
-import styles from 'styles/Login.module.css';
+import styles from '../../styles/Login.module.css';
 
 function LoginButton({ isLoginModalOpen, setIsLoginModalOpen }) {
     const modalRef = React.useRef();
