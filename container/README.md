@@ -4,6 +4,7 @@ Clone the repo and run `next dev`. The website will be hosted on `localhost:3000
 Run `next dev -p <port number>` if you want to host the website on a particular port, but make sure that [art-dashboard-backend](https://github.com/openshift-eng/art-dashboard-server)
 is already up and running. Or the dashboard page will not load.
 
+See Notes if you encounter errors while running the commands above
 
 # Production
 
@@ -19,6 +20,7 @@ _(Adding webhooks to automatically start the builds are in the works. Update thi
 
 # Notes
 
+- If, upon running `next dev` or `next build`, you encounter errors such as `Cannot read properties of null (reading 'useContext')` or `Invalid hook call`, try instead `npx next dev` or `npx next build` (these use locally installed NextJS from `node_modules`)
 - `next dev` will load variables from `.env.development` and then values from `.env`. If same values exist in both, the value
 defined in the former will take priority over the latter. In production, when `next build && next start` is run
 values from `.env.production` will take priority over `.env`.
