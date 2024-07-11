@@ -3,7 +3,7 @@ import { getBuilds } from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table";
 import { RocketOutlined, ReloadOutlined, FileImageOutlined } from "@ant-design/icons";
 import Head from "next/head";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, message } from "antd";
 import { useRouter } from 'next/router';
 
 export default function BUILD_HISTORY_HOME() {
@@ -30,6 +30,24 @@ export default function BUILD_HISTORY_HOME() {
         updateURLWithFilters({ ...searchParams, page: pageNo }); // Update searchParams with the new page number
     }
 
+    // Display loading message
+    const displayLoading = useCallback(() => {
+        message.loading({
+            content: "Loading Data",
+            duration: 0,
+            style: { position: "fixed", left: "50%", top: "20%" }
+        });
+    }, []);
+
+    // Destroy loading message
+    const destroyLoading = useCallback(() => {
+        message.destroy();
+        message.success({
+            content: "Loaded",
+            duration: 2,
+            style: { position: "fixed", left: "50%", top: "20%", color: "#316DC1" }
+        });
+    }, []);
 
     const updateURLWithFilters = useCallback((updatedParams) => {
         // Merge the current searchParams with the new parameters
@@ -140,6 +158,7 @@ export default function BUILD_HISTORY_HOME() {
     }, [router]);
 
     useEffect(() => {
+        displayLoading();
         let isMounted = true;
 
         const getData = () => {
@@ -147,6 +166,7 @@ export default function BUILD_HISTORY_HOME() {
                 if (isMounted && fetchedData && Array.isArray(fetchedData["results"])) {
                     setData(fetchedData["results"]);
                     setTotalCount(fetchedData["results"].length);
+                    destroyLoading();
                 }
             });
         };
