@@ -82,24 +82,56 @@ function reducer(state: NewContentState, action: Action): NewContentState {
 export const NewContentContext = createContext<NewContentContext | undefined>(undefined);
 
 export function NewContentStateProvider({ children }: { children: ReactNode }) {
-  const initialValues: Inputs = {
-    componentType: "image",
-    imageType: "other",
-    // imageName: "openshift/ose-foo-bar",
-    // deliveryRepo: "openshift4/ose-foo-bar-rhel9",
-    // dockerfilePath: "/Dockerfile",
-    arches: new Set(["all"]),
-    hasOperatorLabel: false,
-    deliveryRepoApplicationCategories: new Set(),
-    deliveryRepoContentStructure: "singlestream",
-    // distgit: "foo",
-    // productManager: "someone",
-    // sourceRepo: "https://github.com/openshift/foo.git",
-    // bugComponent: "fake-component",
-    // owners: "alice@redhat.com, bob@redhat.com",
-    // rpmPackageName: "openshift-foo",
-    // specfilePath: "/openshift-foo.spec",
-  };
+
+  // Set this to true when you want to run through the workflows without entering values manually.
+  const debugMode = false
+
+  let initialValues: Inputs
+
+  if (debugMode) {
+
+    // Setting some reasonable defaults to help get through the workflows faster for debugging.
+    initialValues = {
+      componentType: "image",
+      imageType: "other",
+      imageName: "openshift/ose-foo-bar",
+      deliveryRepo: "openshift4/ose-foo-bar-rhel9",
+      dockerfilePath: "/Dockerfile",
+      arches: new Set(["all"]),
+      hasOperatorLabel: false,
+      deliveryRepoApplicationCategories: new Set(["Accounting"]),
+      deliveryRepoContentStructure: "singlestream",
+      distgit: "foo",
+      productManager: "someone",
+      sourceRepo: "https://github.com/openshift/foo.git",
+      bugComponent: "fake-component",
+      owners: "fake-alice@redhat.com, fake-bob@redhat.com",
+      rpmPackageName: "openshift-foo",
+      specfilePath: "/openshift-foo.spec",
+      deliveryRepoDisplayName: "sampleDisplayName",
+      deliveryRepoSummary: "sampleSummary",
+      deliveryRepoDescription: "sampleDescription",
+      deliveryRepoReleaseCategory: "sampleReleaseCategory",
+      deliveryRepoHostLevelAccess: "Privileged",
+      deliveryRepoImageUsageType: "Component image",
+      deliveryRepoImageOwner: "fake-image-owner@redhat.com",
+      deliveryRepoProductManager: "Fake Product Manager",
+      deliveryRepoProgramManager: "Fake Program Manager",
+      deliveryRepoQeOwner: "fake-repo-qe-owner@redhat.com",
+      deliveryRepoDocOwner: "fake-repo-doc-owner@redhat.com",
+      deliveryRepoErrataWriter: "fake-repo-errata-writer@redhat.com",
+      prodSecReviewJira: "PRODSEC-9991"
+    }
+  } else {
+    initialValues = {
+      componentType: "image",
+      imageType: "other",
+      arches: new Set(["all"]),
+      hasOperatorLabel: false,
+      deliveryRepoApplicationCategories: new Set(),
+      deliveryRepoContentStructure: "singlestream",
+    }
+  }
   const [{ activeStep, inputs }, dispatch] = useReducer(reducer, {
     activeStep: 0,
     inputs: initialValues,

@@ -384,7 +384,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
                 {...field}
               >
                 {usageTypeHelperText.map(([usageType, helperText]) => (
-                  <FormControlLabel control={<Radio value={usageType} />} label={
+                  <FormControlLabel key={usageType} control={<Radio value={usageType} />} label={
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Typography>{usageType}</Typography>
                       <Tooltip title={helperText}>

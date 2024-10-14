@@ -4,6 +4,16 @@ Clone the repo and run `next dev`. The website will be hosted on `localhost:3000
 Run `next dev -p <port number>` if you want to host the website on a particular port, but make sure that [art-dashboard-backend](https://github.com/openshift-eng/art-dashboard-server)
 is already up and running. Or the dashboard page will not load.
 
+To get local working version using the production backend:
+
+* `git clone https://github.com/openshift-eng/art-dashboard-ui.git; cd art-dashboard-ui`
+* Modify [api_calls.js](components/api_calls/api_calls.js) and change `server_endpoint = "http://localhost:8080"` to `server_endpoint = "https://art-dash-server-art-dashboard-server.apps.artc2023.pc3z.p1.openshiftapps.com"`
+* `npm install`
+* `npx next build`
+* `npx next dev -p 3009`
+* Log onto the Redhat VPN
+* Browse to http://127.0.0.1:3009
+
 See Notes if you encounter errors while running the commands above
 
 # Production
