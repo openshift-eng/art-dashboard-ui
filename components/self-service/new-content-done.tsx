@@ -112,6 +112,44 @@ export default function NewContentDone() {
     return YAML.stringify(result);
   };
 
+  // safeEncodeURIComponent wraps the library function, and additionally encodes
+  // square brackets.  Square brackets are NOT unsafe per RFC1738, but Google and
+  // others mishandle them.
+  const safeEncodeURIComponent = (value) => {
+    return encodeURIComponent(value)
+      .replace('[', '%5B')
+      .replace(']', '%5D')
+      .replace('{', '%7B')
+      .replace('}', '%7D')
+  }
+
+  // Create jira summary.
+  const jiraSummary = `[BuildAuto] Add OCP component - ${distgit_ns}/${distgitName}`
+  const jiraSummaryEncoded = safeEncodeURIComponent(jiraSummary);
+
+  // Combine YAMLs as Jira description
+  const jiraDescription = `${generateYaml()}\n\n${generateHBYaml()}`;
+  const jiraDescriptionEncoded = safeEncodeURIComponent(jiraDescription);
+
+  const releaseWork = safeEncodeURIComponent("Release work")
+
+  const ARTProjectID = "12323120"
+  const ARTStoryTypeID = 17
+
+  // Build the Jira URL
+  let jiraUrl = `https://issues.redhat.com/secure/CreateIssueDetails!init.jspa?priority=10200`
+  jiraUrl += `&pid=${ARTProjectID}`
+  jiraUrl += `&issuetype=${ARTStoryTypeID}`
+  jiraUrl += `&summary=${jiraSummaryEncoded}`
+  jiraUrl += `&description=${jiraDescriptionEncoded}`
+  jiraUrl += `&component=${releaseWork}`
+
+  const handleCreateJira = () => {
+
+    // Open the Jira creation page in a new tab with pre-filled data
+    window.open(jiraUrl, '_blank');
+  };
+
   return (<Box
     component="div"
     sx={{
@@ -119,9 +157,10 @@ export default function NewContentDone() {
     }}
   >
     <Box>
-      <Typography>Please<Button variant="text" target="_blank" href="https://issues.redhat.com/secure/CreateIssue!default.jspa">create a Jira ticket</Button>for the <strong>ART</strong> project and send it to <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack, with the following content:</Typography>
+      <Typography  sx={{ mb: 3 }}>About to make a Jira in the <strong>ART</strong> project using the <strong>Summary</strong> and <strong>Description</strong> below:</Typography>
+      <hr />
       <Typography component="h6" sx={{ mt: 2 }}><b>Summary</b></Typography>
-      <Typography>[BuildAuto] Add OCP component - {distgit_ns}/{distgitName}</Typography>
+      <Typography>{jiraSummary}</Typography>
       <Typography component="h6" sx={{ mt: 2 }}><b>Description</b></Typography>
       <pre>
         {generateYaml()}
@@ -130,9 +169,25 @@ export default function NewContentDone() {
       <pre>
         {generateHBYaml()}
       </pre>
-
+      <hr />
+      <Typography sx={{ mt: 3 }}>
+        Follow these steps:
+      </Typography>
+      <ul>
+        <li>If the above looks good, login to Jira <a href="https://issues.redhat.com/" target="_blank" rel="noopener noreferrer">here</a> (a separate tab will open) then click the "Create Jira" button below</li>
+        <li>In the "Create Issue" page, set the "Reporter" field as your UserId and click the "Create" button at the bottom</li>
+        <li>Send the Jira number to the <strong>ART</strong> project</li>
+        <li>Inform <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack</li>
+      </ul>
     </Box>
     <Box sx={{ py: 2 }}>
+      <Button
+        variant="contained"
+        onClick={handleCreateJira}
+        sx={{ mt: 1, mr: 1 }}
+      >
+        Create Jira
+      </Button>
       <Button
         variant="contained"
         onClick={handleReset}
