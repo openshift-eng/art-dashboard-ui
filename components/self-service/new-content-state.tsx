@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useReducer, useCallback } from "react";
 
 export type Inputs = {
+  imageReleaseVersion?: string,
   componentType?: string,
   distgit?: string,
   productManager?: string,

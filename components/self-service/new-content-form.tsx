@@ -18,7 +18,7 @@ import { Inputs, useNewContentState } from './new-content-state'
 import HelpIcon from '@mui/icons-material/Help';
 import frontendConfig from "../../frontend.config.json"
 import { useState } from 'react';
-
+import OpenshiftVersionSelect from "../release/openshift_version_select";
 
 const applicationCategories = [
   'API Management',
@@ -116,7 +116,12 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       setValue("deliveryRepoApplicationCategories", new Set(newCategories));
       setSelectedAppCategories(newCategories);
     }
-};
+  };
+
+  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-4.17')
+  const handleImageReleaseChange = (version: string) => {
+    setUserImageReleaseVersion(version);
+  }
 
   const values = watch();
 
@@ -129,6 +134,25 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }}
   >
     <Typography component="h1" variant="h5" sx={{ my: 2 }}>General</Typography>
+    <Box>
+      <FormLabel id="openshift-image-version">Onboard image to this OpenShift Version</FormLabel>
+      <Controller
+        control={control}
+        name="imageReleaseVersion"
+        defaultValue={userImageReleaseVersion}
+        render={({ field: { onChange, value } }) => (
+          <OpenshiftVersionSelect
+            initialVersion={value}
+            alignment='left'
+            padding='0px'
+            onVersionChange={(version) => {
+              onChange(version);
+              setUserImageReleaseVersion(version);
+            }}
+          />
+        )}
+      />
+    </Box>
     <Box>
       <FormControl>
         <FormLabel id="component-type-group-label">Component Type</FormLabel>

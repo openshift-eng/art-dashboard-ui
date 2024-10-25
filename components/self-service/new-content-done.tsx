@@ -1,11 +1,19 @@
 import Box from '@mui/material/Box'
-import { Button, Typography } from '@mui/material'
+import { Button, Typography, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import * as React from 'react';
+import { useState } from 'react';
 import { useNewContentState } from './new-content-state'
 import YAML from 'yaml'
+import { makeApiCall } from '../api_calls/api_calls';
 
 export default function NewContentDone() {
   const { activeStep, handleBack, handleReset, inputs } = useNewContentState();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState([]);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const distgit_ns = inputs.componentType == 'rpm' ? 'rpms' : 'containers';
   let web_url = inputs.sourceRepo;
   if (web_url?.endsWith('.git'))
@@ -95,6 +103,7 @@ export default function NewContentDone() {
   const generateYaml = () => {
     const result: Record<string, any> = {
       meta: {
+        release: inputs.imageReleaseVersion,
         payload_name: inputs.payloadName,
         component_type: inputs.componentType,
         distgit_repo: `${distgit_ns}/${distgitName}`,
@@ -112,52 +121,93 @@ export default function NewContentDone() {
     return YAML.stringify(result);
   };
 
-  // safeEncodeURIComponent wraps the library function, and additionally encodes
-  // square brackets.  Square brackets are NOT unsafe per RFC1738, but Google and
-  // others mishandle them.
-  const safeEncodeURIComponent = (value) => {
-    return encodeURIComponent(value)
-      .replace('[', '%5B')
-      .replace(']', '%5D')
-      .replace('{', '%7B')
-      .replace('}', '%7D')
-  }
-
-  // Create jira summary.
   const jiraSummary = `[BuildAuto] Add OCP component - ${distgit_ns}/${distgitName}`
-  const jiraSummaryEncoded = safeEncodeURIComponent(jiraSummary);
 
-  // Combine YAMLs as Jira description
-  const jiraDescription = `${generateYaml()}\n\n${generateHBYaml()}`;
-  const jiraDescriptionEncoded = safeEncodeURIComponent(jiraDescription);
+  const handleSubmitRequest = async () => {
+    const imageName = web_url?.substring(web_url.lastIndexOf('/')+ 1)
+    const jiraDescription = `${generateYaml()}\n\n${generateHBYaml()}`;
+    const ARTProjectID = "ART"
+    const ARTStoryTypeID = "Story"
+    const component = "Release work";
+    const priority = "Normal";
 
-  const releaseWork = safeEncodeURIComponent("Release work")
+    const fileContent = `content:
+    source:
+      dockerfile: Dockerfile.openshift
+      git:
+        branch:
+          target: release-{MAJOR}.{MINOR}
+        url: ${repo_url}
+        web: ${web_url}
+      ci_alignment:
+        streams_prs:
+          ci_build_root:
+            stream: rhel-9-golang-ci-build-root
+  distgit:
+    branch: rhaos-{MAJOR}.{MINOR}-rhel-9
+    component: ${imageName}-container
+  enabled_repos:
+  - rhel-9-appstream-rpms
+  - rhel-9-baseos-rpms
+  for_payload: false
+  from:
+    builder:
+    - stream: rhel-9-golang
+    member: openshift-enterprise-base-rhel9
+  name: openshift/${imageName}-rhel9
+  owners:
+  - ${inputs.deliveryRepoImageOwner}@redhat.com
+`;
 
-  const ARTProjectID = "12323120"
-  const ARTStoryTypeID = 17
+    const params = {
+      image_name: imageName,
+      release_for_image: inputs.imageReleaseVersion,
+      file_content: fileContent,
+      jira_summary: jiraSummary,
+      jira_description: jiraDescription,
+      jira_project_id: ARTProjectID,
+      jira_story_type_id: ARTStoryTypeID,
+      jira_component: component,
+      jira_priority: priority,
 
-  // Build the Jira URL
-  let jiraUrl = `https://issues.redhat.com/secure/CreateIssueDetails!init.jspa?priority=10200`
-  jiraUrl += `&pid=${ARTProjectID}`
-  jiraUrl += `&issuetype=${ARTStoryTypeID}`
-  jiraUrl += `&summary=${jiraSummaryEncoded}`
-  jiraUrl += `&description=${jiraDescriptionEncoded}`
-  jiraUrl += `&component=${releaseWork}`
+      // the default mode is test mode (i.e., create fake PR and Jira) so you can easily
+      // test the UI and API and be intentional about actually creating the PR and Jira.
+      git_test_mode: "false",
+      jira_test_mode: "false"
+    }
 
-  const handleCreateJira = () => {
+    try {
+      const response = await makeApiCall('/api/v1/git_jira_api', 'GET', {}, {}, params, false);
 
-    // Open the Jira creation page in a new tab with pre-filled data
-    window.open(jiraUrl, '_blank');
+      setDialogTitle('Error occurred');
+      if (response.status === "success") {
+        // Track if submitted successfully so we can suppress the SubmitRequest button.
+        // Override the dialog title and content to show Jira and PR URLs.
+        setIsSubmitted(true);
+        setDialogTitle('Jira and PR created successfully:');
+        setDialogContent([response.jira_url, response.pr_url]);
+      } else {
+        setDialogContent([`ART UI server return status: ${response.status}`, `Error message: ${response.error}`]);
+      }
+      setDialogOpen(true);
+    } catch (error) {
+      setDialogContent(['Error in call to ART UI server', `ART UI server error: ${error}`]);
+      setDialogOpen(true);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
   };
 
   return (<Box
     component="div"
     sx={{
-      '& > :not(style)': { m: 2},
+      '& > :not(style)': { m: 2 },
     }}
   >
     <Box>
-      <Typography  sx={{ mb: 3 }}>About to make a Jira in the <strong>ART</strong> project using the <strong>Summary</strong> and <strong>Description</strong> below:</Typography>
+      <Typography sx={{ mb: 3 }}>About to make a Jira in the <strong>ART</strong> project using the <strong>Summary</strong> and <strong>Description</strong> below:</Typography>
       <hr />
       <Typography component="h6" sx={{ mt: 2 }}><b>Summary</b></Typography>
       <Typography>{jiraSummary}</Typography>
@@ -174,19 +224,20 @@ export default function NewContentDone() {
         Follow these steps:
       </Typography>
       <ul>
-        <li>If the above looks good, login to Jira <a href="https://issues.redhat.com/login.jsp?os_destination=%2Fdefault.jsp" target="_blank" rel="noopener noreferrer">here</a> (a separate tab will open) then click the "Create Jira" button below</li>
-        <li>In the "Create Issue" page, set the "Reporter" field as your UserId and click the "Create" button at the bottom</li>
-        <li>Share the ticket to <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack</li>
+        <li>If the above looks good, click SubmitRequest and a Jira and PR will be created</li>
+        <li>Inform <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack about the Jira and PR</li>
       </ul>
     </Box>
     <Box sx={{ py: 2 }}>
-      <Button
-        variant="contained"
-        onClick={handleCreateJira}
-        sx={{ mt: 1, mr: 1 }}
-      >
-        Create Jira
-      </Button>
+      {!isSubmitted && (
+        <Button
+          variant="contained"
+          onClick={handleSubmitRequest}
+          sx={{ mt: 1, mr: 1 }}
+        >
+          SubmitRequest
+        </Button>
+      )}
       <Button
         variant="contained"
         onClick={handleReset}
@@ -201,6 +252,36 @@ export default function NewContentDone() {
       >
         Back
       </Button>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+      >
+        <DialogTitle>{dialogTitle}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {dialogContent.map((text, index) => {
+              return (
+                <span key={index}>
+                  {text.startsWith('https://') ? (
+                    <a href={text} target="_blank" rel="noopener noreferrer">
+                      {text}
+                    </a>
+                  ) : (
+                    text
+                  )}
+                  <br />
+                </span>
+              );
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center' }}>
+          <Button onClick={handleCloseDialog} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   </Box>)
 }
