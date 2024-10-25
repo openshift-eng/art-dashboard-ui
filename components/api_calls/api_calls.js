@@ -7,7 +7,7 @@ axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 let server_endpoint = null;
 
 if (process.env.NEXT_PUBLIC_RUN_ENV === "dev") {
-    server_endpoint = "http://localhost:8080";
+    server_endpoint = "http://chopin2:8080";
 } else {
     server_endpoint = process.env.NEXT_PUBLIC_ART_DASH_SERVER_ROUTE;
 }
@@ -61,5 +61,6 @@ function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}, req 
 }
 
 module.exports = {
-    makeApiCall
+    makeApiCall,
+    server_endpoint
 };
