@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useReducer, useCallback } from "react";
 
 export type Inputs = {
+  imageReleaseVersion?: string,
   componentType?: string,
   distgit?: string,
   productManager?: string,
@@ -84,7 +85,7 @@ export const NewContentContext = createContext<NewContentContext | undefined>(un
 export function NewContentStateProvider({ children }: { children: ReactNode }) {
 
   // Set this to true when you want to run through the workflows without entering values manually.
-  const debugMode = false
+  const debugMode = true
 
   let initialValues: Inputs
 
