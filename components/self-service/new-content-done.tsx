@@ -11,7 +11,8 @@ export default function NewContentDone() {
   const { activeStep, handleBack, handleReset, inputs } = useNewContentState();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogContent, setDialogContent] = useState('');
+  const [dialogContent, setDialogContent] = useState([]);
+  const [dialogTitle, setDialogTitle] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const distgit_ns = inputs.componentType == 'rpm' ? 'rpms' : 'containers';
@@ -167,8 +168,6 @@ export default function NewContentDone() {
       jira_story_type_id: ARTStoryTypeID,
       jira_component: component,
       jira_priority: priority,
-      git_test_mode: "false",
-      jira_test_mode: "false",
     });
 
     const requestUrl = `${server_endpoint}/api/v1/git_jira_api?${params.toString()}`;
@@ -179,17 +178,19 @@ export default function NewContentDone() {
       });
 
       const data = await response.json();
+      setDialogTitle('Error occurred');
       if (data.status === "success") {
-        // Track if submitted successfully so we can suppress the button.
+        // Track if submitted successfully so we can suppress the SubmitRequest button.
+        // Override the dialog title and content to show Jira and PR URLs.
         setIsSubmitted(true);
-        setDialogContent(`${data.jira_url}\n\n${data.pr_url}`);
-        setDialogOpen(true);
+        setDialogTitle('Jira and PR created successfully:');
+        setDialogContent([data.jira_url, data.pr_url]);
       } else {
-        setDialogContent(`Error: ${data.error}`);
-        setDialogOpen(true);
+        setDialogContent(['ART UI server return status: `${data.status}`', `Error message: ${data.error}`]);
       }
+      setDialogOpen(true);
     } catch (error) {
-      setDialogContent(`Failed to create Jira issue: ${error}`);
+      setDialogContent(['Error in call to ART UI server', `ART UI server error: ${error}`]);
       setDialogOpen(true);
     }
   };
@@ -254,20 +255,28 @@ export default function NewContentDone() {
         open={dialogOpen}
         onClose={handleCloseDialog}
       >
-        <DialogTitle>Jira and PR created successfully:</DialogTitle>
+        <DialogTitle>{dialogTitle}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {dialogContent.split('\n\n').map((text, index) => (
-              <span key={index}>
-                {text}
-                <br />
-              </span>
-            ))}
+            {dialogContent.map((text, index) => {
+              return (
+                <span key={index}>
+                  {text.startsWith('https://') ? (
+                    <a href={text} target="_blank" rel="noopener noreferrer">
+                      {text}
+                    </a>
+                  ) : (
+                    text
+                  )}
+                  <br />
+                </span>
+              );
+            })}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center' }}>
           <Button onClick={handleCloseDialog} color="primary">
-            Dismiss
+            OK
           </Button>
         </DialogActions>
       </Dialog>
