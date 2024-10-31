@@ -174,10 +174,9 @@ export default function NewContentDone() {
         Follow these steps:
       </Typography>
       <ul>
-        <li>If the above looks good, login to Jira <a href="https://issues.redhat.com/" target="_blank" rel="noopener noreferrer">here</a> (a separate tab will open) then click the "Create Jira" button below</li>
+        <li>If the above looks good, login to Jira <a href="https://issues.redhat.com/login.jsp?os_destination=%2Fdefault.jsp" target="_blank" rel="noopener noreferrer">here</a> (a separate tab will open) then click the "Create Jira" button below</li>
         <li>In the "Create Issue" page, set the "Reporter" field as your UserId and click the "Create" button at the bottom</li>
-        <li>Send the Jira number to the <strong>ART</strong> project</li>
-        <li>Inform <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack</li>
+        <li>Share the ticket to <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack</li>
       </ul>
     </Box>
     <Box sx={{ py: 2 }}>
