@@ -161,6 +161,7 @@ export default function NewContentDone() {
 
     const params = new URLSearchParams({
       image_name: imageName,
+      release_for_image: inputs.imageReleaseVersion,
       file_content: fileContent,
       jira_summary: jiraSummary,
       jira_description: jiraDescription,

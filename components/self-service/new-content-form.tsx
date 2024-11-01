@@ -118,9 +118,9 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }
   };
 
-  const [imageReleaseVersion, setImageReleaseVersion] = useState("openshift-4.17")
+  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-4.17')
   const handleImageReleaseChange = (version: string) => {
-    setImageReleaseVersion(version);
+    setUserImageReleaseVersion(version);
   }
 
   const values = watch();
@@ -139,7 +139,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       <Controller
         control={control}
         name="imageReleaseVersion"
-        defaultValue={imageReleaseVersion}
+        defaultValue={userImageReleaseVersion}
         render={({ field: { onChange, value } }) => (
           <OpenshiftVersionSelect
             initialVersion={value}
@@ -147,7 +147,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
             padding='0px'
             onVersionChange={(version) => {
               onChange(version);
-              setImageReleaseVersion(version);
+              setUserImageReleaseVersion(version);
             }}
           />
         )}
