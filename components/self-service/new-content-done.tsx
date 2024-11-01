@@ -104,6 +104,7 @@ export default function NewContentDone() {
   const generateYaml = () => {
     const result: Record<string, any> = {
       meta: {
+        release: inputs.imageReleaseVersion,
         payload_name: inputs.payloadName,
         component_type: inputs.componentType,
         distgit_repo: `${distgit_ns}/${distgitName}`,
@@ -169,6 +170,8 @@ export default function NewContentDone() {
       jira_story_type_id: ARTStoryTypeID,
       jira_component: component,
       jira_priority: priority,
+      git_test_mode: "false", // FIXME and remove this before merging
+      jira_test_mode: "false" // FIXME and remove this before merging
     });
 
     const requestUrl = `${server_endpoint}/api/v1/git_jira_api?${params.toString()}`;
@@ -187,7 +190,7 @@ export default function NewContentDone() {
         setDialogTitle('Jira and PR created successfully:');
         setDialogContent([data.jira_url, data.pr_url]);
       } else {
-        setDialogContent(['ART UI server return status: `${data.status}`', `Error message: ${data.error}`]);
+        setDialogContent([`ART UI server return status: ${data.status}`, `Error message: ${data.error}`]);
       }
       setDialogOpen(true);
     } catch (error) {
