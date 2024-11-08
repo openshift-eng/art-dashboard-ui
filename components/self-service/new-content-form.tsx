@@ -17,8 +17,10 @@ import * as React from 'react';
 import { Inputs, useNewContentState } from './new-content-state'
 import HelpIcon from '@mui/icons-material/Help';
 import frontendConfig from "../../frontend.config.json"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { message } from 'antd'
 import OpenshiftVersionSelect from "../release/openshift_version_select";
+import { getReleaseBranchesFromOcpBuildData } from "../api_calls/release_calls";
 
 const applicationCategories = [
   'API Management',
@@ -118,7 +120,52 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }
   };
 
-  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-4.17')
+  const [ocpLatestBranch, setOcpLatestBranch] = useState('openshift-latest');
+  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-release');
+
+  const fetchLatestBranch = () => {
+    getReleaseBranchesFromOcpBuildData()
+      .then((response) => {
+        if (response.hasOwnProperty('detail') && response['detail'] === 'Request failed') {
+          console.log("response=", response)
+          throw new Error(`API call to getReleaseBranchesFromOcpBuildData returned error: ${response}`);
+        }
+        return response;
+      })
+      .then((loopData) => {
+        const branches = loopData.map(detail => detail.name);
+        branches.sort((a, b) => {
+          const versionA = a.match(/\d+\.\d+/)[0].split('.').map(Number);
+          const versionB = b.match(/\d+\.\d+/)[0].split('.').map(Number);
+          return versionB[0] - versionA[0] || versionB[1] - versionA[1];
+        });
+
+        const latestBranch = branches[0];
+        setOcpLatestBranch(latestBranch);
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          console.log('Fetch aborted');
+        } else {
+          console.error("Failed to fetch branches:", error);
+        }
+      })
+  };
+
+  useEffect(() => {
+    fetchLatestBranch();
+
+    message.loading({
+      content: 'Determining latest Openshift version...',
+      duration: 1,
+      style: {position: "fixed", left: "50%", top: "20%"}
+    })
+  }, []);
+
+  useEffect(() => {
+    setUserImageReleaseVersion(ocpLatestBranch);
+  }, [ocpLatestBranch]);
+
   const handleImageReleaseChange = (version: string) => {
     setUserImageReleaseVersion(version);
   }
@@ -142,9 +189,10 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         defaultValue={userImageReleaseVersion}
         render={({ field: { onChange, value } }) => (
           <OpenshiftVersionSelect
-            initialVersion={value}
+            initialVersion={userImageReleaseVersion}
             alignment='left'
             padding='0px'
+            useDefaultValue={false}
             onVersionChange={(version) => {
               onChange(version);
               setUserImageReleaseVersion(version);
