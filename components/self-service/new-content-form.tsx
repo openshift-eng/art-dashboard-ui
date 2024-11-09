@@ -120,21 +120,28 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }
   };
 
-  const [ocpLatestBranch, setOcpLatestBranch] = useState('openshift-latest');
-  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-release');
+  const [ocpLatestBranch, setOcpLatestBranch] = useState('openshift-TBD');
+  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-TBD');
+
+  type BranchObject = {
+    name: string;
+    // there are more fields returned by getReleaseBranchesFromOcpBuildData(),
+    // but here we only care about the name
+  };
 
   const fetchLatestBranch = () => {
     getReleaseBranchesFromOcpBuildData()
-      .then((response) => {
+      .then((response: BranchObject[] | { detail: string }) => {
         if (response.hasOwnProperty('detail') && response['detail'] === 'Request failed') {
-          console.log("response=", response)
+          console.log("Error in call to getReleaseBranchesFromOcpBuildData, response=", response)
           throw new Error(`API call to getReleaseBranchesFromOcpBuildData returned error: ${response}`);
         }
         return response;
       })
-      .then((loopData) => {
-        const branches = loopData.map(detail => detail.name);
+      .then((branchList: BranchObject[]) => {
+        const branches = branchList.map(detail => detail.name);
         branches.sort((a, b) => {
+          // Sort by major.minor version (latest first)
           const versionA = a.match(/\d+\.\d+/)[0].split('.').map(Number);
           const versionB = b.match(/\d+\.\d+/)[0].split('.').map(Number);
           return versionB[0] - versionA[0] || versionB[1] - versionA[1];
@@ -143,12 +150,12 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         const latestBranch = branches[0];
         setOcpLatestBranch(latestBranch);
       })
-      .catch((error) => {
-        if (error.name === 'AbortError') {
-          console.log('Fetch aborted');
-        } else {
-          console.error("Failed to fetch branches:", error);
-        }
+      .catch((error: Error) => {
+
+        // Worst case, we just use openshift-4.17
+        console.log("Failed to fetch branches using getReleaseBranchesFromOcpBuildData:", error);
+        console.log("Using default branch name: openshift-4.17");
+        setOcpLatestBranch('openshift-4.17');
       })
   };
 
@@ -159,16 +166,16 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       content: 'Determining latest Openshift version...',
       duration: 1,
       style: {position: "fixed", left: "50%", top: "20%"}
-    })
+    });
+
+    return () => {
+      message.destroy();
+    };
   }, []);
 
   useEffect(() => {
     setUserImageReleaseVersion(ocpLatestBranch);
   }, [ocpLatestBranch]);
-
-  const handleImageReleaseChange = (version: string) => {
-    setUserImageReleaseVersion(version);
-  }
 
   const values = watch();
 

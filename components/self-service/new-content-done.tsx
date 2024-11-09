@@ -3,6 +3,7 @@ import { Button, Typography, Dialog, DialogActions, DialogContent, DialogContent
 import * as React from 'react';
 import { useState } from 'react';
 import { useNewContentState } from './new-content-state'
+import { message }  from 'antd';
 import YAML from 'yaml'
 import { makeApiCall } from '../api_calls/api_calls';
 
@@ -124,6 +125,11 @@ export default function NewContentDone() {
   const jiraSummary = `[BuildAuto] Add OCP component - ${distgit_ns}/${distgitName}`
 
   const handleSubmitRequest = async () => {
+
+    // Use this to remove the button immediately to avoid the user being able to
+    // click while a request is being processed.
+    setIsSubmitted(true);
+
     const imageName = web_url?.substring(web_url.lastIndexOf('/')+ 1)
     const jiraDescription = `${generateYaml()}\n\n${generateHBYaml()}`;
     const ARTProjectID = "ART"
@@ -177,22 +183,33 @@ export default function NewContentDone() {
     }
 
     try {
+      message.loading({
+        content: 'Creating PR and Jira ...',
+        duration: 0
+      });
       const response = await makeApiCall('/api/v1/git_jira_api', 'GET', {}, {}, params, false);
-
       setDialogTitle('Error occurred');
       if (response.status === "success") {
-        // Track if submitted successfully so we can suppress the SubmitRequest button.
         // Override the dialog title and content to show Jira and PR URLs.
-        setIsSubmitted(true);
         setDialogTitle('Jira and PR created successfully:');
         setDialogContent([response.jira_url, response.pr_url]);
       } else {
         setDialogContent([`ART UI server return status: ${response.status}`, `Error message: ${response.error}`]);
+
+        // If the call to ART UI server failed, we should allow the user to try again.
+        setIsSubmitted(false);
       }
       setDialogOpen(true);
     } catch (error) {
       setDialogContent(['Error in call to ART UI server', `ART UI server error: ${error}`]);
       setDialogOpen(true);
+
+      // If the call to ART UI server failed, we should allow the user to try again.
+      setIsSubmitted(false);
+    } finally {
+
+      // Ensure we get rid of the loading message whether the and Jira and PR creation succeeded or not.
+      message.destroy();
     }
   };
 
@@ -224,7 +241,7 @@ export default function NewContentDone() {
         Follow these steps:
       </Typography>
       <ul>
-        <li>If the above looks good, click SubmitRequest and a Jira and PR will be created</li>
+        <li>If the above looks good, click the Submit Request button and a Jira and PR will be created</li>
         <li>Inform <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack about the Jira and PR</li>
       </ul>
     </Box>
@@ -235,7 +252,7 @@ export default function NewContentDone() {
           onClick={handleSubmitRequest}
           sx={{ mt: 1, mr: 1 }}
         >
-          SubmitRequest
+          Submit Request
         </Button>
       )}
       <Button

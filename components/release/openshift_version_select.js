@@ -4,7 +4,7 @@ import {getReleaseBranchesFromOcpBuildData} from "../api_calls/release_calls";
 
 const {Option} = Select;
 
-function OpenshiftVersionSelect({ onVersionChange, initialVersion, alignment='right', padding='30px', redirectOnSelect=false, useDefaultValue=true}) {
+function OpenshiftVersionSelect({ onVersionChange, initialVersion, alignment='right', padding='30px', redirectOnSelect=false, useDefaultValue=true }) {
     const [data, setData] = useState([]);
 
     const setDataFunc = () => {
