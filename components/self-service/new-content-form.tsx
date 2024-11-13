@@ -80,6 +80,9 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     defaultValues: inputs,
   });
   const onSubmitHandler: SubmitHandler<Inputs> = data => {
+    // Because the image release version is determined dynamically and stored in a variable
+    // separate from the form, we need to update the data before updating the inputs.
+    data.imageReleaseVersion = userImageReleaseVersion
     console.log("data=", data);
     setInputs(data);
     if (onSubmit) {

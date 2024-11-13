@@ -56,7 +56,17 @@ function makeApiCall(urlPath, method, data = {}, headers = {}, params = {}, req 
     })
     .catch(error => {
         console.error("API call failed:", error);
-        return { detail: 'Request failed' };
+
+        // If an error occurred, attempt to strigify the response data and
+        // include it in the error message so that it can be displayed in the UI.
+        let errorDetails = error.message;
+        try {
+            const errorResponseData = JSON.stringify(error.response?.data);
+            errorDetails += `, ${errorResponseData}`;
+        } catch (error) {
+            console.error("Error parsing response data:", error);
+        }
+        return { detail: 'Request failed', 'message': `${errorDetails}` };
     });
 }
 

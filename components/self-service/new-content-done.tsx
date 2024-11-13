@@ -189,13 +189,15 @@ export default function NewContentDone() {
       });
       const response = await makeApiCall('/api/v1/git_jira_api', 'GET', {}, {}, params, false);
       setDialogTitle('Error occurred');
-      if (response.status === "success") {
+      if (response?.status === "success") {
         // Override the dialog title and content to show Jira and PR URLs.
         setDialogTitle('Jira and PR created successfully:');
         setDialogContent([response.jira_url, response.pr_url]);
       } else {
-        setDialogContent([`ART UI server return status: ${response.status}`, `Error message: ${response.error}`]);
-
+        setDialogContent([`ART UI server return status: ${response?.status}`,
+                          `Error message: ${response?.error}`,
+                          `Other error: ${response?.detail}`,
+                          `Other message: ${response?.message}`]);
         // If the call to ART UI server failed, we should allow the user to try again.
         setIsSubmitted(false);
       }
