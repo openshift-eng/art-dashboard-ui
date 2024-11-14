@@ -551,7 +551,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       </Box>
       <Box>
         <TextField label="Errata Writer" variant="outlined" fullWidth
-                   {...register("deliveryRepoErrataWriter", { required: true})}
+                   {...register("deliveryRepoErrataWriter", { required: false})}
                    helperText="[OPTIONAL] If different from Documentation Writer. Email(s) of Customer Content Services contact(s) responsible for writing Errata text for this repository. Can be comma separated." />
       </Box>
 

@@ -138,31 +138,31 @@ export default function NewContentDone() {
     const priority = "Normal";
 
     const fileContent = `content:
-    source:
-      dockerfile: Dockerfile.openshift
-      git:
-        branch:
-          target: release-{MAJOR}.{MINOR}
-        url: ${repo_url}
-        web: ${web_url}
-      ci_alignment:
-        streams_prs:
-          ci_build_root:
-            stream: rhel-9-golang-ci-build-root
-  distgit:
-    branch: rhaos-{MAJOR}.{MINOR}-rhel-9
-    component: ${imageName}-container
-  enabled_repos:
-  - rhel-9-appstream-rpms
-  - rhel-9-baseos-rpms
-  for_payload: false
-  from:
-    builder:
-    - stream: rhel-9-golang
-    member: openshift-enterprise-base-rhel9
-  name: openshift/${imageName}-rhel9
-  owners:
-  - ${inputs.deliveryRepoImageOwner}@redhat.com
+  source:
+    dockerfile: Dockerfile.openshift
+    git:
+      branch:
+        target: release-{MAJOR}.{MINOR}
+      url: ${repo_url}
+      web: ${web_url}
+    ci_alignment:
+      streams_prs:
+        ci_build_root:
+          stream: rhel-9-golang-ci-build-root
+distgit:
+  branch: rhaos-{MAJOR}.{MINOR}-rhel-9
+  component: ${imageName}-container
+enabled_repos:
+- rhel-9-appstream-rpms
+- rhel-9-baseos-rpms
+for_payload: false
+from:
+  builder:
+  - stream: rhel-9-golang
+  member: openshift-enterprise-base-rhel9
+name: openshift/${imageName}-rhel9
+owners:
+- ${inputs.deliveryRepoImageOwner}@redhat.com
 `;
 
     const params = {
