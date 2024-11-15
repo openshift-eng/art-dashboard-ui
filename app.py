@@ -63,20 +63,22 @@ class KonfluxBuildHistory(Flask):
     async def query(self, params: dict):
         self.logger.info("Search Parameters: %s", params)
 
-        results = await self.konflux_db.search_builds_by_fields(
+        builds = await self.konflux_db.search_builds_by_fields(
             start_search=datetime.now() - timedelta(days=7),
             where={
                 'name': params['name'],
+                'group': params['version'],
+                'outcome': params['outcome'],
                 'engine': 'konflux',
-                'group': params['version']
             }
         )
 
-        self.logger.info(results)
-
+        self.logger.info(builds)
         results = [
-            {"Name": "Result 1 - Param 1", "Outcome": "Success", "OCP version": "v1.0"},
-            {"Name": "Result 2 - Param 2", "Outcome": "Failure", "OCP version": "v2.0"}
+            {
+                "Name": b.name,
+                "Outcome": str(b.outcome), "OCP version": b.group
+            } for b in builds
         ]
 
         # Return the results as JSON
