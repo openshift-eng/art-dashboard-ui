@@ -2,7 +2,7 @@ import logging
 import subprocess
 from datetime import datetime, timedelta
 
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord
+from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 
@@ -81,6 +81,7 @@ class KonfluxBuildHistory(Flask):
             where=where_clauses
         )
 
+
         self._logger.info(builds)
         results = [
             {
@@ -88,7 +89,7 @@ class KonfluxBuildHistory(Flask):
                 "Outcome": str(b.outcome),
                 "Assembly": b.assembly,
                 "Group": b.group,
-            } for b in builds
+            } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
         ]
 
         # Return the results as JSON
