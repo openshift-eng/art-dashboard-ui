@@ -33,7 +33,7 @@ document.getElementById("searchButton").addEventListener("click", function () {
 
                 // Create the row
                 row.innerHTML = `
-                    <td>${result.NVR}</td>
+                    <td class="nvr-td">${result.NVR}</td>
                     <td>${outcomeDisplay}</td>
                     <td>${result["Assembly"]}</td>
                     <td>${result["Group"]}</td>

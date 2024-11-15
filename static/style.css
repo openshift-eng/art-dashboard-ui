@@ -121,8 +121,12 @@ table {
 th, td {
     padding: 10px;
     border: 1px solid #444;
-    text-align: left;
+    text-align: center;
     color: #f0f0f0;
+}
+
+td.nvr-td {
+    text-align: left;
 }
 
 th {
