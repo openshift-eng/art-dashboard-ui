@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <button id="toggleButton" class="toggle-btn">❮</button>
+            <!--<h2>Search Parameters</h2>-->
+            <form id="searchForm">
+                <!-- Ten input fields for parameters -->
+                <div class="input-container">
+                    <label for="Name">Name</label>
+                    <input type="text" id="Name" name="param1">
+                </div>
+                <div class="input-container">
+                    <label for="Outcome">Outcome</label>
+                    <select id="Outcome" name="param2">
+                        <option value="success">✅</option>
+                        <option value="failure">❌</option>
+                        <option value="both" selected>Both</option>
+                    </select>
+                </div>
+                <div class="input-container">
+                    <label for="version">OCP version</label>
+                    <input type="text" id="version" name="param3">
+                </div>
+                
+                <button type="button" id="searchButton">Search</button>
+            </form>
+        </div>
+        
+        <div class="results-container">
+            <h2>Search Results</h2>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Outcome</th>
+                        <th>OCP version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sample rows for visualization -->
+                    <tr>
+                        <td>Result 1 - Param 1</td>
+                        <td>✅</td>
+                        <td>4.10</td>
+                    </tr>
+                    <tr>
+                        <td>Result 2 - Param 1</td>
+                        <td>❌</td>
+                        <td>4.8</td>
+                    </tr>
+                    <tr>
+                        <td>Result 3 - Param 1</td>
+                        <td>✅</td>
+                        <td>4.9</td>
+                    </tr>
+                    <!-- Additional sample rows can be added if needed -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
