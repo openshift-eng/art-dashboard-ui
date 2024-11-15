@@ -2,7 +2,6 @@ import logging
 import subprocess
 from datetime import datetime, timedelta
 
-import pytz
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
@@ -101,6 +100,8 @@ class KonfluxBuildHistory(Flask):
         # Return the results as JSON
         return jsonify(results)
 
+app = KonfluxBuildHistory()
+
 
 if __name__ == "__main__":
-    KonfluxBuildHistory().run(debug=True)
+    app.run(debug=True)

@@ -13,6 +13,7 @@ function hideLoading() {
 }
 
 document.getElementById("searchButton").addEventListener("click", function () {
+    noResultsMessage.style.display = "none";
     showLoading();
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
