@@ -102,6 +102,21 @@ button:hover {
     background-color: #45a049;
 }
 
+#clearButton {
+    background-color: #f44336; /* Red color for the Clear button */
+    color: #fff; /* White text */
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 10px;
+}
+
+#clearButton:hover {
+    background-color: #e53935; /* Darker red on hover */
+}
+
 .results-container {
     flex-grow: 1;
     padding: 20px;

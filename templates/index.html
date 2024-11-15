@@ -12,12 +12,12 @@
             <button id="toggleButton" class="toggle-btn">❮</button>
             <form id="searchForm" method="POST" action="/search">
                 <div class="input-container">
-                    <label for="Name">Name</label>
-                    <input type="text" id="Name" name="name">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name">
                 </div>
                 <div class="input-container">
-                    <label for="Outcome">Outcome</label>
-                    <select id="Outcome" name="outcome">
+                    <label for="outcome">Outcome</label>
+                    <select id="outcome" name="outcome">
                         <option value="success">✅</option>
                         <option value="failure">❌</option>
                         <option value="both" selected>Both</option>
@@ -34,6 +34,7 @@
                     <input type="text" id="assembly" name="assembly" value="stream">
                 </div>
                 <button type="button" id="searchButton">Search</button>
+                <button type="button" id="clearButton">Clear</button>
             </form>
         </div>
         

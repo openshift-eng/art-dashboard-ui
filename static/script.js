@@ -88,3 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch((error) => console.error("Error fetching versions:", error));
 });
+
+document.getElementById("clearButton").addEventListener("click", function () {
+    // Reset all form fields to their default values
+    const form = document.getElementById("searchForm");
+    form.reset();
+
+    document.getElementById("outcome").value = ""; // Set default value for Outcome dropdown
+    document.getElementById("group").value = ""; // Clear version input field
+    document.getElementById("name").value = ""; // Clear version input field
+    document.getElementById("assembly").value = ""; // Reset to default Assembly value
+});
