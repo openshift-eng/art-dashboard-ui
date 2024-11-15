@@ -2,6 +2,7 @@ import logging
 import subprocess
 from datetime import datetime, timedelta
 
+import pytz
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
@@ -68,9 +69,10 @@ class KonfluxBuildHistory(Flask):
 
         where_clauses = {
             'group': params['group'],
-            'assembly': params['assembly'] if params['assembly'] else 'stream',
             'engine': 'konflux',
         }
+        if params['assembly']:
+            where_clauses['assembly'] = params['assembly']
         if params['name']:
             where_clauses['name'] = params['name']
         if params['outcome'] != 'both':
@@ -78,7 +80,8 @@ class KonfluxBuildHistory(Flask):
 
         builds = await self.konflux_db.search_builds_by_fields(
             start_search=datetime.now() - DELTA_SEARCH,
-            where=where_clauses
+            where=where_clauses,
+            order_by='end_time'
         )
 
 
@@ -89,6 +92,9 @@ class KonfluxBuildHistory(Flask):
                 "Outcome": str(b.outcome),
                 "Assembly": b.assembly,
                 "Group": b.group,
+                "Completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
+                "Pipeline URL": b.build_pipeline_url,
+                "ART job URL": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
         ]
 

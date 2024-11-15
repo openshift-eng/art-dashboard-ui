@@ -184,3 +184,14 @@ select option {
     text-align: center;
     display: none; /* Hidden by default */
 }
+
+.results-container a {
+    color: #4caf50;
+    text-decoration: none; /* Remove underline */
+    font-weight: normal;
+}
+
+.results-container a:hover {
+    color: #81e886 !important; /* Brighter green */
+    text-decoration: underline;
+}
