@@ -38,6 +38,9 @@
         </div>
         
         <div class="results-container">
+            <div id="loadingOverlay">
+                <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
+            </div>
             <h2>Search Results</h2>
             <table id="resultsTable">
                 <thead>

@@ -4,7 +4,16 @@ document.getElementById("toggleButton").addEventListener("click", function() {
     this.innerHTML = sidebar.classList.contains("collapsed") ? "❯" : "❮";
 });
 
+function showLoading() {
+    document.getElementById("loadingOverlay").style.display = "flex";
+}
+
+function hideLoading() {
+    document.getElementById("loadingOverlay").style.display = "none";
+}
+
 document.getElementById("searchButton").addEventListener("click", function () {
+    showLoading()
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
@@ -40,6 +49,8 @@ document.getElementById("searchButton").addEventListener("click", function () {
                 `;
                 tableBody.appendChild(row);
             });
+
+            hideLoading()
         })
         .catch((error) => {
             console.error("Error:", error);
@@ -48,6 +59,9 @@ document.getElementById("searchButton").addEventListener("click", function () {
 
 document.addEventListener("DOMContentLoaded", () => {
     const versionDropdown = document.getElementById("group");
+
+    // Ensure the loading overlay is hidden initially
+    hideLoading();
 
     // Fetch the versions from the server
     fetch("/get_versions")
