@@ -1,27 +1,43 @@
+import logging
+
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+class App(Flask):
+    def __init__(self):
+        super().__init__(__name__)
+        self._logger = logging.getLogger(__name__)  # logger field is already used by Flask, not overwriting
+        self.init_logger()
+        self.add_routes()
 
+    def init_logger(self):
+        formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        self._logger.addHandler(handler)
+        self._logger.propagate = False
+        self._logger.level = logging.INFO
 
-@app.route("/search", methods=["POST"])
-def search():
-    # Retrieve parameters from the request
-    params = request.form.to_dict()
-    print("Search Parameters:", params)  # Debugging
+    def add_routes(self):
+        @self.route("/")
+        def index():
+            return render_template("index.html")
 
-    # Perform your search logic here (replace with actual backend logic)
-    results = [
-        {"Name": "Result 1 - Param 1", "Outcome": "Success", "OCP version": "v1.0"},
-        {"Name": "Result 2 - Param 2", "Outcome": "Failure", "OCP version": "v2.0"}
-    ]
+        @self.route("/search", methods=["POST"])
+        def search():
+            return self.query(request.form.to_dict())
 
-    # Return the results as JSON
-    return jsonify(results)
+    def query(self, params: dict):
+        self.logger.info("Search Parameters: %s", params)
+
+        results = [
+            {"Name": "Result 1 - Param 1", "Outcome": "Success", "OCP version": "v1.0"},
+            {"Name": "Result 2 - Param 2", "Outcome": "Failure", "OCP version": "v2.0"}
+        ]
+
+        # Return the results as JSON
+        return jsonify(results)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    App().run(debug=True)
