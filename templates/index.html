@@ -10,9 +10,7 @@
     <div class="main-container">
         <div class="sidebar" id="sidebar">
             <button id="toggleButton" class="toggle-btn">❮</button>
-            <!--<h2>Search Parameters</h2>-->
             <form id="searchForm" method="POST" action="/search">
-                <!-- Ten input fields for parameters -->
                 <div class="input-container">
                     <label for="Name">Name</label>
                     <input type="text" id="Name" name="name">
@@ -26,10 +24,14 @@
                     </select>
                 </div>
                 <div class="input-container">
-                    <label for="version">OCP version</label>
-                    <select id="version" name="version">
+                    <label for="group">Group</label>
+                    <select id="group" name="group">
                         <!-- Options will be populated dynamically -->
                     </select>
+                </div>
+                <div class="input-container">
+                    <label for="assembly">Assembly</label>
+                    <input type="text" id="assembly" name="assembly" value="stream">
                 </div>
                 <button type="button" id="searchButton">Search</button>
             </form>
@@ -40,9 +42,10 @@
             <table id="resultsTable">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th>NVR</th>
                         <th>Outcome</th>
-                        <th>OCP version</th>
+                        <th>Assembly</th>
+                        <th>Group</th>
                     </tr>
                 </thead>
                 <tbody>

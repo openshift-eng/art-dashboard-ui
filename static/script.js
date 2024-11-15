@@ -33,9 +33,10 @@ document.getElementById("searchButton").addEventListener("click", function () {
 
                 // Create the row
                 row.innerHTML = `
-                    <td>${result.Name}</td>
+                    <td>${result.NVR}</td>
                     <td>${outcomeDisplay}</td>
-                    <td>${result["OCP version"]}</td>
+                    <td>${result["Assembly"]}</td>
+                    <td>${result["Group"]}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -46,7 +47,7 @@ document.getElementById("searchButton").addEventListener("click", function () {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const versionDropdown = document.getElementById("version");
+    const versionDropdown = document.getElementById("group");
 
     // Fetch the versions from the server
     fetch("/get_versions")

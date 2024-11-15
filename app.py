@@ -6,6 +6,9 @@ from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 
+# How far back should we search for builds?
+DELTA_SEARCH = timedelta(days=180)
+
 
 class KonfluxBuildHistory(Flask):
     def __init__(self):
@@ -61,23 +64,30 @@ class KonfluxBuildHistory(Flask):
                 raise RuntimeError('No matches found or an error occurred.')
 
     async def query(self, params: dict):
-        self.logger.info("Search Parameters: %s", params)
+        self._logger.info("Search Parameters: %s", params)
+
+        where_clauses = {
+            'group': params['group'],
+            'assembly': params['assembly'] if params['assembly'] else 'stream',
+            'engine': 'konflux',
+        }
+        if params['name']:
+            where_clauses['name'] = params['name']
+        if params['outcome'] != 'both':
+            where_clauses['outcome'] = params['outcome']
 
         builds = await self.konflux_db.search_builds_by_fields(
-            start_search=datetime.now() - timedelta(days=7),
-            where={
-                'name': params['name'],
-                'group': params['version'],
-                'outcome': params['outcome'],
-                'engine': 'konflux',
-            }
+            start_search=datetime.now() - DELTA_SEARCH,
+            where=where_clauses
         )
 
-        self.logger.info(builds)
+        self._logger.info(builds)
         results = [
             {
-                "Name": b.name,
-                "Outcome": str(b.outcome), "OCP version": b.group
+                "NVR": b.nvr,
+                "Outcome": str(b.outcome),
+                "Assembly": b.assembly,
+                "Group": b.group,
             } for b in builds
         ]
 
