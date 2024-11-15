@@ -44,3 +44,24 @@ document.getElementById("searchButton").addEventListener("click", function () {
             console.error("Error:", error);
         });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const versionDropdown = document.getElementById("version");
+
+    // Fetch the versions from the server
+    fetch("/get_versions")
+        .then((response) => response.json())
+        .then((versions) => {
+            // Clear the dropdown
+            versionDropdown.innerHTML = "";
+
+            // Populate the dropdown with fetched options
+            versions.forEach((version) => {
+                const option = document.createElement("option");
+                option.value = version;
+                option.textContent = version;
+                versionDropdown.appendChild(option);
+            });
+        })
+        .catch((error) => console.error("Error fetching versions:", error));
+});
