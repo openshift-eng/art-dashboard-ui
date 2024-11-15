@@ -176,3 +176,11 @@ select option {
 #loadingOverlay img {
     width: 100px; /* Adjust size of the GIF */
 }
+
+#noResultsMessage {
+    font-size: 1.5em;
+    margin-top: 50px;
+    color: #f0f0f0; /* Matches the page text color */
+    text-align: center;
+    display: none; /* Hidden by default */
+}

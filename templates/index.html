@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Interface</title>
+    <title>ART Konflux build history</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -41,7 +41,6 @@
             <div id="loadingOverlay">
                 <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
             </div>
-            <h2>Search Results</h2>
             <table id="resultsTable">
                 <thead>
                     <tr>
@@ -54,6 +53,9 @@
                 <tbody>
                 </tbody>
             </table>
+            <p id="noResultsMessage" style="display: none; text-align: center; color: #f0f0f0;">
+                No builds have been found for the given parameters.
+            </p>
         </div>
     </div>
 
