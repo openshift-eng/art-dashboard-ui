@@ -11,7 +11,7 @@
         <div class="sidebar" id="sidebar">
             <button id="toggleButton" class="toggle-btn">❮</button>
             <!--<h2>Search Parameters</h2>-->
-            <form id="searchForm">
+            <form id="searchForm" method="POST" action="/search">
                 <!-- Ten input fields for parameters -->
                 <div class="input-container">
                     <label for="Name">Name</label>
@@ -45,23 +45,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Sample rows for visualization -->
-                    <tr>
-                        <td>Result 1 - Param 1</td>
-                        <td>✅</td>
-                        <td>4.10</td>
-                    </tr>
-                    <tr>
-                        <td>Result 2 - Param 1</td>
-                        <td>❌</td>
-                        <td>4.8</td>
-                    </tr>
-                    <tr>
-                        <td>Result 3 - Param 1</td>
-                        <td>✅</td>
-                        <td>4.9</td>
-                    </tr>
-                    <!-- Additional sample rows can be added if needed -->
                 </tbody>
             </table>
         </div>
