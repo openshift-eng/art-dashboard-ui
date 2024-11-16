@@ -52,6 +52,7 @@ document.getElementById("searchButton").addEventListener("click", function () {
                         <td>${result["Assembly"]}</td>
                         <td>${result["Group"]}</td>
                         <td>${result["Completed"]}</td>
+                        <td><a href="${result["Source"]}" target="_blank">Source URL</a></td>
                         <td><a href="${result["Pipeline URL"]}" target="_blank">Pipeline URL</a></td>
                         <td><a href="${result["ART job URL"]}" target="_blank">ART Job URL</a></td>
                     `;

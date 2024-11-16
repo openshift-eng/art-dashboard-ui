@@ -92,6 +92,7 @@ class KonfluxBuildHistory(Flask):
                 "Assembly": b.assembly,
                 "Group": b.group,
                 "Completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
+                "Source": f'{b.source_repo}/tree/{b.commitish}',
                 "Pipeline URL": b.build_pipeline_url,
                 "ART job URL": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
