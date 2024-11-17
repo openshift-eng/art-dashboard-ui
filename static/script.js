@@ -146,8 +146,14 @@ function matchesFilters(result, filterParams) {
         if (!value) continue; // Skip empty filter values
 
             if (key === "name") {
-                if (value && result['name'].toLowerCase() != value) {
-                    return false;
+                try {
+                    const regex = new RegExp(value, "i"); // Create a case-insensitive regex
+                    if (!regex.test(result["name"])) {
+                        return false; // Return false if regex does not match
+                    }
+                } catch (e) {
+                    console.error(`Invalid regex for 'name': ${value}`, e);
+                    return false; // If regex is invalid, consider it not matching
                 }
             } else if (key === "outcome") {
                 if (value != 'both' && result['outcome'] != value) {
