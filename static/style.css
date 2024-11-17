@@ -108,11 +108,11 @@ button {
 }
 
 #filterButton {
-    background-color: #2196f3; /* Light blue */
+    background-color: #2196f3;
 }
 
 #filterButton:hover {
-    background-color: #1e88e5; /* Slightly darker blue */
+    background-color: #1e88e5;
 }
 
 button:hover {
@@ -120,11 +120,11 @@ button:hover {
 }
 
 #clearButton {
-    background-color: #f44336; /* Red color for the Clear button */
+    background-color: #f17208;
 }
 
 #clearButton:hover {
-    background-color: #e53935; /* Darker red on hover */
+    background-color: #f17c1a;
 }
 
 .results-container {
@@ -203,17 +203,17 @@ select option {
 }
 
 .results-container {
-    position: relative; /* Ensure the container is the reference for #loadingOverlay */
+    position: relative;
 }
 
 #loadingOverlay img {
-    width: 100px; /* Adjust size of the GIF */
+    width: 100px;
 }
 
 #noResultsMessage {
     font-size: 1.5em;
     margin-top: 50px;
-    color: #f0f0f0; /* Matches the page text color */
+    color: #f0f0f0;
     text-align: center;
     display: none; /* Hidden by default */
 }
@@ -225,7 +225,7 @@ select option {
 }
 
 .results-container a:hover {
-    color: #81e886 !important; /* Brighter green */
+    color: #81e886 !important;
     text-decoration: underline;
 }
 
@@ -234,7 +234,7 @@ select option {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #333; /* Dark background close to the container */
+    background-color: #333;
     color: white;
     text-align: center;
     padding: 5px;
@@ -247,8 +247,8 @@ select option {
 }
 
 #statusText {
-    text-align: center;   /* Ensure text inside is centered */
-    flex-grow: 1;          /* Take up available space */
+    text-align: center;
+    flex-grow: 1;  /* Take up available space */
 }
 
 #helpIcon {
