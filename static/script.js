@@ -1,3 +1,5 @@
+let cachedResults = [];
+
 document.getElementById("toggleButton").addEventListener("click", function() {
     const sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("collapsed");
@@ -12,7 +14,38 @@ function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
 }
 
+function createRow(result) {
+    const row = document.createElement("tr");
+
+    // Determine the Outcome display value
+    outcome = result.outcome
+    let outcomeDisplay;
+    if (outcome.toLowerCase() === "success") {
+        outcomeDisplay = "✅";
+    } else if (outcome.toLowerCase() === "failure") {
+        outcomeDisplay = "❌";
+    } else {
+        outcomeDisplay = outcome; // Fallback for other cases
+    }
+
+    // Create the row
+    row.innerHTML = `
+        <td>${result["name"]}</td>
+        <td>${outcomeDisplay}</td>
+        <td class="nvr-td">${result.NVR}</td>
+        <td>${result["assembly"]}</td>
+        <td>${result["group"]}</td>
+        <td>${result["completed"]}</td>
+        <td><a href="${result["source"]}" target="_blank">Source URL</a></td>
+        <td><a href="${result["pipeline URL"]}" target="_blank">Pipeline URL</a></td>
+        <td><a href="${result["art job URL"]}" target="_blank">ART Job URL</a></td>
+    `;
+
+    return row;
+}
+
 document.getElementById("searchButton").addEventListener("click", function () {
+    cachedResults = [];  // clear cached search results
     noResultsMessage.style.display = "none";
     showLoading();
     const form = document.getElementById("searchForm");
@@ -24,45 +57,25 @@ document.getElementById("searchButton").addEventListener("click", function () {
     })
         .then((response) => response.json())
         .then((data) => {
+            // Cache the results
+            cachedResults = data;
+
             const tableBody = document.querySelector("#resultsTable tbody");
             tableBody.innerHTML = ""; // Clear existing rows
 
-            // Populate table with new results
             // If no results are returned, show the "No Results" message
+            // Otherwise, populate table with new results
             if (data.length === 0) {
                 noResultsMessage.style.display = "block";
             } else {
-                data.forEach((result) => {
-                    const row = document.createElement("tr");
-
-                    // Determine the Outcome display value
-                    let outcomeDisplay;
-                    if (result.Outcome.toLowerCase() === "success") {
-                        outcomeDisplay = "✅";
-                    } else if (result.Outcome.toLowerCase() === "failure") {
-                        outcomeDisplay = "❌";
-                    } else {
-                        outcomeDisplay = result.Outcome; // Fallback for other cases
-                    }
-
-                    // Create the row
-                    row.innerHTML = `
-                        <td class="nvr-td">${result.NVR}</td>
-                        <td>${outcomeDisplay}</td>
-                        <td>${result["Assembly"]}</td>
-                        <td>${result["Group"]}</td>
-                        <td>${result["Completed"]}</td>
-                        <td><a href="${result["Source"]}" target="_blank">Source URL</a></td>
-                        <td><a href="${result["Pipeline URL"]}" target="_blank">Pipeline URL</a></td>
-                        <td><a href="${result["ART job URL"]}" target="_blank">ART Job URL</a></td>
-                    `;
+                data.forEach(result => {
+                    const row = createRow(result);
                     tableBody.appendChild(row);
                 });
             }
 
             hideLoading();
-        })
-        .catch((error) => {
+        }).catch((error) => {
             console.error("Error:", error);
         });
 });
@@ -87,6 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.textContent = version;
                 versionDropdown.appendChild(option);
             });
+
+            // Add a "-" entry to match any version
+            option = document.createElement("option");
+            option.value = '-';
+            option.textContent = '-';
+            versionDropdown.appendChild(option)
         })
         .catch((error) => console.error("Error fetching versions:", error));
 });
@@ -101,3 +120,46 @@ document.getElementById("clearButton").addEventListener("click", function () {
     document.getElementById("name").value = ""; // Clear version input field
     document.getElementById("assembly").value = ""; // Reset to default Assembly value
 });
+
+document.getElementById("filterButton").addEventListener("click", function () {
+    event.preventDefault(); // Prevent the default form submission behavior
+
+    // Collect the form values into search filters
+    const form = document.getElementById("searchForm");
+    const formData = new FormData(form);
+
+    // Clear the results table
+    const tbody = document.querySelector('#resultsTable tbody');
+    tbody.innerHTML = '';
+
+    // Filter cached results based on filter criteria
+    cachedResults
+        .filter(result => matchesFilters(result, formData))
+        .forEach(filteredResult => {
+            const row = createRow(filteredResult);
+            tbody.appendChild(row);
+        });
+});
+
+function matchesFilters(result, filterParams) {
+    for (let [key, value] of filterParams.entries()) {
+        if (!value) continue; // Skip empty filter values
+
+            if (key === "name") {
+                if (value && result['name'].toLowerCase() != value) {
+                    return false;
+                }
+            } else if (key === "outcome") {
+                if (value != 'both' && result['outcome'] != value) {
+                    return false;
+                }
+            } else {
+                // Generic filter logic for other keys
+                if (result[key] && result[key].toString().toLowerCase() !== value.toLowerCase()) {
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}

@@ -67,9 +67,10 @@ class KonfluxBuildHistory(Flask):
         self._logger.info("Search Parameters: %s", params)
 
         where_clauses = {
-            'group': params['group'],
             'engine': 'konflux',
         }
+        if params['group'] != '-':
+            where_clauses['group'] = params['group']
         if params['assembly']:
             where_clauses['assembly'] = params['assembly']
         if params['name']:
@@ -82,24 +83,25 @@ class KonfluxBuildHistory(Flask):
             where=where_clauses,
             order_by='end_time'
         )
-
-
         self._logger.info(builds)
+
         results = [
             {
-                "NVR": b.nvr,
-                "Outcome": str(b.outcome),
-                "Assembly": b.assembly,
-                "Group": b.group,
-                "Completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
-                "Source": f'{b.source_repo}/tree/{b.commitish}',
-                "Pipeline URL": b.build_pipeline_url,
-                "ART job URL": b.art_job_url,
+                "name": b.name,
+                "nvr": b.nvr,
+                "outcome": str(b.outcome),
+                "assembly": b.assembly,
+                "group": b.group,
+                "completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
+                "source": f'{b.source_repo}/tree/{b.commitish}',
+                "pipeline URL": b.build_pipeline_url,
+                "art job URL": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
         ]
 
         # Return the results as JSON
         return jsonify(results)
+
 
 app = KonfluxBuildHistory()
 
