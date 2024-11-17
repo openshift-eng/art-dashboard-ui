@@ -44,6 +44,11 @@ function createRow(result) {
     return row;
 }
 
+function updateStatusBar(cachedCount, filteredCount) {
+    const statusBar = document.getElementById("statusBar");
+    statusBar.textContent = `Cached: ${cachedCount} | Filtered: ${filteredCount}`;
+}
+
 document.getElementById("searchButton").addEventListener("click", function () {
     cachedResults = [];  // clear cached search results
     noResultsMessage.style.display = "none";
@@ -73,6 +78,8 @@ document.getElementById("searchButton").addEventListener("click", function () {
                     tableBody.appendChild(row);
                 });
             }
+
+            updateStatusBar(cachedResults.length, cachedResults.length);
 
             hideLoading();
         }).catch((error) => {
@@ -133,12 +140,14 @@ document.getElementById("filterButton").addEventListener("click", function () {
     tbody.innerHTML = '';
 
     // Filter cached results based on filter criteria
-    cachedResults
-        .filter(result => matchesFilters(result, formData))
-        .forEach(filteredResult => {
-            const row = createRow(filteredResult);
-            tbody.appendChild(row);
-        });
+    const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+
+    filteredResults.forEach(filteredResult => {
+        const row = createRow(filteredResult);
+        tbody.appendChild(row);
+    });
+
+    updateStatusBar(cachedResults.length, filteredResults.length);
 });
 
 function matchesFilters(result, filterParams) {

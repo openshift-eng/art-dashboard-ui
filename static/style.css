@@ -28,6 +28,7 @@ body {
     transition: width 0.3s ease;
     overflow: hidden;
     position: relative;
+    z-index: 10;
 }
 
 .sidebar.collapsed {
@@ -122,6 +123,8 @@ button:hover {
     flex-grow: 1;
     padding: 20px;
     overflow-y: auto;
+    min-height: calc(100vh - 50px); /* Subtract status bar height */
+    padding-bottom: 50px; /* Allow space for the status bar */
 }
 
 .results-container h2 {
@@ -210,4 +213,18 @@ select option {
 .results-container a:hover {
     color: #81e886 !important; /* Brighter green */
     text-decoration: underline;
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #333; /* Dark background close to the container */
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    z-index: 5; /* Lower z-index to be behind the sidebar */
+    border-top: 1px solid #444; /* Slightly lighter border for contrast */
 }
