@@ -168,6 +168,10 @@ function matchesFilters(result, filterParams) {
                 if (value != 'both' && result['outcome'] != value) {
                     return false;
                 }
+            } else if (key == 'group') {
+                if (value != '-' && result['group'] != value) {
+                    return false;
+                }
             } else {
                 // Generic filter logic for other keys
                 if (result[key] && result[key].toString().toLowerCase() !== value.toLowerCase()) {
