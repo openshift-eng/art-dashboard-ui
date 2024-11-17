@@ -127,6 +127,11 @@ button:hover {
     padding-bottom: 50px; /* Allow space for the status bar */
 }
 
+.results-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
 .results-container h2 {
     font-size: 1.2em;
     margin-bottom: 15px;
