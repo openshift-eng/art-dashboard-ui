@@ -45,8 +45,8 @@ function createRow(result) {
 }
 
 function updateStatusBar(cachedCount, filteredCount) {
-    const statusBar = document.getElementById("statusBar");
-    statusBar.textContent = `Cached: ${cachedCount} | Filtered: ${filteredCount}`;
+    const statusTextBar = document.getElementById("statusText");
+    statusTextBar.textContent = `Results: ${cachedCount} cached, ${filteredCount} filtered`;
 }
 
 document.getElementById("searchButton").addEventListener("click", function () {
@@ -178,3 +178,22 @@ function matchesFilters(result, filterParams) {
 
     return true;
 }
+
+document.getElementById("helpIcon").addEventListener("click", function() {
+    const dialog = document.getElementById("instructionsDialog");
+    dialog.style.display = "block";  // Make it visible
+    setTimeout(() => {
+        dialog.classList.add("show");  // Trigger zoomIn animation
+    }, 10);  // Delay slightly to allow the dialog to be visible first
+});
+
+document.getElementById("closeDialogButton").addEventListener("click", function() {
+    const dialog = document.getElementById("instructionsDialog");
+    dialog.classList.remove("show");  // Remove zoomIn class
+    dialog.classList.add("hide");  // Add zoomOut class
+
+    setTimeout(() => {
+        dialog.style.display = "none";  // Hide the dialog after animation
+        dialog.classList.remove("hide");  // Reset the hide class for future use
+    }, 400);  // Match the animation duration
+});

@@ -37,13 +37,15 @@
                 <button type="button" id="filterButton" class="filter-btn">Filter</button>
                 <button type="button" id="clearButton">Clear</button>
             </form>
-        </div>
-        
+        </div> <!-- sidebar -->
+
         <div class="results-container">
             <h1>Konflux build history</h1>
+
             <div id="loadingOverlay">
                 <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
             </div>
+
             <table id="resultsTable">
                 <thead>
                     <tr>
@@ -61,14 +63,32 @@
                 <tbody>
                 </tbody>
             </table>
+
             <p id="noResultsMessage" style="display: none; text-align: center; color: #f0f0f0;">
                 No builds have been found for the given parameters.
             </p>
+
+            <div id="instructionsDialog" class="hidden">
+                <div id="instructionsContent">
+                    <h3>Instructions</h3>
+                    <p>1. Set the filters matching your search criteria</p>
+                    <p>2. Hit the "Search" button to query the Konflux DB (results are cached)</p>
+                    <p>3. Adjust the filters to limit the results being displayed</p>
+                    <p>4. Hit the "Filter" button to only display matching results (cached is not cleared)</p>
+                    <p>5. Repeat step 4 as neede (will not query Konflux DB) </p>
+                    <p>6. Hit "Clear" to reset all filters</p>
+                    <button id="closeDialogButton">Close</button>
+                </div>
+            </div>
         </div>
 
-        <div id="statusBar" class="status-bar">Cached: 0 | Filtered: 0</div>
-
-    </div>
+        <div id="statusBar" class="status-bar">
+            <span id="statusText">
+                Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
+            </span>
+            <span id="helpIcon" style="cursor: pointer;">?</span>
+        </div>
+    </div> <!-- main-container -->
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
