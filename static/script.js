@@ -93,6 +93,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Ensure the loading overlay is hidden initially
     hideLoading();
 
+    // Set default date cut off
+    const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - 7);
+    const formattedDate = currentDate.toISOString().split('T')[0];
+    document.getElementById('after').value = formattedDate;
+
     // Fetch the versions from the server
     fetch("/get_versions")
         .then((response) => response.json())
@@ -170,6 +176,12 @@ function matchesFilters(result, filterParams) {
                 }
             } else if (key == 'group') {
                 if (value != '-' && result['group'] != value) {
+                    return false;
+                }
+            } else if (key == 'after') {
+                resultDate = new Date(result['completed']);
+                afterDate = new Date(value);
+                if (resultDate < afterDate) {
                     return false;
                 }
             } else {

@@ -78,13 +78,21 @@ label {
     font-weight: bold;
 }
 
-input[type="text"] {
+input {
     width: 100%;
     padding: 8px;
     border: 1px solid #444;
     border-radius: 4px;
     background-color: #333;
+}
+
+input[type="text"] {
     color: #f0f0f0;
+}
+
+input[type="date"] {
+    color: #f0f0f0;
+    font-family: Arial, sans-serif;
 }
 
 button {

@@ -78,12 +78,20 @@ class KonfluxBuildHistory(Flask):
         if params['outcome'] != 'both':
             where_clauses['outcome'] = params['outcome']
 
+        if params['after']:
+            try:
+                start_search = datetime.strptime(params['after'], '%Y-%m-%d')
+            except Exception as e:
+                self._logger.warning('Failed parsing date string %s: %s', params['after'], e)
+                start_search = None
+        else:
+            start_search = datetime.now() - DELTA_SEARCH
+
         builds = await self.konflux_db.search_builds_by_fields(
-            start_search=datetime.now() - DELTA_SEARCH,
+            start_search=start_search,
             where=where_clauses,
             order_by='end_time'
         )
-        self._logger.info(builds)
 
         results = [
             {
