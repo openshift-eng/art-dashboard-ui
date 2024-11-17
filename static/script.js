@@ -32,7 +32,7 @@ function createRow(result) {
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td">${result.NVR}</td>
+        <td class="nvr-td">${result.nvr}</td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${result["completed"]}</td>
