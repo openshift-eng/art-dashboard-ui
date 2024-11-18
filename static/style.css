@@ -21,7 +21,7 @@ body {
 .sidebar {
     width: 30%;
     max-width: 300px;
-    min-width: 60px;
+    min-width: 30px;
     background-color: #2b2b2b;
     padding: 20px;
     border-right: 2px solid #3a3a3a;
@@ -32,7 +32,7 @@ body {
 }
 
 .sidebar.collapsed {
-    width: 60px;
+    width: 30px;
     padding: 0;
 }
 
