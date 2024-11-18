@@ -17,8 +17,10 @@ import * as React from 'react';
 import { Inputs, useNewContentState } from './new-content-state'
 import HelpIcon from '@mui/icons-material/Help';
 import frontendConfig from "../../frontend.config.json"
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
+import { message } from 'antd'
+import OpenshiftVersionSelect from "../release/openshift_version_select";
+import { getReleaseBranchesFromOcpBuildData } from "../api_calls/release_calls";
 
 const applicationCategories = [
   'API Management',
@@ -78,6 +80,9 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     defaultValues: inputs,
   });
   const onSubmitHandler: SubmitHandler<Inputs> = data => {
+    // Because the image release version is determined dynamically and stored in a variable
+    // separate from the form, we need to update the data before updating the inputs.
+    data.imageReleaseVersion = userImageReleaseVersion
     console.log("data=", data);
     setInputs(data);
     if (onSubmit) {
@@ -116,7 +121,64 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       setValue("deliveryRepoApplicationCategories", new Set(newCategories));
       setSelectedAppCategories(newCategories);
     }
-};
+  };
+
+  const [ocpLatestBranch, setOcpLatestBranch] = useState('openshift-TBD');
+  const [userImageReleaseVersion, setUserImageReleaseVersion] = useState('openshift-TBD');
+
+  type BranchObject = {
+    name: string;
+    // there are more fields returned by getReleaseBranchesFromOcpBuildData(),
+    // but here we only care about the name
+  };
+
+  const fetchLatestBranch = () => {
+    getReleaseBranchesFromOcpBuildData()
+      .then((response: BranchObject[] | { detail: string }) => {
+        if (response.hasOwnProperty('detail') && response['detail'] === 'Request failed') {
+          console.log("Error in call to getReleaseBranchesFromOcpBuildData, response=", response)
+          throw new Error(`API call to getReleaseBranchesFromOcpBuildData returned error: ${response}`);
+        }
+        return response;
+      })
+      .then((branchList: BranchObject[]) => {
+        const branches = branchList.map(detail => detail.name);
+        branches.sort((a, b) => {
+          // Sort by major.minor version (latest first)
+          const versionA = a.match(/\d+\.\d+/)[0].split('.').map(Number);
+          const versionB = b.match(/\d+\.\d+/)[0].split('.').map(Number);
+          return versionB[0] - versionA[0] || versionB[1] - versionA[1];
+        });
+
+        const latestBranch = branches[0];
+        setOcpLatestBranch(latestBranch);
+      })
+      .catch((error: Error) => {
+
+        // Worst case, we just use openshift-4.17
+        console.log("Failed to fetch branches using getReleaseBranchesFromOcpBuildData:", error);
+        console.log("Using default branch name: openshift-4.17");
+        setOcpLatestBranch('openshift-4.17');
+      })
+  };
+
+  useEffect(() => {
+    fetchLatestBranch();
+
+    message.loading({
+      content: 'Determining latest Openshift version...',
+      duration: 1,
+      style: {position: "fixed", left: "50%", top: "20%"}
+    });
+
+    return () => {
+      message.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    setUserImageReleaseVersion(ocpLatestBranch);
+  }, [ocpLatestBranch]);
 
   const values = watch();
 
@@ -129,6 +191,26 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     }}
   >
     <Typography component="h1" variant="h5" sx={{ my: 2 }}>General</Typography>
+    <Box>
+      <FormLabel id="openshift-image-version">Onboard image to this OpenShift Version</FormLabel>
+      <Controller
+        control={control}
+        name="imageReleaseVersion"
+        defaultValue={userImageReleaseVersion}
+        render={({ field: { onChange, value } }) => (
+          <OpenshiftVersionSelect
+            initialVersion={userImageReleaseVersion}
+            alignment='left'
+            padding='0px'
+            useDefaultValue={false}
+            onVersionChange={(version) => {
+              onChange(version);
+              setUserImageReleaseVersion(version);
+            }}
+          />
+        )}
+      />
+    </Box>
     <Box>
       <FormControl>
         <FormLabel id="component-type-group-label">Component Type</FormLabel>
@@ -469,7 +551,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       </Box>
       <Box>
         <TextField label="Errata Writer" variant="outlined" fullWidth
-                   {...register("deliveryRepoErrataWriter", { required: true})}
+                   {...register("deliveryRepoErrataWriter", { required: false})}
                    helperText="[OPTIONAL] If different from Documentation Writer. Email(s) of Customer Content Services contact(s) responsible for writing Errata text for this repository. Can be comma separated." />
       </Box>
 

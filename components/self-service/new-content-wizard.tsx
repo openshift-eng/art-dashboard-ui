@@ -20,7 +20,7 @@ export function NewContentStep({ activeStep }: { activeStep: number }) {
       return (
         <Box sx={{ m: 4 }}>
           <Typography component="h1" variant="h4" sx={{ my: 2 }}>Step 2: Fill the onboarding form</Typography>
-          <NewContentForm onSubmit={(data: any) => console.log(data)} />
+          <NewContentForm onSubmit={(data: any) => console.log('Fill onboarding form: ', data)} />
         </Box>)
     case 2:
       return (

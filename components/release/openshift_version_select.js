@@ -4,7 +4,7 @@ import {getReleaseBranchesFromOcpBuildData} from "../api_calls/release_calls";
 
 const {Option} = Select;
 
-function OpenshiftVersionSelect({ onVersionChange, initialVersion, redirectOnSelect=false }) {
+function OpenshiftVersionSelect({ onVersionChange, initialVersion, alignment='right', padding='30px', redirectOnSelect=false, useDefaultValue=true }) {
     const [data, setData] = useState([]);
 
     const setDataFunc = () => {
@@ -47,8 +47,11 @@ function OpenshiftVersionSelect({ onVersionChange, initialVersion, redirectOnSel
 
     // Simplify the render function by removing the if-else
     return (
-        <div align={"right"} style={{padding: "30px"}}>
-            <Select defaultValue={initialVersion} placeholder={<div style={{color: "black"}}>Openshift Version</div>} onChange={onChangeFunc}>
+        <div align={alignment} style={{ padding: { padding } }}>
+            <Select
+                {...(useDefaultValue ? { defaultValue: initialVersion } : { value: initialVersion })}
+                placeholder={<div style={{ color: "black" }}>Openshift Version</div>} onChange={onChangeFunc}
+            >
                 {generateSelectOptionFromStateDate(data)}
             </Select>
         </div>
