@@ -36,6 +36,7 @@ function createRow(result) {
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${result["completed"]}</td>
+        <td>${result["engine"]}</td>
         <td><a href="${result["source"]}" target="_blank">Source URL</a></td>
         <td><a href="${result["pipeline URL"]}" target="_blank">Pipeline URL</a></td>
         <td><a href="${result["art job URL"]}" target="_blank">ART Job URL</a></td>

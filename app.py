@@ -67,7 +67,7 @@ class KonfluxBuildHistory(Flask):
         self._logger.info("Search Parameters: %s", params)
 
         where_clauses = {
-            'engine': 'konflux',
+            'engine': params['engine'],
         }
         if params['group'] != '-':
             where_clauses['group'] = params['group']
@@ -101,6 +101,7 @@ class KonfluxBuildHistory(Flask):
                 "assembly": b.assembly,
                 "group": b.group,
                 "completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
+                "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art job URL": b.art_job_url,
