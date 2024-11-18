@@ -10,7 +10,7 @@
     <div class="main-container">
         <div class="sidebar" id="sidebar">
             <button id="toggleButton" class="toggle-btn">❮</button>
-            <form id="searchForm" method="POST" action="/search">
+            <form id="searchForm" method="GET" action="/search">
                 <div class="input-container">
                     <label for="name">Name</label>
                     <input type="text" id="name" name="name">
@@ -45,7 +45,7 @@
                     </select>
                 </div>
 
-                <button type="button" id="searchButton">Search</button>
+                <button type="submit" id="searchButton">Search</button>
                 <button type="button" id="filterButton" class="filter-btn">Filter</button>
                 <button type="button" id="clearButton">Clear</button>
             </form>
@@ -105,5 +105,9 @@
     </div> <!-- main-container -->
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        const initialResults = {{ search_results|tojson|safe }};
+        const initialQueryParams = {{ query_params|tojson|safe }};
+    </script>
 </body>
 </html>

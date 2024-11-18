@@ -32,11 +32,27 @@ class KonfluxBuildHistory(Flask):
     def add_routes(self):
         @self.route("/")
         def index():
-            return render_template("index.html")
+            return render_template(
+                "index.html",
+                query_params={},
+                search_results=[]
+            )
 
-        @self.route("/search", methods=["POST"])
+        @self.route("/search", methods=["GET"])
         async def search():
-            return await self.query(request.form.to_dict())
+            query_params = request.args.to_dict()
+            search_results = await self.query(query_params)
+
+            # Check if the request is an AJAX request
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(search_results)  # Respond with JSON for AJAX requests
+
+            # Render the full template for non-AJAX requests
+            return render_template(
+                "index.html",
+                query_params=request.args,
+                search_results=search_results,
+            )
 
         @self.route("/get_versions", methods=["GET"])
         def get_versions():
@@ -109,7 +125,7 @@ class KonfluxBuildHistory(Flask):
         ]
 
         # Return the results as JSON
-        return jsonify(results)
+        return results
 
 
 app = KonfluxBuildHistory()

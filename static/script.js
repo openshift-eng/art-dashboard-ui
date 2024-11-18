@@ -50,16 +50,25 @@ function updateStatusBar(cachedCount, filteredCount) {
     statusTextBar.textContent = `Results: ${cachedCount} cached, ${filteredCount} filtered`;
 }
 
-document.getElementById("searchButton").addEventListener("click", function () {
+document.getElementById("searchButton").addEventListener("click", function (event) {
+    event.preventDefault()
     cachedResults = [];  // clear cached search results
     noResultsMessage.style.display = "none";
     showLoading();
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
-    fetch("/search", {
-        method: "POST",
-        body: formData,
+    // Convert FormData to query string
+    const queryParams = new URLSearchParams(formData).toString();
+    const url = `/search?${queryParams}`;
+
+    // Update the browser URL with search parameters
+    window.history.pushState({}, '', url);
+
+    fetch(
+        url, {
+        method: "GET",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
     })
         .then((response) => response.json())
         .then((data) => {
@@ -120,8 +129,36 @@ document.addEventListener("DOMContentLoaded", () => {
             option.value = '-';
             option.textContent = '-';
             versionDropdown.appendChild(option)
-        })
-        .catch((error) => console.error("Error fetching versions:", error));
+
+            // Preserve the group value from the query string if present
+            const currentGroup = initialQueryParams?.group;
+            if (currentGroup) {
+                versionDropdown.value = currentGroup;
+            }
+        }).catch((error) => console.error("Error fetching versions:", error));
+
+    // Populate form fields with initial query parameters
+    const form = document.getElementById("searchForm");
+    for (const [key, value] of Object.entries(initialQueryParams || {})) {
+        const input = form.querySelector(`[name="${key}"]`);
+        if (input) input.value = value;
+    }
+
+    // Populate the results table with initial results
+    const isSearch = window.location.search != '';
+    if (isSearch && initialResults) {
+        const tableBody = document.querySelector("#resultsTable tbody");
+        tableBody.innerHTML = ""; // Clear existing rows
+        if (initialResults.length === 0) {
+            noResultsMessage.style.display = "block";
+        } else {
+            initialResults.forEach(result => {
+                const row = createRow(result);
+                tableBody.appendChild(row);
+            });
+        }
+        updateStatusBar(initialResults.length, initialResults.length);
+    }
 });
 
 document.getElementById("clearButton").addEventListener("click", function () {
