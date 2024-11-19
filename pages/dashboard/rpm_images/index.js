@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Typography, Spin, Card, message } from 'antd';
-import { RocketOutlined, ReloadOutlined, FileImageOutlined } from '@ant-design/icons';
+import { RocketOutlined, ReloadOutlined, FileImageOutlined, ExperimentOutlined } from '@ant-design/icons';
 import Head from 'next/head';
 import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_version_select";
 import ImagesList from "../../../components/release/RpmsImagesList";
@@ -30,6 +30,11 @@ function RpmImages() {
             key: "buildHistory",
             icon: <ReloadOutlined />,
             label: <a href={"/dashboard/build/history"}><p style={{fontSize: "medium"}}>Build History</p></a>
+        },
+        {
+            key: "buildHistoryBeta",
+            icon: <ExperimentOutlined />,
+            label: <a href={`${process.env.NEXT_PUBLIC_BETA_BUILD_HISTORY_LINK}`} target={"_blank"}><p style={{ fontSize: "medium" }}>Build History: Beta</p></a>
         },
         {
             key: "rpmImages",
@@ -78,7 +83,7 @@ function RpmImages() {
                 <link rel="icon" href="/redhat-logo.png"/>
             </Head>
             <Layout>
-                <Sider collapsed={false}>
+                <Sider collapsed={false} width="220">
                     <div style={{paddingTop: "10px"}}>
                         <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} items={menuItems}/>
                     </div>
