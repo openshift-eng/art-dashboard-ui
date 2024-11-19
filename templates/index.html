@@ -45,9 +45,8 @@
                     </select>
                 </div>
 
-                <button type="submit" id="searchButton">Search</button>
-                <button type="button" id="filterButton" class="filter-btn">Filter</button>
-                <button type="button" id="clearButton">Clear</button>
+                <button type="submit" id="searchButton">Fetch from DB</button>
+                <button type="button" id="filterButton" class="filter-btn">Filter view</button>
             </form>
         </div> <!-- sidebar -->
 
@@ -87,10 +86,9 @@
                     <p style="margin-bottom: 5px;">Default search filters: both failed and succeeded builds, latest OCP group, stream assembly,
                     completed within last week</p>
                     <p>1. Set the filters matching your search criteria</p>
-                    <p>2. Hit "Search" to query the Konflux DB; results are cached</p>
+                    <p>2. Hit "Fetch from DB" to query the Konflux DB; results are cached in the browser</p>
                     <p>3. Adjust the filters to limit the results being displayed</p>
-                    <p>4. Hit "Filter" to display matching results; cache is preserved</p>
-                    <p>5. Hit "Clear" to reset search filters</p>
+                    <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
                     <button id="closeDialogButton">Close</button>
                 </div>
             </div>

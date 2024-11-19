@@ -119,14 +119,6 @@ button:hover {
     background-color: #45a049;
 }
 
-#clearButton {
-    background-color: #f17208;
-}
-
-#clearButton:hover {
-    background-color: #f17c1a;
-}
-
 .results-container {
     flex-grow: 1;
     padding: 20px;
