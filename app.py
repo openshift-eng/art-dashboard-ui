@@ -95,6 +95,8 @@ class KonfluxBuildHistory(Flask):
         extra_patterns = {}
         if params['name']:
             extra_patterns['name'] = params['name']
+        if params['art-job-url']:
+            extra_patterns['art_job_url'] = params['art-job-url']
 
         if params['after']:
             try:
@@ -123,7 +125,7 @@ class KonfluxBuildHistory(Flask):
                 "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
-                "art job URL": b.art_job_url,
+                "art-job-url": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
         ]
 

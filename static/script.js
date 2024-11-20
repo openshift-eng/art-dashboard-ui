@@ -39,7 +39,7 @@ function createRow(result) {
         <td>${result["engine"]}</td>
         <td><a href="${result["source"]}" target="_blank">Source URL</a></td>
         <td><a href="${result["pipeline URL"]}" target="_blank">Pipeline URL</a></td>
-        <td><a href="${result["art job URL"]}" target="_blank">ART Job URL</a></td>
+        <td><a href="${result["art-job-url"]}" target="_blank">ART Job URL</a></td>
     `;
 
     return row;
@@ -187,34 +187,30 @@ function matchesFilters(result, filterParams) {
     for (let [key, value] of filterParams.entries()) {
         if (!value) continue; // Skip empty filter values
 
-            if (key === "name") {
-                try {
-                    const regex = new RegExp(value, "i"); // Create a case-insensitive regex
-                    if (!regex.test(result["name"])) {
-                        return false; // Return false if regex does not match
-                    }
-                } catch (e) {
-                    console.error(`Invalid regex for 'name': ${value}`, e);
-                    return false; // If regex is invalid, consider it not matching
+        if (key === "outcome") {
+            if (value != 'both' && result['outcome'] != value) {
+                return false;
+            }
+        } else if (key == 'group') {
+            if (value != '-' && result['group'] != value) {
+                return false;
+            }
+        } else if (key == 'after') {
+            resultDate = new Date(result['completed']);
+            afterDate = new Date(value);
+            if (resultDate < afterDate) {
+                return false;
+            }
+        } else {
+            // Generic filter logic for other keys
+            try {
+                const regex = new RegExp(value, "i"); // Create a case-insensitive regex
+                if (!regex.test(result[key])) {
+                    return false; // Return false if regex does not match
                 }
-            } else if (key === "outcome") {
-                if (value != 'both' && result['outcome'] != value) {
-                    return false;
-                }
-            } else if (key == 'group') {
-                if (value != '-' && result['group'] != value) {
-                    return false;
-                }
-            } else if (key == 'after') {
-                resultDate = new Date(result['completed']);
-                afterDate = new Date(value);
-                if (resultDate < afterDate) {
-                    return false;
-                }
-            } else {
-                // Generic filter logic for other keys
-                if (result[key] && result[key].toString().toLowerCase() !== value.toLowerCase()) {
-                    return false;
+            } catch (e) {
+                console.error(`Invalid regex for 'name': ${value}`, e);
+                return false; // If regex is invalid, consider it not matching
             }
         }
     }
