@@ -89,10 +89,12 @@ class KonfluxBuildHistory(Flask):
             where_clauses['group'] = params['group']
         if params['assembly']:
             where_clauses['assembly'] = params['assembly']
-        if params['name']:
-            where_clauses['name'] = params['name']
         if params['outcome'] != 'both':
             where_clauses['outcome'] = params['outcome']
+
+        extra_patterns = {}
+        if params['name']:
+            extra_patterns['name'] = params['name']
 
         if params['after']:
             try:
@@ -106,6 +108,7 @@ class KonfluxBuildHistory(Flask):
         builds = await self.konflux_db.search_builds_by_fields(
             start_search=start_search,
             where=where_clauses,
+            extra_patterns=extra_patterns,
             order_by='end_time'
         )
 
