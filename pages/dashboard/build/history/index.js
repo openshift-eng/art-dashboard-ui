@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { getBuilds } from "../../../../components/api_calls/build_calls";
 import BUILD_HISTORY_TABLE from "../../../../components/build/build_history_table";
-import { RocketOutlined, ReloadOutlined, FileImageOutlined } from "@ant-design/icons";
+import { RocketOutlined, ReloadOutlined, FileImageOutlined, ExperimentOutlined } from "@ant-design/icons";
 import Head from "next/head";
 import { Layout, Menu, message } from "antd";
 import { useRouter } from 'next/router';
@@ -195,10 +195,15 @@ export default function BUILD_HISTORY_HOME() {
             label: <a href={"/dashboard/build/history"}><p style={{ fontSize: "medium" }}>Build History</p></a>
         },
         {
+            key: "buildHistoryBeta",
+            icon: <ExperimentOutlined />,
+            label: <a href={`${process.env.NEXT_PUBLIC_BETA_BUILD_HISTORY_LINK}`} target={"_blank"}><p style={{ fontSize: "medium" }}>Build History: Beta</p></a>
+        },
+        {
             key: "rpmImages",
             icon: <FileImageOutlined />,
             label: <a href={"/dashboard/rpm_images"}><p style={{ fontSize: "medium" }}>RPMs & Images</p></a>
-        }
+        },
     ]
 
     return (
@@ -209,7 +214,7 @@ export default function BUILD_HISTORY_HOME() {
                 <link rel="icon" href="/redhat-logo.png" />
             </Head>
             <Layout>
-                <Sider collapsed={false}>
+                <Sider collapsed={false} width="220">
                     <div style={{ paddingTop: "10px" }}>
                         <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} items={menuItems} />
 
@@ -230,6 +235,13 @@ export default function BUILD_HISTORY_HOME() {
                             }}>OpenShift Release
                                 Portal</h1>
                         </div>
+                    </div>
+                    <div>
+                        <h4 style={{
+                            paddingTop: "10px",
+                            margin: "0px",
+                            textAlign: "center"
+                        }}>New Build History page available <a href={`${process.env.NEXT_PUBLIC_BETA_BUILD_HISTORY_LINK}`} target={"_blank"}>here</a></h4>
                     </div>
                     <BUILD_HISTORY_TABLE data={data} nvr={nvr} buildStatus={buildStatus} taskId={taskId} DistgitName={DistgitName}
                         version={version} cgit={cgit} sourceCommit={sourceCommit} jenkinsBuild={jenkinsBuild}
