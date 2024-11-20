@@ -1,0 +1,30 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    build: art-build-history
+  name: art-build-history
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: art-build-history:latest
+  runPolicy: Serial
+  source:
+    git:
+      uri: https://github.com/openshift-eng/art-dashboard-ui.git
+      ref: art-build-history
+    type: Git
+  strategy:
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: registry.redhat.io/ubi8/python-311:1-86
+    type: Docker
+  successfulBuildsHistoryLimit: 5
+  triggers:
+  - type: ConfigChange
+  - imageChange: {}
+    type: ImageChange

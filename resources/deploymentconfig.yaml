@@ -1,0 +1,41 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: art-build-history
+spec:
+  replicas: 1
+  selector:
+    app: art-build-history
+  template:
+    metadata:
+      labels:
+        app: art-build-history
+    spec:
+      containers:
+        - name: art-build-history
+          image: art-build-history:latest
+          imagePullPolicy: Always
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /etc/secrets/gcp/gcp-credentials.json
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /etc/secrets/gcp
+              readOnly: true
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-credentials
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - art-build-history
+        from:
+          kind: ImageStreamTag
+          name: art-build-history:latest
