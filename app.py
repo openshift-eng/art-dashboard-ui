@@ -1,9 +1,11 @@
+import json
 import logging
 import subprocess
 from datetime import datetime, timedelta
 
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
+from artcommonlib.release_util import isolate_timestamp_in_release
 from flask import Flask, render_template, request, jsonify
 
 # How far back should we search for builds?
@@ -20,6 +22,9 @@ class KonfluxBuildHistory(Flask):
         self.konflux_db = KonfluxDb()
         self.konflux_db.bind(KonfluxBuildRecord)
         self._logger.info('Konflux DB initialized ')
+
+        # Cache installed packages
+        self.installed_packages = {}
 
     def init_logger(self):
         formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
@@ -79,6 +84,40 @@ class KonfluxBuildHistory(Flask):
                     self._logger.error("Error fetching OCP versions: %s", result.stderr.strip())
                 raise RuntimeError('No matches found or an error occurred.')
 
+        @self.route("/packages")
+        async def show_packages():
+            nvr = request.args.get("nvr")
+            default_result = []
+
+            if not nvr:
+                # nvr param was not passed in
+                nvr = '<undefined>'
+                result = default_result
+
+            elif result := self.installed_packages.get(nvr):
+                # nvr param was passed in, and there is a cached entry for it
+                pass  # all done
+
+            else:
+                # nvr param was passed in, but there is no cached entry for it
+                # fetch the build record from Konflux DB
+                try:
+                    nvr_timestamp = datetime.strptime(isolate_timestamp_in_release(nvr), "%Y%m%d%H%M%S")
+                    start_search = datetime(nvr_timestamp.year, nvr_timestamp.month, nvr_timestamp.day)
+                    builds = await self.konflux_db.search_builds_by_fields(
+                        start_search=start_search,
+                        where={'nvr': nvr},
+                        limit=1
+                    )
+                    result = builds[0].installed_packages if builds else []
+
+                except Exception as e:
+                    self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
+
+            return render_template("packages.html",
+                                   nvr=nvr,
+                                   packages=result)
+
     async def query(self, params: dict):
         self._logger.info("Search Parameters: %s", params)
 
@@ -128,6 +167,11 @@ class KonfluxBuildHistory(Flask):
                 "art-job-url": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
         ]
+
+        # Cache installed packages
+        self.installed_packages = {build.nvr: build.installed_packages
+                                   for build in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)}
+        self._logger.info('Cached installed packages: %s', self.installed_packages)
 
         # Return the results as JSON
         return results
