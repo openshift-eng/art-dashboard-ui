@@ -1,8 +1,10 @@
+import asyncio
 import json
 import logging
 import subprocess
 from datetime import datetime, timedelta
 
+from artcommonlib import redis
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from artcommonlib.release_util import isolate_timestamp_in_release
@@ -10,6 +12,8 @@ from flask import Flask, render_template, request, jsonify
 
 # How far back should we search for builds?
 DELTA_SEARCH = timedelta(days=180)
+# How long before cached Redis keys are cleared
+CACHE_EXPIRY = 60 * 60 * 3600 * 24 * 7  # 1 week
 
 
 class KonfluxBuildHistory(Flask):
@@ -22,9 +26,6 @@ class KonfluxBuildHistory(Flask):
         self.konflux_db = KonfluxDb()
         self.konflux_db.bind(KonfluxBuildRecord)
         self._logger.info('Konflux DB initialized ')
-
-        # Cache installed packages
-        self.installed_packages = {}
 
     def init_logger(self):
         formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
@@ -94,9 +95,9 @@ class KonfluxBuildHistory(Flask):
                 nvr = '<undefined>'
                 result = default_result
 
-            elif result := self.installed_packages.get(nvr):
+            elif redis_value := await redis.get_value(self.redis_key(nvr)):
                 # nvr param was passed in, and there is a cached entry for it
-                pass  # all done
+                result = json.loads(redis_value)
 
             else:
                 # nvr param was passed in, but there is no cached entry for it
@@ -110,6 +111,11 @@ class KonfluxBuildHistory(Flask):
                         limit=1
                     )
                     result = builds[0].installed_packages if builds else []
+
+                    # Update the cache
+                    await redis.set_value(self.redis_key(nvr),
+                                          json.dumps(result),
+                                          expiry=CACHE_EXPIRY)
 
                 except Exception as e:
                     self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
@@ -169,12 +175,19 @@ class KonfluxBuildHistory(Flask):
         ]
 
         # Cache installed packages
-        self.installed_packages = {build.nvr: build.installed_packages
-                                   for build in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)}
-        self._logger.info('Cached installed packages: %s', self.installed_packages)
+        await asyncio.gather(*[
+            redis.set_value(self.redis_key(build.nvr),
+                            json.dumps(build.installed_packages),
+                            expiry=CACHE_EXPIRY)
+            for build in builds
+        ])
 
         # Return the results as JSON
         return results
+
+    @staticmethod
+    def redis_key(nvr: str):
+        return f'appdata:art-build-history:installed-packages:{nvr}'
 
 
 app = KonfluxBuildHistory()
