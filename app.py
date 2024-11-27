@@ -171,7 +171,7 @@ class KonfluxBuildHistory(Flask):
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
-            } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING, builds)
+            } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING and b.end_time, builds)
         ]
 
         # Cache installed packages
