@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import json
 import logging
 import subprocess
@@ -14,6 +15,8 @@ from flask import Flask, render_template, request, jsonify
 DELTA_SEARCH = timedelta(days=180)
 # How long before cached Redis keys are cleared
 CACHE_EXPIRY = 60 * 60 * 3600 * 24 * 7  # 1 week
+# How many build results can we handle?
+MAX_BUILDS = 1000
 
 
 class KonfluxBuildHistory(Flask):
@@ -158,6 +161,7 @@ class KonfluxBuildHistory(Flask):
             extra_patterns=extra_patterns,
             order_by='end_time'
         )
+        builds = [self.konflux_db.from_result_row(result) for result in itertools.islice(builds, MAX_BUILDS)]
 
         results = [
             {
