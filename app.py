@@ -67,7 +67,7 @@ class KonfluxBuildHistory(Flask):
         def get_versions():
             command = (
                 "git ls-remote --heads https://github.com/openshift-eng/ocp-build-data | "
-                "awk '/refs\\/heads\\/openshift-[1-9][0-9]*\\.[1-9][0-9]*/ {print $2}' | "
+                "awk '/refs\\/heads\\/openshift-[1-9][0-9]*\\.[1-9][0-9]*$/ {print $2}' | "
                 "sed 's#refs/heads/##'"
             )
 
