@@ -175,6 +175,8 @@ owners:
       jira_story_type_id: ARTStoryTypeID,
       jira_component: component,
       jira_priority: priority,
+      image_type: inputs.imageType,
+      payload_name: inputs.payloadName,
 
       // the default mode is test mode (i.e., create fake PR and Jira) so you can easily
       // test the UI and API and be intentional about actually creating the PR and Jira.
