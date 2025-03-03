@@ -1,4 +1,8 @@
+aiohttp
 artcommon @ git+https://github.com/openshift-eng/art-tools.git@main#subdirectory=artcommon
 flask
 Flask[async]
 redis
+ruamel.yaml
+semver
+tenacity
