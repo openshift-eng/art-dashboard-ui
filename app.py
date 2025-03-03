@@ -108,12 +108,14 @@ class KonfluxBuildHistory(Flask):
                 try:
                     nvr_timestamp = datetime.strptime(isolate_timestamp_in_release(nvr), "%Y%m%d%H%M%S")
                     start_search = datetime(nvr_timestamp.year, nvr_timestamp.month, nvr_timestamp.day)
-                    builds = await self.konflux_db.search_builds_by_fields(
+
+
+                    build = [build async for build in self.konflux_db.search_builds_by_fields(
                         start_search=start_search,
                         where={'nvr': nvr},
                         limit=1
-                    )
-                    result = builds[0].installed_packages if builds else []
+                    )]
+                    result = build[0].installed_packages if build else []
 
                     # Update the cache
                     await redis.set_value(self.redis_key(nvr),
@@ -155,13 +157,12 @@ class KonfluxBuildHistory(Flask):
         else:
             start_search = datetime.now() - DELTA_SEARCH
 
-        builds = await self.konflux_db.search_builds_by_fields(
+        builds = [build async for build in self.konflux_db.search_builds_by_fields(
             start_search=start_search,
             where=where_clauses,
             extra_patterns=extra_patterns,
             order_by='end_time'
-        )
-        builds = [self.konflux_db.from_result_row(result) for result in itertools.islice(builds, MAX_BUILDS)]
+        )]
 
         results = [
             {
