@@ -1,5 +1,3 @@
-import asyncio
-import itertools
 import json
 import logging
 import subprocess
@@ -14,7 +12,7 @@ from flask import Flask, render_template, request, jsonify
 # How far back should we search for builds?
 DELTA_SEARCH = timedelta(days=180)
 # How long before cached Redis keys are cleared
-CACHE_EXPIRY = 60 * 60 * 3600 * 24 * 7  # 1 week
+CACHE_EXPIRY = 60 * 60 * 24 * 7  # 1 week
 # How many build results can we handle?
 MAX_BUILDS = 1000
 
@@ -112,7 +110,7 @@ class KonfluxBuildHistory(Flask):
 
                     build = [build async for build in self.konflux_db.search_builds_by_fields(
                         start_search=start_search,
-                        where={'nvr': nvr},
+                        where={'nvr': nvr, 'outcome': ['success', 'failure']},
                         limit=1
                     )]
                     result = build[0].installed_packages if build else []
@@ -139,7 +137,9 @@ class KonfluxBuildHistory(Flask):
             where_clauses['group'] = params['group']
         if params['assembly']:
             where_clauses['assembly'] = params['assembly']
-        if params['outcome'] != 'both':
+        if params['outcome'] == 'both':
+            where_clauses['outcome'] = ['failure', 'success']
+        else:
             where_clauses['outcome'] = params['outcome']
 
         extra_patterns = {}
@@ -161,7 +161,8 @@ class KonfluxBuildHistory(Flask):
             start_search=start_search,
             where=where_clauses,
             extra_patterns=extra_patterns,
-            order_by='end_time'
+            order_by='end_time',
+            limit=MAX_BUILDS
         )]
 
         results = [
@@ -178,14 +179,6 @@ class KonfluxBuildHistory(Flask):
                 "art-job-url": b.art_job_url,
             } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING and b.end_time, builds)
         ]
-
-        # Cache installed packages
-        await asyncio.gather(*[
-            redis.set_value(self.redis_key(build.nvr),
-                            json.dumps(build.installed_packages),
-                            expiry=CACHE_EXPIRY)
-            for build in builds
-        ])
 
         # Return the results as JSON
         return results
