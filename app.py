@@ -142,6 +142,7 @@ class KonfluxBuildHistory(Flask):
         else:
             where_clauses['outcome'] = params['outcome']
 
+        params['name'] = params['name'].strip()
         extra_patterns = {}
         if params['name']:
             extra_patterns['name'] = params['name']
