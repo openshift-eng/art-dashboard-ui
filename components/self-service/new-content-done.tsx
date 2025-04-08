@@ -139,7 +139,7 @@ export default function NewContentDone() {
 
     const fileContent = `content:
   source:
-    dockerfile: Dockerfile.openshift
+    dockerfile: ${inputs.dockerfilePath}
     git:
       branch:
         target: release-{MAJOR}.{MINOR}
@@ -155,7 +155,7 @@ distgit:
 enabled_repos:
 - rhel-9-appstream-rpms
 - rhel-9-baseos-rpms
-for_payload: false
+for_payload: ${inputs.imageType === "cvo-payload" || inputs.hasOperatorLabel}
 from:
   builder:
   - stream: rhel-9-golang
