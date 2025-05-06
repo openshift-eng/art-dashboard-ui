@@ -137,10 +137,13 @@ class KonfluxBuildHistory(Flask):
         else:
             where_clauses['outcome'] = params['outcome']
 
-        params['name'] = params['name'].strip()
+        name = params['name'].strip()
+        nvr = params['nvr'].strip()
         extra_patterns = {}
-        if params['name']:
-            extra_patterns['name'] = params['name']
+        if name:
+            extra_patterns['name'] = name
+        if nvr:
+            extra_patterns['nvr'] = nvr
         if params['art-job-url']:
             extra_patterns['art_job_url'] = params['art-job-url']
 

@@ -117,6 +117,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Clear the dropdown
             versionDropdown.innerHTML = "";
 
+            // Add a "-" entry to match any version
+            option = document.createElement("option");
+            option.value = '-';
+            option.textContent = '-';
+            versionDropdown.appendChild(option)
+
             // Populate the dropdown with fetched options
             versions.forEach((version) => {
                 const option = document.createElement("option");
@@ -124,12 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.textContent = version;
                 versionDropdown.appendChild(option);
             });
-
-            // Add a "-" entry to match any version
-            option = document.createElement("option");
-            option.value = '-';
-            option.textContent = '-';
-            versionDropdown.appendChild(option)
 
             // Preserve the group value from the query string if present
             const currentGroup = initialQueryParams?.group;
