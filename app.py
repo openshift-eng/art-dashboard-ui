@@ -104,12 +104,7 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
-                    nvr_timestamp = datetime.strptime(isolate_timestamp_in_release(nvr), "%Y%m%d%H%M%S")
-                    start_search = datetime(nvr_timestamp.year, nvr_timestamp.month, nvr_timestamp.day)
-
-
                     build = [build async for build in self.konflux_db.search_builds_by_fields(
-                        start_search=start_search,
                         where={'nvr': nvr, 'outcome': ['success', 'failure']},
                         limit=1
                     )]
