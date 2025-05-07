@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from artcommonlib import redis
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
 from artcommonlib.konflux.konflux_db import KonfluxDb
-from artcommonlib.release_util import isolate_timestamp_in_release
 from flask import Flask, render_template, request, jsonify
 
 # How far back should we search for builds?
@@ -132,9 +131,7 @@ class KonfluxBuildHistory(Flask):
             where_clauses['group'] = params['group']
         if params['assembly']:
             where_clauses['assembly'] = params['assembly']
-        if params['outcome'] == 'both':
-            where_clauses['outcome'] = ['failure', 'success']
-        else:
+        if params['outcome'] != 'all':
             where_clauses['outcome'] = params['outcome']
 
         name = params['name'].strip()
@@ -171,12 +168,12 @@ class KonfluxBuildHistory(Flask):
                 "outcome": str(b.outcome),
                 "assembly": b.assembly,
                 "group": b.group,
-                "completed": b.end_time.strftime("%d %b %Y %H:%M:%S"),
+                "completed": b.end_time.strftime("%d %b %Y %H:%M:%S") if b.end_time else '-',
                 "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
-            } for b in filter(lambda b: b.outcome != KonfluxBuildOutcome.PENDING and b.end_time, builds)
+            } for b in builds
         ]
 
         # Return the results as JSON
