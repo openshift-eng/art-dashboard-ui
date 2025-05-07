@@ -24,6 +24,8 @@ function createRow(result) {
         outcomeDisplay = "✅";
     } else if (outcome.toLowerCase() === "failure") {
         outcomeDisplay = "❌";
+    } else if (outcome.toLowerCase() === "pending") {
+        outcomeDisplay = "⏳";
     } else {
         outcomeDisplay = outcome; // Fallback for other cases
     }
