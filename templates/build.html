@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Build information</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='build.css') }}">
+</head>
+<body>
+    <div class="main-container">
+        <div class="results-container">
+            <h2>Build information for <span>{{ nvr }}</span></h2>
+            <div>
+                {% if build %}
+                    <table id="buildTable">
+                        {% for key, value in build.items() %}
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p>No information available to display for this build.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

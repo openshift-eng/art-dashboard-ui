@@ -37,15 +37,15 @@ function createRow(result) {
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td">${result.nvr}</td>
+        <td class="nvr-td"><a href="/build?nvr=${result.nvr}" target="_blank">${result.nvr}</a></td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${result["completed"]}</td>
         <td>${engineDisplay}</td>
-        <td><a href="/packages?nvr=${result.nvr}" target="_blank">Show</a></td>
-        <td><a href="${result["source"]}" target="_blank">Source URL</a></td>
-        <td><a href="${result["pipeline URL"]}" target="_blank">Pipeline URL</a></td>
-        <td><a href="${result["art-job-url"]}" target="_blank">ART Job URL</a></td>
+        <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
+        <td><a href="${result["source"]}" target="_blank">🔗️</a></td>
+        <td><a href="${result["pipeline URL"]}" target="_blank">🔗</a></td>
+        <td><a href="${result["art-job-url"]}" target="_blank">🔗</a></td>
     `;
 
     return row;

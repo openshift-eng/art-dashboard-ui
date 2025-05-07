@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import re
 
 from artcommonlib import redis
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
+from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 
@@ -90,6 +90,46 @@ class KonfluxBuildHistory(Flask):
                     self._logger.error("Error fetching OCP versions: %s", result.stderr.strip())
                 raise RuntimeError('No matches found or an error occurred.')
 
+        @self.route("/build")
+        async def show_build():
+            default_result = {}
+            nvr = request.args.get("nvr")
+            redis_key = self.redis_build_key(nvr)
+
+            if not nvr:
+                # nvr param was not passed in
+                nvr = '<undefined>'
+                result = default_result
+
+            elif redis_value := await redis.get_value(redis_key):
+                # nvr param was passed in, and there is a cached entry for it
+                result = json.loads(redis_value)
+
+            else:
+                # nvr param was passed in, but there is no cached entry for it
+                # fetch the build record from Konflux DB
+                try:
+                    build = [build async for build in self.konflux_db.search_builds_by_fields(
+                        where={'nvr': nvr, 'outcome': ['success', 'failure']},
+                        limit=1
+                    )]
+                    result = build[0].to_dict() if build else {}
+
+                    # Update the cache
+                    if result:
+                        await redis.set_value(redis_key,
+                                              json.dumps(result),
+                                              expiry=CACHE_EXPIRY)
+
+                except Exception as e:
+                    self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
+                    result = default_result
+
+            return render_template("build.html",
+                                   nvr=nvr,
+                                   build=result)
+
+
         @self.route("/packages")
         async def show_packages():
             nvr = request.args.get("nvr")
@@ -100,7 +140,7 @@ class KonfluxBuildHistory(Flask):
                 nvr = '<undefined>'
                 result = default_result
 
-            elif redis_value := await redis.get_value(self.redis_key(nvr)):
+            elif redis_value := await redis.get_value(self.redis_packages_key(nvr)):
                 # nvr param was passed in, and there is a cached entry for it
                 result = json.loads(redis_value)
 
@@ -115,12 +155,13 @@ class KonfluxBuildHistory(Flask):
                     result = build[0].installed_packages if build else []
 
                     # Update the cache
-                    await redis.set_value(self.redis_key(nvr),
+                    await redis.set_value(self.redis_packages_key(nvr),
                                           json.dumps(result),
                                           expiry=CACHE_EXPIRY)
 
                 except Exception as e:
                     self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
+                    result = default_result
 
             return render_template("packages.html",
                                    nvr=nvr,
@@ -186,8 +227,12 @@ class KonfluxBuildHistory(Flask):
         return results
 
     @staticmethod
-    def redis_key(nvr: str):
+    def redis_packages_key(nvr: str):
         return f'appdata:art-build-history:installed-packages:{nvr}'
+
+    @staticmethod
+    def redis_build_key(nvr: str):
+        return f'appdata:art-build-history:build:{nvr}'
 
 
 app = KonfluxBuildHistory()
