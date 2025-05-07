@@ -60,7 +60,14 @@ document.getElementById("searchButton").addEventListener("click", function (even
     event.preventDefault()
     cachedResults = [];  // clear cached search results
     noResultsMessage.style.display = "none";
+
+    // Show loading gif
     showLoading();
+
+    // Prevent DOM scrolling
+    const scrollContainer = document.querySelector(".results-container");
+    scrollContainer.style.overflow = 'hidden';  // prevent scrolling
+
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
@@ -97,7 +104,11 @@ document.getElementById("searchButton").addEventListener("click", function (even
 
             updateStatusBar(cachedResults.length, cachedResults.length);
 
+            // Hide loading gif
             hideLoading();
+
+            // re-enable scrolling
+            scrollContainer.style.overflow = 'auto';
         }).catch((error) => {
             console.error("Error:", error);
         });
