@@ -18,17 +18,20 @@ function createRow(result) {
     const row = document.createElement("tr");
 
     // Determine the Outcome display value
-    outcome = result.outcome
-    let outcomeDisplay;
-    if (outcome.toLowerCase() === "success") {
-        outcomeDisplay = "✅";
-    } else if (outcome.toLowerCase() === "failure") {
-        outcomeDisplay = "❌";
-    } else if (outcome.toLowerCase() === "pending") {
-        outcomeDisplay = "⏳";
-    } else {
-        outcomeDisplay = outcome; // Fallback for other cases
-    }
+    const outcome = result.outcome?.toLowerCase() || "";
+    const outcomeDisplay = {
+        "success": "✅",
+        "failure": "❌",
+        "pending": "⏳",
+    }[outcome] || outcome;
+
+    // Engine icons
+    const engine = result.engine?.toLowerCase() || "";
+    const engineIcons = {
+        "konflux": `<img src="static/konflux.png" alt="Konflux" title="Konflux" style="height: 25px;">`,
+        "brew": `<img src="static/brew.png" alt="Brew" title="Brew" style="height: 25px;">`,
+    };
+    const engineDisplay = engineIcons[engine] || engine;
 
     // Create the row
     row.innerHTML = `
@@ -38,7 +41,7 @@ function createRow(result) {
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${result["completed"]}</td>
-        <td>${result["engine"]}</td>
+        <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">Show</a></td>
         <td><a href="${result["source"]}" target="_blank">Source URL</a></td>
         <td><a href="${result["pipeline URL"]}" target="_blank">Pipeline URL</a></td>
@@ -191,7 +194,10 @@ function matchesFilters(result, filterParams) {
         if (!value) continue; // Skip empty filter values
 
         if (key === "outcome") {
-            if (value != 'both' && result['outcome'] != value) {
+            if (value == 'completed') {
+                if(!['success', 'failure'].includes(result['outcome']))
+                    return false;
+            } else if(result['outcome'] != value) {
                 return false;
             }
         } else if (key == 'group') {
@@ -202,6 +208,10 @@ function matchesFilters(result, filterParams) {
             resultDate = new Date(result['completed']);
             afterDate = new Date(value);
             if (resultDate < afterDate) {
+                return false;
+            }
+        } else if (key == 'engine') {
+            if (value != 'both' && result['engine'] != value) {
                 return false;
             }
         } else {

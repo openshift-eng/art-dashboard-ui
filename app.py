@@ -129,15 +129,16 @@ class KonfluxBuildHistory(Flask):
     async def query(self, params: dict):
         self._logger.info("Search Parameters: %s", params)
 
-        where_clauses = {
-            'engine': params['engine'],
-        }
+        where_clauses = {}
+
         if params['group'] != '-':
             where_clauses['group'] = params['group']
         if params['assembly']:
             where_clauses['assembly'] = params['assembly']
-        if params['outcome'] != 'all':
+        if params['outcome'] != 'completed':
             where_clauses['outcome'] = params['outcome']
+        if params['engine'] != 'both':
+            where_clauses['engine'] = params['engine']
 
         name = params['name'].strip()
         nvr = params['nvr'].strip()
