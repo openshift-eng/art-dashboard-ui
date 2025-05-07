@@ -2,6 +2,7 @@ import json
 import logging
 import subprocess
 from datetime import datetime, timedelta
+import re
 
 from artcommonlib import redis
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBuildOutcome
@@ -63,18 +64,22 @@ class KonfluxBuildHistory(Flask):
 
         @self.route("/get_versions", methods=["GET"])
         def get_versions():
-            command = (
-                "git ls-remote --heads https://github.com/openshift-eng/ocp-build-data | "
-                "awk '/refs\\/heads\\/openshift-[1-9][0-9]*\\.[1-9][0-9]*$/ {print $2}' | "
-                "sed 's#refs/heads/##'"
-            )
-
-            result = subprocess.run(command, shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            url = "https://github.com/openshift-eng/ocp-build-data"
+            command = ["git", "ls-remote", "--heads", url]
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
 
             if result.stdout:
-                ocp_versions = result.stdout.strip().splitlines()
+                lines = result.stdout.splitlines()
+                pattern = re.compile(r"refs/heads/openshift-(\d+)\.(\d+)$")
+                versions = []
+
+                for line in lines:
+                    _, ref = line.split()
+                    if pattern.match(ref):
+                        versions.append(ref.replace("refs/heads/", ""))
+
                 sorted_ocp_versions = sorted(
-                    ocp_versions,
+                    versions,
                     key=lambda x: tuple(map(int, x.replace("openshift-", "").split("."))),
                     reverse=True
                 )
