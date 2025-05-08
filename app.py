@@ -57,7 +57,7 @@ class KonfluxBuildHistory(Flask):
             # Render the full template for non-AJAX requests
             return render_template(
                 "index.html",
-                query_params=request.args,
+                query_params=query_params,
                 search_results=search_results,
             )
 
@@ -172,30 +172,42 @@ class KonfluxBuildHistory(Flask):
 
         where_clauses = {}
 
-        if params['group'] != '-':
-            where_clauses['group'] = params['group']
-        if params['assembly']:
-            where_clauses['assembly'] = params['assembly']
-        if params['outcome'] != 'completed':
-            where_clauses['outcome'] = params['outcome']
-        if params['engine'] != 'both':
-            where_clauses['engine'] = params['engine']
+        group = params.get('group', '')
+        if group and group != '-':
+            where_clauses['group'] = group
 
-        name = params['name'].strip()
-        nvr = params['nvr'].strip()
+        assembly = params.get('assembly', 'stream').strip()
+        if assembly:
+            where_clauses['assembly'] = assembly
+
+        outcome = params.get('outcome', 'completed')
+        if outcome != 'completed':
+            where_clauses['outcome'] = outcome
+
+        engine = params.get('engine', 'both')
+        if engine != 'both':
+            where_clauses['engine'] = engine
+
         extra_patterns = {}
+
+        name = params.get('name', '').strip()
         if name:
             extra_patterns['name'] = name
+
+        nvr = params.get('nvr', '').strip()
         if nvr:
             extra_patterns['nvr'] = nvr
-        if params['art-job-url']:
-            extra_patterns['art_job_url'] = params['art-job-url']
 
-        if params['after']:
+        art_job_url = params.get('art-job-url', '').strip()
+        if art_job_url:
+            extra_patterns['art_job_url'] = art_job_url
+
+        after = params.get('after', '').strip()
+        if after:
             try:
-                start_search = datetime.strptime(params['after'], '%Y-%m-%d')
+                start_search = datetime.strptime(after, '%Y-%m-%d')
             except Exception as e:
-                self._logger.warning('Failed parsing date string %s: %s', params['after'], e)
+                self._logger.warning('Failed parsing date string %s: %s', after, e)
                 start_search = None
         else:
             start_search = datetime.now() - DELTA_SEARCH
