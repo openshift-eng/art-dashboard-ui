@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ART build history</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
     <div class="main-container">
@@ -40,7 +42,7 @@
                 </div>
                 <div class="input-container">
                     <label for="after">Completed after</label>
-                    <input type="date" id="after" name="after" placeholder="YYYY-MM-DD">
+                    <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
                 </div>
                 <div class="input-container">
                     <label for="engine">Engine</label>
