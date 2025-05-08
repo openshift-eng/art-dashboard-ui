@@ -13,10 +13,12 @@
                 {% if build %}
                     <table id="buildTable">
                         {% for key, value in build.items() %}
+                            {% if key != 'embargoed' %}
                         <tr>
                             <td>{{ key }}</td>
                             <td>{{ value }}</td>
                         </tr>
+                            {% endif %}
                         {% endfor %}
                     </table>
                 {% else %}
