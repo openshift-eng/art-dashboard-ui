@@ -115,7 +115,11 @@ document.getElementById("searchButton").addEventListener("click", function (even
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const versionDropdown = document.getElementById("group");
+    // Initialize Flatpickr
+    flatpickr("#after", {
+        dateFormat: "Y-m-d",  // YYYY-MM-DD
+        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    });
 
     // Ensure the loading overlay is hidden initially
     hideLoading();
@@ -127,6 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('after').value = formattedDate;
 
     // Fetch the versions from the server
+    const versionDropdown = document.getElementById("group");
     fetch("/get_versions")
         .then((response) => response.json())
         .then((versions) => {
