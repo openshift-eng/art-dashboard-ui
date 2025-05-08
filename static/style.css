@@ -69,7 +69,7 @@ body {
 }
 
 .input-container {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 label {
@@ -101,7 +101,7 @@ input[type="date"] {
 
 button {
     width: 100%;
-    padding: 10px;
+    padding: 5px 10px;
     background-color: #4caf50;
     color: #fff;
     border: none;
@@ -308,4 +308,10 @@ select option {
 
 #instructionsContent button {
     margin-top: 20px;
+}
+
+#resetSearch {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
 }

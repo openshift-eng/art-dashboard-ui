@@ -174,8 +174,12 @@ class KonfluxBuildHistory(Flask):
         where_clauses = {}
 
         group = params.get('group', '')
-        if group and group != '-':
+        if group:
             where_clauses['group'] = group
+
+        commitish = params.get('commitish', '').strip()
+        if commitish:
+            where_clauses['commitish'] = commitish
 
         assembly = params.get('assembly', 'stream').strip()
         if assembly:
@@ -228,6 +232,7 @@ class KonfluxBuildHistory(Flask):
                 "outcome": str(b.outcome),
                 "assembly": b.assembly,
                 "group": b.group,
+                "commitish": b.commitish,
                 "completed": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else '-',
                 "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}',
