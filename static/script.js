@@ -28,8 +28,8 @@ function createRow(result) {
     // Engine icons
     const engine = result.engine?.toLowerCase() || "";
     const engineIcons = {
-        "konflux": `<img src="static/konflux.png" alt="Konflux" title="Konflux" style="height: 25px;">`,
-        "brew": `<img src="static/brew.png" alt="Brew" title="Brew" style="height: 25px;">`,
+        "konflux": '<img src="static/konflux.png" alt="Konflux" title="Konflux" style="height: 25px;">',
+        "brew": '<img src="static/brew.png" alt="Brew" title="Brew" style="height: 25px;">',
     };
     const engineDisplay = engineIcons[engine] || engine;
 
@@ -56,154 +56,57 @@ function updateStatusBar(cachedCount, filteredCount) {
     statusTextBar.textContent = `Results: ${cachedCount} cached, ${filteredCount} filtered`;
 }
 
-document.getElementById("searchButton").addEventListener("click", function (event) {
-    event.preventDefault()
-    cachedResults = [];  // clear cached search results
-    noResultsMessage.style.display = "none";
+function displayResults(results) {
+    const tableBody = document.querySelector("#resultsTable tbody");
+    tableBody.innerHTML = "";
 
-    // Show loading gif
+    if (results.length === 0) {
+        document.getElementById("noResultsMessage").style.display = "block";
+    } else {
+        results.forEach(result => {
+            const row = createRow(result);
+            tableBody.appendChild(row);
+        });
+    }
+
+    updateStatusBar(cachedResults.length, results.length);
+}
+
+function performSearch(queryParams = null) {
     showLoading();
-
-    // Prevent DOM scrolling
     const scrollContainer = document.querySelector(".results-container");
-    scrollContainer.style.overflow = 'hidden';  // prevent scrolling
+    scrollContainer.style.overflow = 'hidden';
 
     const form = document.getElementById("searchForm");
-    const formData = new FormData(form);
+    const formData = queryParams || new FormData(form);
 
-    // Convert FormData to query string
-    const queryParams = new URLSearchParams(formData).toString();
-    const url = `/search?${queryParams}`;
+    const queryString = new URLSearchParams(formData).toString();
+    const url = `/search?${queryString}`;
 
-    // Update the browser URL with search parameters
-    window.history.pushState({}, '', url);
-
-    fetch(
-        url, {
+    fetch(url, {
         method: "GET",
         headers: { "X-Requested-With": "XMLHttpRequest" },
     })
-        .then((response) => response.json())
-        .then((data) => {
-            // Cache the results
-            cachedResults = data;
-
-            const tableBody = document.querySelector("#resultsTable tbody");
-            tableBody.innerHTML = ""; // Clear existing rows
-
-            // If no results are returned, show the "No Results" message
-            // Otherwise, populate table with new results
-            if (data.length === 0) {
-                noResultsMessage.style.display = "block";
-            } else {
-                data.forEach(result => {
-                    const row = createRow(result);
-                    tableBody.appendChild(row);
-                });
-            }
-
-            updateStatusBar(cachedResults.length, cachedResults.length);
-
-            // Hide loading gif
-            hideLoading();
-
-            // re-enable scrolling
-            scrollContainer.style.overflow = 'auto';
-        }).catch((error) => {
-            console.error("Error:", error);
-        });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Flatpickr
-    flatpickr("#after", {
-        dateFormat: "Y-m-d",  // YYYY-MM-DD
-        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    .then((response) => response.json())
+    .then((data) => {
+        cachedResults = data;
+        displayResults(data);
+        hideLoading();
+        scrollContainer.style.overflow = 'auto';
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        hideLoading();
     });
+}
 
-    // Ensure the loading overlay is hidden initially
-    hideLoading();
-
-    // Set default date cut off
-    const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 7);
-    const formattedDate = currentDate.toISOString().split('T')[0];
-    document.getElementById('after').value = formattedDate;
-
-    // Fetch the versions from the server
-    const versionDropdown = document.getElementById("group");
-    fetch("/get_versions")
-        .then((response) => response.json())
-        .then((versions) => {
-            // Clear the dropdown
-            versionDropdown.innerHTML = "";
-
-            // Add a "-" entry to match any version
-            option = document.createElement("option");
-            option.value = '-';
-            option.textContent = '-';
-            versionDropdown.appendChild(option)
-
-            // Populate the dropdown with fetched options
-            versions.forEach((version) => {
-                const option = document.createElement("option");
-                option.value = version;
-                option.textContent = version;
-                versionDropdown.appendChild(option);
-            });
-
-            // Preserve the group value from the query string if present
-            const currentGroup = initialQueryParams?.group;
-            if (currentGroup) {
-                versionDropdown.value = currentGroup;
-            }
-        }).catch((error) => console.error("Error fetching versions:", error));
-
-    // Populate form fields with initial query parameters
-    const form = document.getElementById("searchForm");
-    for (const [key, value] of Object.entries(initialQueryParams || {})) {
-        const input = form.querySelector(`[name="${key}"]`);
-        if (input) input.value = value;
-    }
-
-    // Populate the results table with initial results
-    const isSearch = window.location.search != '';
-    if (isSearch && initialResults) {
-        const tableBody = document.querySelector("#resultsTable tbody");
-        tableBody.innerHTML = ""; // Clear existing rows
-        if (initialResults.length === 0) {
-            noResultsMessage.style.display = "block";
-        } else {
-            initialResults.forEach(result => {
-                const row = createRow(result);
-                tableBody.appendChild(row);
-            });
-        }
-        updateStatusBar(initialResults.length, initialResults.length);
-    }
-});
-
-document.getElementById("filterButton").addEventListener("click", function () {
-    event.preventDefault(); // Prevent the default form submission behavior
-
-    // Collect the form values into search filters
+function filterResults() {
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
-    // Clear the results table
-    const tbody = document.querySelector('#resultsTable tbody');
-    tbody.innerHTML = '';
-
-    // Filter cached results based on filter criteria
     const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
-
-    filteredResults.forEach(filteredResult => {
-        const row = createRow(filteredResult);
-        tbody.appendChild(row);
-    });
-
-    updateStatusBar(cachedResults.length, filteredResults.length);
-});
+    displayResults(filteredResults);
+}
 
 function matchesFilters(result, filterParams) {
     for (let [key, value] of filterParams.entries()) {
@@ -221,8 +124,8 @@ function matchesFilters(result, filterParams) {
                 return false;
             }
         } else if (key == 'after') {
-            resultDate = new Date(result['completed']);
-            afterDate = new Date(value);
+            const resultDate = new Date(result['completed']);
+            const afterDate = new Date(value);
             if (resultDate < afterDate) {
                 return false;
             }
@@ -231,15 +134,14 @@ function matchesFilters(result, filterParams) {
                 return false;
             }
         } else {
-            // Generic filter logic for other keys
             try {
-                const regex = new RegExp(value, "i"); // Create a case-insensitive regex
+                const regex = new RegExp(value, "i");
                 if (!regex.test(result[key])) {
-                    return false; // Return false if regex does not match
+                    return false;
                 }
             } catch (e) {
-                console.error(`Invalid regex for 'name': ${value}`, e);
-                return false; // If regex is invalid, consider it not matching
+                console.error(`Invalid regex for '${key}': ${value}`, e);
+                return false;
             }
         }
     }
@@ -247,21 +149,107 @@ function matchesFilters(result, filterParams) {
     return true;
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    // Initialize Flatpickr
+    flatpickr("#after", {
+        dateFormat: "Y-m-d",
+        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    });
+
+    hideLoading();
+
+    // Set default date cut off
+    const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - 7);
+    const formattedDate = currentDate.toISOString().split('T')[0];
+    document.getElementById('after').value = formattedDate;
+
+    // Check if we're on a search results page (from server-side render)
+    const isSearchPage = document.body.dataset.isSearchPage === 'true';
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // If we have initial results from server, cache them
+    if (isSearchPage && window.initialResults) {
+        cachedResults = window.initialResults;
+        displayResults(cachedResults);
+    }
+    // Otherwise, if we have search parameters, perform search
+    else if (urlParams.size > 0) {
+        // Populate form fields from URL
+        const form = document.getElementById("searchForm");
+        urlParams.forEach((value, key) => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) input.value = value;
+        });
+
+        performSearch(urlParams);
+    }
+
+    // Fetch versions (independent of search)
+    const versionDropdown = document.getElementById("group");
+    fetch("/get_versions")
+        .then((response) => response.json())
+        .then((versions) => {
+            versionDropdown.innerHTML = "";
+
+            let option = document.createElement("option");
+            option.value = '-';
+            option.textContent = '-';
+            versionDropdown.appendChild(option);
+
+            versions.forEach((version) => {
+                const option = document.createElement("option");
+                option.value = version;
+                option.textContent = version;
+                versionDropdown.appendChild(option);
+            });
+
+            // Set version from URL if present
+            if (urlParams.has('group')) {
+                versionDropdown.value = urlParams.get('group');
+            }
+        })
+        .catch((error) => console.error("Error fetching versions:", error));
+});
+
+document.getElementById("searchButton").addEventListener("click", function (event) {
+    event.preventDefault();
+
+    const form = document.getElementById("searchForm");
+    const formData = new FormData(form);
+    const queryParams = new URLSearchParams(formData);
+
+    // Update browser URL without reloading
+    window.history.pushState({}, '', `/?${queryParams.toString()}`);
+
+    performSearch(formData);
+});
+
+document.getElementById("searchButton").addEventListener("click", function (event) {
+    event.preventDefault();
+    performSearch();
+});
+
+document.getElementById("filterButton").addEventListener("click", function (event) {
+    event.preventDefault();
+    filterResults();
+});
+
 document.getElementById("helpIcon").addEventListener("click", function() {
     const dialog = document.getElementById("instructionsDialog");
-    dialog.style.display = "block";  // Make it visible
+    dialog.style.display = "block";
     setTimeout(() => {
-        dialog.classList.add("show");  // Trigger zoomIn animation
-    }, 10);  // Delay slightly to allow the dialog to be visible first
+        dialog.classList.add("show");
+    }, 10);
 });
 
 document.getElementById("closeDialogButton").addEventListener("click", function() {
     const dialog = document.getElementById("instructionsDialog");
-    dialog.classList.remove("show");  // Remove zoomIn class
-    dialog.classList.add("hide");  // Add zoomOut class
+    dialog.classList.remove("show");
+    dialog.classList.add("hide");
 
     setTimeout(() => {
-        dialog.style.display = "none";  // Hide the dialog after animation
-        dialog.classList.remove("hide");  // Reset the hide class for future use
-    }, 400);  // Match the animation duration
+        dialog.style.display = "none";
+        dialog.classList.remove("hide");
+    }, 400);
 });

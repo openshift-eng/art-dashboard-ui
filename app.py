@@ -54,11 +54,12 @@ class KonfluxBuildHistory(Flask):
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify(search_results)  # Respond with JSON for AJAX requests
 
-            # Render the full template for non-AJAX requests
+            # For direct URL access, render template with results
             return render_template(
                 "index.html",
                 query_params=query_params,
-                search_results=search_results,
+                initial_results=search_results,  # Pass results to template
+                is_search_page=True  # Add flag to indicate this is a search result page
             )
 
         @self.route("/get_versions", methods=["GET"])
