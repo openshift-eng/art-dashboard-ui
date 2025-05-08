@@ -309,3 +309,9 @@ select option {
 #instructionsContent button {
     margin-top: 20px;
 }
+
+#resetSearch {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}

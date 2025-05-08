@@ -258,3 +258,38 @@ document.getElementById("closeDialogButton").addEventListener("click", function(
         dialog.classList.remove("hide");
     }, 400);
 });
+
+document.querySelector(".results-container h1").addEventListener("click", function() {
+    // Reset form
+    const form = document.getElementById("searchForm");
+
+    // Reset text inputs
+    form.querySelector("#name").value = "";
+    form.querySelector("#nvr").value = "";
+    form.querySelector("#assembly").value = "stream";
+    form.querySelector("#commitish").value = "";
+    form.querySelector("#art-job-url").value = "";
+
+    // Reset select dropdowns
+    form.querySelector("#outcome").value = "success";
+    form.querySelector("#engine").value = "konflux";
+    form.querySelector("#group").value = "";
+
+    // Reset date picker
+    flatpickr("#after", {
+        dateFormat: "Y-m-d",
+        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    });
+
+    // Clear any existing search results
+    cachedResults = [];
+    document.querySelector("#resultsTable tbody").innerHTML = "";
+    document.getElementById("noResultsMessage").style.display = "none";
+    updateStatusBar(0, 0);
+
+    // Clear the URL parameters
+    window.history.pushState({}, document.title, window.location.pathname);
+
+    // Clear cached results
+    cachedResults = [];
+});
