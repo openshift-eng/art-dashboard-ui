@@ -7,8 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        // Pass initial results from server to client
+        window.initialResults = {{ initial_results|tojson|safe if initial_results else '[]' }};
+    </script>
 </head>
-<body>
+<body data-is-search-page="{{ 'true' if is_search_page else 'false' }}">
     <div class="main-container">
         <div class="sidebar" id="sidebar">
             <button id="toggleButton" class="toggle-btn">❮</button>
