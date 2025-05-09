@@ -94,7 +94,8 @@ class KonfluxBuildHistory(Flask):
         @self.route("/build")
         async def show_build():
             default_result = {}
-            nvr = request.args.get("nvr")
+            nvr = request.args.get('nvr')
+            outcome = request.args.get('outcome')
             redis_key = self.redis_build_key(nvr)
 
             if not nvr:
@@ -111,7 +112,7 @@ class KonfluxBuildHistory(Flask):
                 # fetch the build record from Konflux DB
                 try:
                     build = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where={'nvr': nvr, 'outcome': ['success', 'failure']},
+                        where={'nvr': nvr, 'outcome': outcome},
                         limit=1
                     )]
                     result = build[0].to_dict() if build else {}
@@ -123,7 +124,8 @@ class KonfluxBuildHistory(Flask):
                                               expiry=CACHE_EXPIRY)
 
                 except Exception as e:
-                    self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
+                    self._logger.error(
+                        'Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
                     result = default_result
 
             return render_template("build.html",
