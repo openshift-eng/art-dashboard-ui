@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import re
 
 from artcommonlib import redis
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord
+from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 
@@ -25,7 +25,6 @@ class KonfluxBuildHistory(Flask):
         self.add_routes()
 
         self.konflux_db = KonfluxDb()
-        self.konflux_db.bind(KonfluxBuildRecord)
         self._logger.info('Konflux DB initialized ')
 
     def init_logger(self):
@@ -218,6 +217,11 @@ class KonfluxBuildHistory(Flask):
                 start_search = None
         else:
             start_search = datetime.now() - DELTA_SEARCH
+
+        if params.get('type', 'image') == 'image':
+            self.konflux_db.bind(KonfluxBuildRecord)
+        else:
+            self.konflux_db.bind(KonfluxBundleBuildRecord)
 
         builds = [build async for build in self.konflux_db.search_builds_by_fields(
             start_search=start_search,

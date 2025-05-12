@@ -20,7 +20,7 @@ body {
 
 .sidebar {
     width: 30%;
-    max-width: 200px;
+    max-width: 250px;
     min-width: 30px;
     background-color: #2b2b2b;
     padding: 20px;
@@ -29,11 +29,27 @@ body {
     overflow: hidden;
     position: relative;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .sidebar.collapsed {
     width: 30px;
-    padding: 0;
+    padding-top: 10px; /* so the toggle button isn't crushed */
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 0; /* no need for bottom padding */
+}
+
+.form-actions {
+    margin-top: auto;
+    padding: 20px;
+}
+
+.sidebar.collapsed .form-scroll-container,
+.sidebar.collapsed .form-actions {
+    display: none;
 }
 
 .sidebar h2 {
@@ -69,7 +85,7 @@ body {
 }
 
 .input-container {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 label {
@@ -84,6 +100,15 @@ input {
     border: 1px solid #444;
     border-radius: 4px;
     background-color: #333;
+}
+
+.form-scroll-container {
+    overflow-y: auto;
+    padding-right: 20px;
+    border-radius: 5px;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: unset;
 }
 
 form input, form label {
