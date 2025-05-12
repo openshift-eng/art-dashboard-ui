@@ -16,58 +16,68 @@
     <div class="main-container">
         <div class="sidebar" id="sidebar">
             <button id="toggleButton" class="toggle-btn">❮</button>
-            <form id="searchForm" method="GET" action="/search">
-                <div class="input-container">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name">
-                </div>
-                <div class="input-container">
-                    <label for="nvr">NVR</label>
-                    <input type="text" id="nvr" name="nvr">
-                </div>
-                <div class="input-container">
-                    <label for="outcome">Outcome</label>
-                    <select id="outcome" name="outcome">
-                        <option value="success" selected>✅</option>
-                        <option value="failure">❌</option>
-                        <option value="pending">⏳</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-                <div class="input-container">
-                    <label for="group">Group</label>
-                    <select id="group" name="group">
-                        <!-- Options will be populated dynamically -->
-                    </select>
-                </div>
-                <div class="input-container">
-                    <label for="assembly">Assembly</label>
-                    <input type="text" id="assembly" name="assembly" value="stream">
-                </div>
-                <div class="input-container">
-                    <label for="commitish">Commitish</label>
-                    <input type="text" id="commitish" name="commitish">
-                </div>
-                <div class="input-container">
-                    <label for="after">Completed after</label>
-                    <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
-                </div>
-                <div class="input-container">
-                    <label for="engine">Engine</label>
-                    <select id="engine" name="engine">
-                        <option value="konflux" selected>Konflux</option>
-                        <option value="brew">Brew</option>
-                        <option value="both">Both</option>
-                    </select>
-                </div>
-                <div class="input-container">
-                    <label for="art-job-url">ART job URL</label>
-                    <input type="text" id="art-job-url" name="art-job-url">
-                </div>
-
-                <button type="submit" id="searchButton">Search</button>
+            <div class="form-scroll-container">
+                <form id="searchForm" method="GET" action="/search">
+                    <div class="input-container">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name">
+                    </div>
+                    <div class="input-container">
+                        <label for="group">Group</label>
+                        <select id="group" name="group">
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <label for="assembly">Assembly</label>
+                        <input type="text" id="assembly" name="assembly" value="stream">
+                    </div>
+                    <div class="input-container">
+                        <label for="type">Type</label>
+                        <select id="type" name="type">
+                            <option value="image" selected>Image</option>
+                            <option value="bundle">Bundle</option>
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <label for="outcome">Outcome</label>
+                        <select id="outcome" name="outcome">
+                            <option value="success" selected>✅</option>
+                            <option value="failure">❌</option>
+                            <option value="pending">⏳</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <label for="engine">Engine</label>
+                        <select id="engine" name="engine">
+                            <option value="konflux" selected>Konflux</option>
+                            <option value="brew">Brew</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <label for="after">Completed after</label>
+                        <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div class="input-container">
+                        <label for="nvr">NVR</label>
+                        <input type="text" id="nvr" name="nvr">
+                    </div>
+                    <div class="input-container">
+                        <label for="commitish">Commitish</label>
+                        <input type="text" id="commitish" name="commitish">
+                    </div>
+                    <div class="input-container">
+                        <label for="art-job-url">ART job URL</label>
+                        <input type="text" id="art-job-url" name="art-job-url">
+                    </div>
+                </form>
+            </div> <!-- form-scroll-container -->
+            <div class="form-actions">
+                <button type="submit" form="searchForm" id="searchButton">Search</button>
                 <button type="button" id="filterButton" class="filter-btn">Filter</button>
-            </form>
+            </div>
         </div> <!-- sidebar -->
 
         <div class="results-container">
