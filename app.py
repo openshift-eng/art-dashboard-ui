@@ -110,6 +110,11 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
+                    if request.args.get('type', 'image') == 'image':
+                        self.konflux_db.bind(KonfluxBuildRecord)
+                    else:
+                        self.konflux_db.bind(KonfluxBundleBuildRecord)
+
                     build = [build async for build in self.konflux_db.search_builds_by_fields(
                         where={'nvr': nvr, 'outcome': outcome},
                         limit=1
@@ -244,6 +249,7 @@ class KonfluxBuildHistory(Flask):
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
+                "type": params.get('type', 'image')
             } for b in builds
         ]
 
