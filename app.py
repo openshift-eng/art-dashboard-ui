@@ -147,14 +147,18 @@ class KonfluxBuildHistory(Flask):
                 nvr = '<undefined>'
                 result = default_result
 
-            elif redis_value := await redis.get_value(self.redis_packages_key(nvr)):
-                # nvr param was passed in, and there is a cached entry for it
-                result = json.loads(redis_value)
+
+            elif (raw_value := await redis.get_value(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
+                # nvr param was passed in, and there is a cached entry for it,
+                # and the cached entry is not an empty list
+                result = parsed
 
             else:
-                # nvr param was passed in, but there is no cached entry for it
+                # nvr param was passed in, but there is no cached entry for it,
+                # or the cached entry is an empty list
                 # fetch the build record from Konflux DB
                 try:
+                    self.konflux_db.bind(KonfluxBuildRecord)
                     build = [build async for build in self.konflux_db.search_builds_by_fields(
                         where={'nvr': nvr, 'outcome': ['success', 'failure']},
                         limit=1
