@@ -148,7 +148,7 @@ export default function NewContentDone() {
     ci_alignment:
       streams_prs:
         ci_build_root:
-          stream: rhel-9-golang-ci-build-root
+          member: ci-openshift-build-root-latest.rhel9
 distgit:
   branch: rhaos-{MAJOR}.{MINOR}-rhel-9
   component: ${imageName}-container
