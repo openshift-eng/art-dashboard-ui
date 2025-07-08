@@ -224,21 +224,34 @@ class KonfluxBuildHistory(Flask):
             except Exception as e:
                 self._logger.warning('Failed parsing date string %s: %s', after, e)
                 start_search = None
+
         else:
             start_search = datetime.now() - DELTA_SEARCH
 
-        if params.get('type', 'image') == 'image':
-            self.konflux_db.bind(KonfluxBuildRecord)
-        else:
-            self.konflux_db.bind(KonfluxBundleBuildRecord)
-
-        builds = [build async for build in self.konflux_db.search_builds_by_fields(
+        # Fetch image builds
+        self.konflux_db.bind(KonfluxBuildRecord)
+        image_builds = [build async for build in self.konflux_db.search_builds_by_fields(
             start_search=start_search,
             where=where_clauses,
             extra_patterns=extra_patterns,
             order_by='end_time',
             limit=MAX_BUILDS
         )]
+
+        # Fetch bundle builds
+        self.konflux_db.bind(KonfluxBundleBuildRecord)
+        bundle_builds = [build async for build in self.konflux_db.search_builds_by_fields(
+            start_search=start_search,
+            where=where_clauses,
+            extra_patterns=extra_patterns,
+            order_by='end_time',
+            limit=MAX_BUILDS
+        )]
+
+        # Combine all builds, sort by end time
+        all_builds = image_builds + bundle_builds
+        all_builds = sorted(all_builds, key=lambda record: record.end_time, reverse=True)
+        all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
 
         results = [
             {
@@ -253,8 +266,8 @@ class KonfluxBuildHistory(Flask):
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
-                "type": params.get('type', 'image')
-            } for b in builds
+                "type": "bundle" if isinstance(b, KonfluxBundleBuildRecord) else "image",
+            } for b in all_builds
         ]
 
         # Return the results as JSON
