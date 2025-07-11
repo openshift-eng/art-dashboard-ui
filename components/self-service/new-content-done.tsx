@@ -152,9 +152,6 @@ export default function NewContentDone() {
 distgit:
   branch: rhaos-{MAJOR}.{MINOR}-rhel-9
   component: ${imageName}-container
-enabled_repos:
-- rhel-9-appstream-rpms
-- rhel-9-baseos-rpms
 for_payload: ${inputs.imageType === "cvo-payload" || inputs.hasOperatorLabel}
 from:
   builder:
