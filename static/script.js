@@ -17,6 +17,31 @@ function hideLoading() {
 function createRow(result) {
     const row = document.createElement("tr");
 
+    // Helper: format relative time
+    function timeAgo(timestamp) {
+        const now = new Date();
+        const then = new Date(timestamp);
+        const seconds = Math.floor((now - then) / 1000);
+
+        const intervals = [
+            { label: 'year', seconds: 31536000 },
+            { label: 'month', seconds: 2592000 },
+            { label: 'week', seconds: 604800 },
+            { label: 'day', seconds: 86400 },
+            { label: 'hour', seconds: 3600 },
+            { label: 'minute', seconds: 60 },
+            { label: 'second', seconds: 1 }
+        ];
+
+        for (const interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                return `${count} ${interval.label}${count > 1 ? 's' : ''} ago`;
+            }
+        }
+        return 'just now';
+    }
+
     // Determine the Outcome display value
     const outcome = result.outcome?.toLowerCase() || "";
     const outcomeDisplay = {
@@ -33,6 +58,11 @@ function createRow(result) {
     };
     const engineDisplay = engineIcons[engine] || engine;
 
+    // Completed + relative time
+    const completed = result["completed"];
+    const completedRelative = timeAgo(completed);
+    const completedDisplay = `${completed}<br><em style="color: #777;">(${completedRelative})</em>`;
+
     // Create the row
     row.innerHTML = `
         <td>${result["name"]}</td>
@@ -40,12 +70,16 @@ function createRow(result) {
         <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank">${result.nvr}</a></td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
-        <td>${result["completed"]}</td>
+        <td>${completedDisplay}</td>
         <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
-        <td><a href="${result["source"]}" target="_blank">🔗️</a></td>
-        <td><a href="${result["pipeline URL"]}" target="_blank">🔗</a></td>
-        <td><a href="${result["art-job-url"]}" target="_blank">🔗</a></td>
+        <td>
+            <ul>
+              <li><a href="${result["source"]}" target="_blank" title="Source commit URL">🧬</a></li>
+              <li><a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a></li>
+              <li><a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a></li>
+            </ul>
+        </td>
     `;
 
     return row;
@@ -192,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Fetch versions (independent of search)
     const versionDropdown = document.getElementById("group");
+
     fetch("/get_versions")
         .then((response) => response.json())
         .then((versions) => {
@@ -202,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
             option.textContent = '';
             versionDropdown.appendChild(option);
 
+            // Add options
             versions.forEach((version) => {
                 const option = document.createElement("option");
                 option.value = version;
@@ -209,9 +245,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 versionDropdown.appendChild(option);
             });
 
-            // Set version from URL if present
             if (urlParams.has('group')) {
+                // Set version from URL if present
                 versionDropdown.value = urlParams.get('group');
+            } else {
+                // Sort versions numerically and select most recent
+                const mostRecent = versions.sort((a, b) => {
+                    const [aMajor, aMinor] = a.split('.').map(Number);
+                    const [bMajor, bMinor] = b.split('.').map(Number);
+                    return bMajor - aMajor || bMinor - aMinor;
+                })[0];
+                versionDropdown.value = mostRecent;
             }
         })
         .catch((error) => console.error("Error fetching versions:", error));
