@@ -74,11 +74,9 @@ function createRow(result) {
         <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
         <td>
-            <ul>
-              <li><a href="${result["source"]}" target="_blank" title="Source commit URL">🧬</a></li>
-              <li><a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a></li>
-              <li><a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a></li>
-            </ul>
+            <a href="${result["source"]}" target="_blank" title="Source commit URL">🧬</a>
+            <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
+            <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
     `;
 

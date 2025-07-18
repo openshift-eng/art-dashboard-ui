@@ -183,18 +183,16 @@ th {
     min-width: 100px;
 }
 
+th.links-th {
+    min-width: 150px;
+}
+
 td {
     background-color: #2b2b2b;
 }
 
-td ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-td ul li {
-    padding: 7px;
+td a {
+    padding: 0 5px;
 }
 
 select {
