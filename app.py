@@ -132,6 +132,8 @@ class KonfluxBuildHistory(Flask):
                         'Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
                     result = default_result
 
+            result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
+
             return render_template("build.html",
                                    nvr=nvr,
                                    build=result)
