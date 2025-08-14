@@ -250,9 +250,9 @@ class KonfluxBuildHistory(Flask):
             limit=MAX_BUILDS
         )]
 
-        # Combine all builds, sort by end time
+        # Combine all builds, sort by end time if available (for completed builds), or by start time if not
         all_builds = image_builds + bundle_builds
-        all_builds = sorted(all_builds, key=lambda record: record.end_time, reverse=True)
+        all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)
         all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
 
         results = [
