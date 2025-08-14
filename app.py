@@ -115,24 +115,38 @@ class KonfluxBuildHistory(Flask):
                     else:
                         self.konflux_db.bind(KonfluxBundleBuildRecord)
 
-                    build = [build async for build in self.konflux_db.search_builds_by_fields(
+                    builds = [build async for build in self.konflux_db.search_builds_by_fields(
                         where={'nvr': nvr, 'outcome': outcome},
                         limit=1
                     )]
-                    result = build[0].to_dict() if build else {}
 
-                    # Update the cache
-                    if result:
-                        await redis.set_value(redis_key,
-                                              json.dumps(result),
-                                              expiry=CACHE_EXPIRY)
+                    if not builds:
+                        self._logger.warning('No builds found for NVR %s with state %s', nvr, outcome)
+                        result = default_result
+
+                    else:
+                        # We expect only one build for a given NVR and outcome
+                        self._logger.info('Found %d builds for NVR %s with state %s', len(builds), nvr, outcome)
+                        build = builds[0]
+                        if build.embargoed:
+                            self._logger.warning('Build %s is embargoed, not displaying details', nvr)
+                            result = default_result
+
+                        else:
+                            result = build.to_dict() if build else default_result
+
+                            # Update the cache
+                            await redis.set_value(redis_key,
+                                                  json.dumps(result),
+                                                  expiry=CACHE_EXPIRY)
 
                 except Exception as e:
                     self._logger.error(
                         'Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
                     result = default_result
 
-            result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
+            if result:
+                result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
 
             return render_template("build.html",
                                    nvr=nvr,
@@ -239,6 +253,7 @@ class KonfluxBuildHistory(Flask):
             order_by='end_time',
             limit=MAX_BUILDS
         )]
+        image_builds = [b for b in image_builds if not b.embargoed]
 
         # Fetch bundle builds
         self.konflux_db.bind(KonfluxBundleBuildRecord)
