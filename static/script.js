@@ -14,6 +14,40 @@ function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
 }
 
+function showCustomAlert(message, icon = "⚠️") {
+    const overlay = document.getElementById("alertOverlay");
+    const dialog = document.getElementById("customAlertDialog");
+    const alertIcon = document.getElementById("alertIcon");
+    const alertMessage = document.getElementById("alertMessage");
+
+    // Set the message and icon
+    alertMessage.textContent = message;
+    alertIcon.textContent = icon;
+
+    // Show overlay and dialog
+    overlay.style.display = "block";
+    dialog.style.display = "block";
+
+    // Trigger animation after a short delay
+    setTimeout(() => {
+        dialog.classList.add("show");
+    }, 10);
+}
+
+function hideCustomAlert() {
+    const overlay = document.getElementById("alertOverlay");
+    const dialog = document.getElementById("customAlertDialog");
+
+    dialog.classList.remove("show");
+    dialog.classList.add("hide");
+
+    setTimeout(() => {
+        dialog.style.display = "none";
+        overlay.style.display = "none";
+        dialog.classList.remove("hide");
+    }, 400);
+}
+
 function createRow(result) {
     const row = document.createElement("tr");
 
@@ -139,6 +173,35 @@ function filterResults() {
 
     const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
+}
+
+function downloadResults() {
+    const form = document.getElementById("searchForm");
+    const formData = new FormData(form);
+
+    const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+    if (filteredResults.length === 0) {
+        showCustomAlert("No results to download. Please perform a search first.");
+        return;
+    }
+
+    // Convert results to JSON string (pretty-printed for readability)
+    const jsonStr = JSON.stringify(filteredResults, null, 2);
+
+    // Create a Blob with the JSON content
+    const blob = new Blob([jsonStr], { type: "application/json" });
+
+    // Create a temporary link and trigger download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "results.json"; // <-- filename
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function matchesFilters(result, filterParams) {
@@ -282,6 +345,11 @@ document.getElementById("filterButton").addEventListener("click", function (even
     filterResults();
 });
 
+document.getElementById("downloadButton").addEventListener("click", function (event) {
+    event.preventDefault();
+    downloadResults();
+});
+
 document.getElementById("helpIcon").addEventListener("click", function() {
     const dialog = document.getElementById("instructionsDialog");
     dialog.style.display = "block";
@@ -299,6 +367,15 @@ document.getElementById("closeDialogButton").addEventListener("click", function(
         dialog.style.display = "none";
         dialog.classList.remove("hide");
     }, 400);
+});
+
+document.getElementById("alertOkButton").addEventListener("click", function() {
+    hideCustomAlert();
+});
+
+// Close alert when clicking on overlay
+document.getElementById("alertOverlay").addEventListener("click", function() {
+    hideCustomAlert();
 });
 
 document.querySelector(".results-container h1").addEventListener("click", function() {

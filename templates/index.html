@@ -77,7 +77,8 @@
             </div> <!-- form-scroll-container -->
             <div class="form-actions">
                 <button type="submit" form="searchForm" id="searchButton">Search</button>
-                <button type="button" id="filterButton" class="filter-btn">Filter</button>
+                <button type="button" form="filterButton" id="filterButton">Filter</button>
+                <button type="button" form="downloadButton" id="downloadButton">Download</button>
             </div>
         </div> <!-- sidebar -->
 
@@ -120,6 +121,16 @@
                     <p>3. Adjust the filters to limit the results being displayed</p>
                     <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
                     <button id="closeDialogButton">Close</button>
+                </div>
+            </div>
+
+            <!-- Custom Alert Dialog -->
+            <div id="alertOverlay"></div>
+            <div id="customAlertDialog">
+                <div id="customAlertContent">
+                    <span class="alert-icon" id="alertIcon">⚠️</span>
+                    <div class="alert-message" id="alertMessage">Alert message</div>
+                    <button id="alertOkButton">OK</button>
                 </div>
             </div>
         </div>
