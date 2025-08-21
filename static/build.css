@@ -20,3 +20,83 @@ p {
     text-align: center;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
 }
+
+/* Copy button styles */
+.copy-button {
+    padding: 4px 6px;
+    background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+    color: #f0f0f0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0 0 0 auto !important;
+    min-width: 24px;
+    max-width: 50px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    vertical-align: middle;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+    background: linear-gradient(145deg, #5a5a5a, #4a4a4a);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+                0 3px 6px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.copy-button:active {
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(1px);
+}
+
+.copy-button.copied {
+    background: linear-gradient(145deg, #28a745, #1e7e34);
+    color: #fff;
+    border-color: #1e7e34;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+/* Override global button styles specifically for copy buttons */
+td .copy-button {
+    margin: 0 0 0 auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+td .field-with-copy {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left !important;
+    margin: 0;
+    padding: 0;
+    justify-content: space-between;
+    min-height: inherit;
+}
+
+td .field-value {
+    flex: 1;
+    margin: 0;
+    margin-right: 10px;
+    padding: 0;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word;
+    text-align: left !important;
+    line-height: normal !important;
+    align-self: center;
+}

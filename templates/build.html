@@ -4,6 +4,8 @@
     <title>Build information</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='build.css') }}">
+    <!-- Favicon for the browser tab -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='history.png') }}">
 </head>
 <body>
     <div class="main-container">
@@ -16,7 +18,27 @@
                             {% if key != 'embargoed' %}
                         <tr>
                             <td>{{ key }}</td>
-                            <td>{{ value }}</td>
+                            <td>
+                                {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec'] and value %}
+                                    <div class="field-with-copy">
+                                        <span class="field-value">{{ value }}</span>
+                                        <button class="copy-button" onclick="copyToClipboard('{{ value|e }}', this)" title="Copy to clipboard">📋</button>
+                                    </div>
+                                {% elif key == 'commitish' and value and build.get('source_repo') %}
+                                    <a href="{{ build.source_repo }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                                {% elif key == 'rebase_commitish' and value and build.get('rebase_repo_url') %}
+                                    <a href="{{ build.rebase_repo_url }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                                {% elif value and (
+                                    key.endswith('_url') or
+                                    key.endswith('_repo') or
+                                    key in ['source_repo', 'rebase_repo_url', 'build_pipeline_url', 'art_job_url', 'pipeline URL', 'source'] or
+                                    (value|string).startswith('http')
+                                ) %}
+                                    <a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
                         </tr>
                             {% endif %}
                         {% endfor %}
@@ -27,5 +49,7 @@
             </div>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
