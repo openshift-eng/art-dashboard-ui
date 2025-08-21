@@ -128,7 +128,7 @@ class KonfluxBuildHistory(Flask):
                         # We expect only one build for a given NVR and outcome
                         self._logger.info('Found %d builds for NVR %s with state %s', len(builds), nvr, outcome)
                         build = builds[0]
-                        if build.embargoed:
+                        if getattr(build, 'embargoed', False):
                             self._logger.warning('Build %s is embargoed, not displaying details', nvr)
                             result = default_result
 
