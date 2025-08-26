@@ -1,55 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Build information</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Build information{% endblock %}
+
+{% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
-    <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
-</head>
-<body>
-    <div class="main-container">
-        <div class="results-container">
-            <h2>Build information for <span>{{ nvr }}</span></h2>
-            <div>
-                {% if build %}
-                    <table id="buildTable">
-                        {% for key, value in build.items() %}
-                            {% if key != 'embargoed' %}
-                        <tr>
-                            <td>{{ key }}</td>
-                            <td>
-                                {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec', 'record_id'] and value %}
-                                    <div class="field-with-copy">
-                                        <span class="field-value">{{ value }}</span>
-                                        <button class="copy-button" onclick="copyToClipboard('{{ value|e }}', this)" title="Copy to clipboard">📋</button>
-                                    </div>
-                                {% elif key == 'commitish' and value and build.get('source_repo') %}
-                                    <a href="{{ build.source_repo }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
-                                {% elif key == 'rebase_commitish' and value and build.get('rebase_repo_url') %}
-                                    <a href="{{ build.rebase_repo_url }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
-                                {% elif value and (
-                                    key.endswith('_url') or
-                                    key.endswith('_repo') or
-                                    key in ['source_repo', 'rebase_repo_url', 'build_pipeline_url', 'art_job_url', 'pipeline URL', 'source'] or
-                                    (value|string).startswith('http')
-                                ) %}
-                                    <a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
-                                {% else %}
-                                    {{ value }}
-                                {% endif %}
-                            </td>
-                        </tr>
+{% endblock %}
+
+{% block content %}
+    <div class="results-container">
+        <h2>Build information for <span>{{ nvr }}</span></h2>
+        <div>
+            {% if build %}
+                <table id="buildTable">
+                    {% for key, value in build.items() %}
+                        {% if key != 'embargoed' %}
+                    <tr>
+                        <td>{{ key }}</td>
+                        <td>
+                            {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec', 'record_id'] and value %}
+                                <div class="field-with-copy">
+                                    <span class="field-value">{{ value }}</span>
+                                    <button class="copy-button" onclick="copyToClipboard('{{ value|e }}', this)" title="Copy to clipboard">📋</button>
+                                </div>
+                            {% elif key == 'commitish' and value and build.get('source_repo') %}
+                                <a href="{{ build.source_repo }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                            {% elif key == 'rebase_commitish' and value and build.get('rebase_repo_url') %}
+                                <a href="{{ build.rebase_repo_url }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                            {% elif value and (
+                                key.endswith('_url') or
+                                key.endswith('_repo') or
+                                key in ['source_repo', 'rebase_repo_url', 'build_pipeline_url', 'art_job_url', 'pipeline URL', 'source'] or
+                                (value|string).startswith('http')
+                            ) %}
+                                <a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                            {% else %}
+                                {{ value }}
                             {% endif %}
-                        {% endfor %}
-                    </table>
-                {% else %}
-                    <p>No information available to display for this build.</p>
-                {% endif %}
-            </div>
+                        </td>
+                    </tr>
+                        {% endif %}
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p class="no-results-message">No information available to display for this build.</p>
+            {% endif %}
         </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script src="{{ url_for('static', filename='js/build.js') }}"></script>
-</body>
-</html>
+{% endblock %}

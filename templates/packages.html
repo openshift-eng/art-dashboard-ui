@@ -1,28 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Installed Packages</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Installed Packages{% endblock %}
+
+{% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/packages.css') }}">
-    <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
-</head>
-<body>
-    <div class="main-container">
-        <div class="results-container">
-            <h2>Package list for <span>{{ nvr }}</span></h2>
-            <div>
-                {% if packages %}
-                    <table id="packagesTable">
-                        {% for package in packages %}
-                        <tr><td>{{ package }}</td></tr>
-                        {% endfor %}
-                    </table>
-                {% else %}
-                    <p class="no-results-message">No packages available to display.</p>
-                {% endif %}
-            </div>
+{% endblock %}
+
+{% block content %}
+    <div class="results-container">
+        <h2>Package list for <span>{{ nvr }}</span></h2>
+        <div>
+            {% if packages %}
+                <table id="packagesTable">
+                    {% for package in packages %}
+                    <tr><td>{{ package }}</td></tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p class="no-results-message">No packages available to display.</p>
+            {% endif %}
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

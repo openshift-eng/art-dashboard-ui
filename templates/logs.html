@@ -1,39 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Build Logs</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Build Logs{% endblock %}
+
+{% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
-    <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
-</head>
-<body>
-    <div class="main-container">
-        <div class="results-container">
-            <h2>Build logs for <span>{{ nvr }}</span></h2>
-            <div>
-                {% if containers %}
-                    {% for container in containers %}
-                        <div class="container-log-item">
-                            <div class="container-header" onclick="toggleContainer(this)">
-                                <span class="container-info">
-                                    <strong>{{ container.name }}</strong> - Exit Code: {{ container.exit_code }}
-                                </span>
-                                <span class="toggle-icon">▶</span>
-                            </div>
-                            <div class="container-logs" style="display: none;">
-                                <pre class="log-content">{{ container.log_output }}</pre>
-                            </div>
+{% endblock %}
+
+{% block content %}
+    <div class="results-container">
+        <h2>Build logs for <span>{{ nvr }}</span></h2>
+        <div>
+            {% if containers %}
+                {% for container in containers %}
+                    <div class="container-log-item">
+                        <div class="container-header" onclick="toggleContainer(this)">
+                            <span class="container-info">
+                                <strong>{{ container.name }}</strong> - Exit Code: {{ container.exit_code }}
+                            </span>
+                            <span class="toggle-icon">▶</span>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="no-results-message">No logs available to display for this build.</p>
-                {% endif %}
-            </div>
+                        <div class="container-logs" style="display: none;">
+                            <pre class="log-content">{{ container.log_output }}</pre>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-results-message">No logs available to display for this build.</p>
+            {% endif %}
         </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
-</body>
-</html>
+{% endblock %}
 

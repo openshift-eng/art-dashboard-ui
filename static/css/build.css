@@ -7,16 +7,6 @@
     font-size: 1.2em;
 }
 
-p {
-    font-size: 1.2em;
-    color: #f0f0f0;
-    background-color: #2b2b2b;
-    border: 1px solid #444;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
-
 /* Copy button styles */
 .copy-button {
     padding: 4px 6px;

@@ -1,152 +1,141 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ART build history</title>
+{% extends "base.html" %}
 
-    <!-- Include Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-    <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         // Pass initial results from server to client
         window.initialResults = {{ initial_results|tojson|safe if initial_results else '[]' }};
     </script>
-</head>
-<body data-is-search-page="{{ 'true' if is_search_page else 'false' }}">
-    <div class="main-container">
-        <div class="sidebar" id="sidebar">
-            <button id="toggleButton" class="toggle-btn">❮</button>
-            <div class="form-scroll-container">
-                <form id="searchForm" method="GET" action="/search">
-                    <div class="input-container">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" name="name">
-                    </div>
-                    <div class="input-container">
-                        <label for="group">Group</label>
-                        <select id="group" name="group">
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="input-container">
-                        <label for="assembly">Assembly</label>
-                        <input type="text" id="assembly" name="assembly" value="stream">
-                    </div>
-                    <div class="input-container">
-                        <label for="outcome">Outcome</label>
-                        <select id="outcome" name="outcome">
-                            <option value="success" selected>✅</option>
-                            <option value="failure">❌</option>
-                            <option value="pending">⏳</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                    <div class="input-container">
-                        <label for="engine">Engine</label>
-                        <select id="engine" name="engine">
-                            <option value="konflux" selected>Konflux</option>
-                            <option value="brew">Brew</option>
-                            <option value="both">Both</option>
-                        </select>
-                    </div>
-                    <div class="input-container">
-                        <label for="after">Completed after</label>
-                        <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
-                    </div>
-                    <div class="input-container">
-                        <label for="nvr">NVR</label>
-                        <input type="text" id="nvr" name="nvr">
-                    </div>
-                    <div class="input-container">
-                        <label for="commitish">Commitish</label>
-                        <input type="text" id="commitish" name="commitish">
-                    </div>
-                    <div class="input-container">
-                        <label for="art-job-url">ART job URL</label>
-                        <input type="text" id="art-job-url" name="art-job-url">
-                    </div>
-                </form>
-            </div> <!-- form-scroll-container -->
-            <div class="form-actions">
-                <button type="submit" form="searchForm" id="searchButton">Search</button>
-                <button type="button" form="filterButton" id="filterButton">Filter</button>
-                <button type="button" form="downloadButton" id="downloadButton">Download</button>
-            </div>
-        </div> <!-- sidebar -->
+{% endblock %}
 
-        <div class="results-container">
-            <h1><a href="" title="Reset search form and clear results">ART build history</a></h1>
-
-            <div id="loadingOverlay">
-                <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
-            </div>
-
-            <table id="resultsTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Outcome</th>
-                        <th>NVR</th>
-                        <th>Assembly</th>
-                        <th>Group</th>
-                        <th>Time</th>
-                        <th>Engine</th>
-                        <th>Packages</th>
-                        <th class="links-th">Links</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-
-            <p id="noResultsMessage" style="display: none; text-align: center; color: #f0f0f0;">
-                No builds have been found for the given parameters.
-            </p>
-
-            <div id="instructionsDialog" class="hidden">
-                <div id="instructionsContent">
-                    <h3>Instructions</h3>
-                    <p style="margin-bottom: 5px;">Default search filters: both failed and succeeded builds, latest OCP group, stream assembly,
-                    completed within last week</p>
-                    <p>1. Set the filters matching your search criteria</p>
-                    <p>2. Hit "Fetch from DB" to query the Konflux DB; results are cached in the browser</p>
-                    <p>3. Adjust the filters to limit the results being displayed</p>
-                    <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
-                    <button id="closeDialogButton">Close</button>
+{% block content %}
+    <div class="sidebar" id="sidebar">
+        <button id="toggleButton" class="toggle-btn">❮</button>
+        <div class="form-scroll-container">
+            <form id="searchForm" method="GET" action="/search">
+                <div class="input-container">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name">
                 </div>
-            </div>
-
-            <!-- Custom Alert Dialog -->
-            <div id="alertOverlay"></div>
-            <div id="customAlertDialog">
-                <div id="customAlertContent">
-                    <span class="alert-icon" id="alertIcon">⚠️</span>
-                    <div class="alert-message" id="alertMessage">Alert message</div>
-                    <button id="alertOkButton">OK</button>
+                <div class="input-container">
+                    <label for="group">Group</label>
+                    <select id="group" name="group">
+                        <!-- Options will be populated dynamically -->
+                    </select>
                 </div>
+                <div class="input-container">
+                    <label for="assembly">Assembly</label>
+                    <input type="text" id="assembly" name="assembly" value="stream">
+                </div>
+                <div class="input-container">
+                    <label for="outcome">Outcome</label>
+                    <select id="outcome" name="outcome">
+                        <option value="success" selected>✅</option>
+                        <option value="failure">❌</option>
+                        <option value="pending">⏳</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div class="input-container">
+                    <label for="engine">Engine</label>
+                    <select id="engine" name="engine">
+                        <option value="konflux" selected>Konflux</option>
+                        <option value="brew">Brew</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+                <div class="input-container">
+                    <label for="after">Completed after</label>
+                    <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
+                </div>
+                <div class="input-container">
+                    <label for="nvr">NVR</label>
+                    <input type="text" id="nvr" name="nvr">
+                </div>
+                <div class="input-container">
+                    <label for="commitish">Commitish</label>
+                    <input type="text" id="commitish" name="commitish">
+                </div>
+                <div class="input-container">
+                    <label for="art-job-url">ART job URL</label>
+                    <input type="text" id="art-job-url" name="art-job-url">
+                </div>
+            </form>
+        </div> <!-- form-scroll-container -->
+        <div class="form-actions">
+            <button type="submit" form="searchForm" id="searchButton">Search</button>
+            <button type="button" form="filterButton" id="filterButton">Filter</button>
+            <button type="button" form="downloadButton" id="downloadButton">Download</button>
+        </div>
+    </div> <!-- sidebar -->
+
+    <div class="results-container">
+        <h1><a href="" title="Reset search form and clear results">ART build history</a></h1>
+
+        <div id="loadingOverlay">
+            <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
+        </div>
+
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Outcome</th>
+                    <th>NVR</th>
+                    <th>Assembly</th>
+                    <th>Group</th>
+                    <th>Time</th>
+                    <th>Engine</th>
+                    <th>Packages</th>
+                    <th class="links-th">Links</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <p id="noResultsMessage" style="display: none; text-align: center; color: #f0f0f0;">
+            No builds have been found for the given parameters.
+        </p>
+
+        <div id="instructionsDialog" class="hidden">
+            <div id="instructionsContent">
+                <h3>Instructions</h3>
+                <p style="margin-bottom: 5px;">Default search filters: both failed and succeeded builds, latest OCP group, stream assembly,
+                completed within last week</p>
+                <p>1. Set the filters matching your search criteria</p>
+                <p>2. Hit "Fetch from DB" to query the Konflux DB; results are cached in the browser</p>
+                <p>3. Adjust the filters to limit the results being displayed</p>
+                <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
+                <button id="closeDialogButton">Close</button>
             </div>
         </div>
 
-        <div id="statusBar" class="status-bar">
-            <span id="statusText">
-                Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
-            </span>
-            <span id="helpIcon" style="cursor: pointer;">?</span>
+        <!-- Custom Alert Dialog -->
+        <div id="alertOverlay"></div>
+        <div id="customAlertDialog">
+            <div id="customAlertContent">
+                <span class="alert-icon" id="alertIcon">⚠️</span>
+                <div class="alert-message" id="alertMessage">Alert message</div>
+                <button id="alertOkButton">OK</button>
+            </div>
         </div>
-    </div> <!-- main-container -->
+    </div>
 
+    <div id="statusBar" class="status-bar">
+        <span id="statusText">
+            Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
+        </span>
+        <span id="helpIcon" style="cursor: pointer;">?</span>
+    </div>
+{% endblock %}
+
+{% block scripts %}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
         const initialResults = {{ search_results|tojson|safe }};
         const initialQueryParams = {{ query_params|tojson|safe }};
     </script>
-</body>
-</html>
+{% endblock %}
