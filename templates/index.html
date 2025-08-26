@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
     <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='history.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -86,7 +86,7 @@
             <h1><a href="" title="Reset search form and clear results">ART build history</a></h1>
 
             <div id="loadingOverlay">
-                <img src="{{ url_for('static', filename='loading.gif') }}" alt="Loading...">
+                <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
             </div>
 
             <table id="resultsTable">
@@ -143,7 +143,7 @@
         </div>
     </div> <!-- main-container -->
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
         const initialResults = {{ search_results|tojson|safe }};
         const initialQueryParams = {{ query_params|tojson|safe }};

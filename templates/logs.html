@@ -2,10 +2,10 @@
 <html>
 <head>
     <title>Build Logs</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='logs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
     <!-- Favicon for the browser tab -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='history.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/history.png') }}">
 </head>
 <body>
     <div class="main-container">
@@ -27,13 +27,13 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p>No logs available to display for this build.</p>
+                    <p class="no-results-message">No logs available to display for this build.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='logs.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
 </body>
 </html>
 

@@ -246,6 +246,31 @@ select option {
     color: #4caf50
 }
 
+.results-container a {
+    color: #4caf50;
+    text-decoration: none; /* Remove underline */
+    font-weight: normal;
+}
+
+.results-container a:hover {
+    color: #81e886 !important;
+    text-decoration: underline;
+}
+
+.results-container > div {
+    padding: 0 150px 0 150px;
+}
+
+p.no-results-message {
+    font-size: 1.2em;
+    color: #f0f0f0;
+    background-color: #2b2b2b;
+    border: 1px solid #444;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
 #loadingOverlay img {
     width: 100px;
 }
@@ -256,17 +281,6 @@ select option {
     color: #f0f0f0;
     text-align: center;
     display: none; /* Hidden by default */
-}
-
-.results-container a {
-    color: #4caf50;
-    text-decoration: none; /* Remove underline */
-    font-weight: normal;
-}
-
-.results-container a:hover {
-    color: #81e886 !important;
-    text-decoration: underline;
 }
 
 .status-bar {

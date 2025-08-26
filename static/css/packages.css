@@ -1,0 +1,8 @@
+.results-container h2 span {
+    color: #4caf50
+}
+
+#packagesTable td {
+    text-align: left;
+    font-size: 1.2em;
+}
