@@ -19,7 +19,7 @@
                         <tr>
                             <td>{{ key }}</td>
                             <td>
-                                {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec'] and value %}
+                                {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec', 'record_id'] and value %}
                                     <div class="field-with-copy">
                                         <span class="field-value">{{ value }}</span>
                                         <button class="copy-button" onclick="copyToClipboard('{{ value|e }}', this)" title="Copy to clipboard">📋</button>

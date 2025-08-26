@@ -108,7 +108,7 @@ function createRow(result) {
         <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
         <td>
-            <a href="${result["source"]}" target="_blank" title="Source commit URL">🧬</a>
+            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}&after=${result.start_time}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
@@ -411,7 +411,7 @@ document.querySelector(".results-container h1").addEventListener("click", functi
 
     // Clear cached results
     cachedResults = [];
-})
+});
 
 // Copy to clipboard functionality for build details page
 async function copyToClipboard(text, button) {

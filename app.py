@@ -4,10 +4,12 @@ import subprocess
 from datetime import datetime, timedelta
 import re
 
-from artcommonlib import redis
+from artcommonlib import redis, bigquery
+from artcommonlib.constants import TASKRUN_TABLE_ID
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
+from sqlalchemy import Column, DateTime, String
 
 # How far back should we search for builds?
 DELTA_SEARCH = timedelta(days=180)
@@ -152,6 +154,24 @@ class KonfluxBuildHistory(Flask):
                                    nvr=nvr,
                                    build=result)
 
+        @self.route("/logs")
+        async def show_logs():
+            nvr = request.args.get('nvr')
+            record_id = request.args.get('record_id')
+            after = datetime.strptime(request.args.get('after'), "%a, %d %b %Y %H:%M:%S %Z")
+
+            # Fetch task runs
+            bq_client = bigquery.BigQueryClient()
+            bq_client.bind(TASKRUN_TABLE_ID)
+            where_clauses = [
+                    Column('start_time', DateTime) >= after,
+                    Column('record_id', String) == record_id,
+            ]
+            rows = await bq_client.select(where_clauses)
+
+            # Gather container logs
+            containers = [container for row in rows for container in row.get('containers', []) if container.get('log_output')]
+            return render_template("logs.html", nvr=nvr, containers=containers)
 
         @self.route("/packages")
         async def show_packages():
@@ -284,6 +304,8 @@ class KonfluxBuildHistory(Flask):
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
                 "type": "bundle" if isinstance(b, KonfluxBundleBuildRecord) else "image",
+                "record_id": b.record_id,
+                "start_time": b.start_time,
             } for b in all_builds
         ]
 

@@ -242,6 +242,10 @@ select option {
     position: relative;
 }
 
+.results-container h2 span {
+    color: #4caf50
+}
+
 #loadingOverlay img {
     width: 100px;
 }
