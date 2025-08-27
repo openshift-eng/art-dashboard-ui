@@ -8,7 +8,7 @@
 
 {% block content %}
     <div class="results-container">
-        <h2>Build logs for <span>{{ nvr }}</span></h2>
+        <h2>Build logs for <span><a href="/build?nvr={{ nvr }}" target="_blank">{{ nvr }}</a></span></h2>
         <div>
             {% if containers %}
                 {% for container in containers %}
