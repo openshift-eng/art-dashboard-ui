@@ -92,10 +92,10 @@ function createRow(result) {
     };
     const engineDisplay = engineIcons[engine] || engine;
 
-    // Completed + relative time
-    const completed = result["completed"];
-    const completedRelative = timeAgo(completed);
-    const completedDisplay = `${completed}<br><em style="color: #777;">(${completedRelative})</em>`;
+    // Build time + relative time
+    const buildTime = result["time"];
+    const completedBuildTime = timeAgo(buildTime);
+    const buildTimeDisplay = `${buildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
 
     // Create the row
     row.innerHTML = `
@@ -104,7 +104,7 @@ function createRow(result) {
         <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank">${result.nvr}</a></td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
-        <td>${completedDisplay}</td>
+        <td>${buildTimeDisplay}</td>
         <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
         <td>

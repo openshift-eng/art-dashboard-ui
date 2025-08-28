@@ -298,7 +298,7 @@ class KonfluxBuildHistory(Flask):
                 "assembly": b.assembly,
                 "group": b.group,
                 "commitish": b.commitish,
-                "completed": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else '-',
+                "time": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else b.start_time.strftime("%B %d, %Y, %I:%M:%S %p"),
                 "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
