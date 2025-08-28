@@ -54,7 +54,7 @@ function createRow(result) {
     // Helper: format relative time
     function timeAgo(timestamp) {
         const now = new Date();
-        const then = new Date(timestamp);
+        const then = new Date(timestamp + " UTC");
         const seconds = Math.floor((now - then) / 1000);
 
         const intervals = [
@@ -94,8 +94,9 @@ function createRow(result) {
 
     // Build time + relative time
     const buildTime = result["time"];
+    const localBuildTime = new Date(buildTime + " UTC").toLocaleString();
     const completedBuildTime = timeAgo(buildTime);
-    const buildTimeDisplay = `${buildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
+    const buildTimeDisplay = `${localBuildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
 
     // Create the row
     row.innerHTML = `
