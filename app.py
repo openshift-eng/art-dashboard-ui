@@ -71,21 +71,24 @@ class KonfluxBuildHistory(Flask):
 
             if result.stdout:
                 lines = result.stdout.splitlines()
-                pattern = re.compile(r"refs/heads/openshift-(\d+)\.(\d+)$")
-                versions = []
+                all_branches = []
 
                 for line in lines:
                     _, ref = line.split()
-                    if pattern.match(ref):
-                        versions.append(ref.replace("refs/heads/", ""))
+                    branch_name = ref.replace("refs/heads/", "")
+                    all_branches.append(branch_name)
 
-                sorted_ocp_versions = sorted(
-                    versions,
-                    key=lambda x: tuple(map(int, x.replace("openshift-", "").split("."))),
-                    reverse=True
-                )
-                self._logger.info('Found OCP versions: %s', ', '.join(sorted_ocp_versions))
-                return jsonify(sorted_ocp_versions)
+                # Sort branches openshift-X.Y at the top, then alphabetically the remaining branches
+                def sort_key(branch):
+                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", branch)
+                    if openshift_pattern:
+                        major, minor = map(int, openshift_pattern.groups())
+                        return (0, -major, -minor)  # 0 for priority, negative for reverse order
+                    return (1, branch.lower())  # everything else alphabetically
+
+                sorted_branches = sorted(all_branches, key=sort_key)
+                self._logger.info('Found %d branches, first 10: %s', len(sorted_branches), ', '.join(sorted_branches[:10]))
+                return jsonify(sorted_branches)
 
             else:
                 if result.stderr:

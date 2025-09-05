@@ -1,4 +1,6 @@
 let cachedResults = [];
+let allBranches = [];
+let highlightedIndex = -1;
 
 document.getElementById("toggleButton").addEventListener("click", function() {
     const sidebar = document.getElementById("sidebar");
@@ -250,6 +252,121 @@ function matchesFilters(result, filterParams) {
     return true;
 }
 
+function setupAutocomplete(input, dropdown) {
+    function filterBranches(query) {
+        if (!query) return allBranches;
+
+        const lowercaseQuery = query.toLowerCase();
+        return allBranches.filter(branch =>
+            branch.toLowerCase().includes(lowercaseQuery)
+        );
+    }
+
+    function showDropdown(branches) {
+        dropdown.innerHTML = '';
+        highlightedIndex = -1;
+
+        if (branches.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        branches.forEach((branch, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.textContent = branch;
+            item.dataset.index = index;
+
+            item.addEventListener('click', () => {
+                input.value = branch;
+                dropdown.style.display = 'none';
+                highlightedIndex = -1;
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIndex = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        // Scroll highlighted item into view
+        if (index >= 0 && items[index]) {
+            items[index].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            });
+        }
+    }
+
+    // Input event for filtering
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        const filteredBranches = filterBranches(query);
+        showDropdown(filteredBranches);
+    });
+
+    // Focus event to show dropdown
+    input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        const filteredBranches = filterBranches(query);
+        showDropdown(filteredBranches);
+    });
+
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        const isVisible = dropdown.style.display === 'block';
+
+        if (!isVisible) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+                highlightItem(highlightedIndex);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                highlightedIndex = Math.max(highlightedIndex - 1, -1);
+                highlightItem(highlightedIndex);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                    // Select the highlighted item
+                    input.value = items[highlightedIndex].textContent;
+                    hideDropdown();
+                } else if (items.length > 0) {
+                    // Auto-select the first filtered result if no item is highlighted
+                    input.value = items[0].textContent;
+                    hideDropdown();
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    // Click outside to hide dropdown
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     // Initialize Flatpickr
     flatpickr("#after", {
@@ -286,41 +403,24 @@ document.addEventListener("DOMContentLoaded", () => {
         performSearch(urlParams);
     }
 
-    // Fetch versions (independent of search)
-    const versionDropdown = document.getElementById("group");
+    // Fetch all branches for autocomplete (independent of search)
+    const groupInput = document.getElementById("group");
+    const groupDropdown = document.getElementById("group-dropdown");
 
     fetch("/get_versions")
         .then((response) => response.json())
-        .then((versions) => {
-            versionDropdown.innerHTML = "";
+        .then((branches) => {
+            allBranches = branches;
 
-            let option = document.createElement("option");
-            option.value = '';
-            option.textContent = '';
-            versionDropdown.appendChild(option);
-
-            // Add options
-            versions.forEach((version) => {
-                const option = document.createElement("option");
-                option.value = version;
-                option.textContent = version;
-                versionDropdown.appendChild(option);
-            });
-
+            // Set value from URL if present
             if (urlParams.has('group')) {
-                // Set version from URL if present
-                versionDropdown.value = urlParams.get('group');
-            } else {
-                // Sort versions numerically and select most recent
-                const mostRecent = versions.sort((a, b) => {
-                    const [aMajor, aMinor] = a.split('.').map(Number);
-                    const [bMajor, bMinor] = b.split('.').map(Number);
-                    return bMajor - aMajor || bMinor - aMinor;
-                })[0];
-                versionDropdown.value = mostRecent;
+                groupInput.value = urlParams.get('group');
             }
         })
-        .catch((error) => console.error("Error fetching versions:", error));
+        .catch((error) => console.error("Error fetching branches:", error));
+
+    // Setup autocomplete functionality
+    setupAutocomplete(groupInput, groupDropdown);
 });
 
 document.getElementById("searchButton").addEventListener("click", function (event) {

@@ -275,3 +275,49 @@ select option {
     margin-left: 10px;
     cursor: pointer;
 }
+
+/* Autocomplete styles */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #333;
+    border: 1px solid #444;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: #f0f0f0;
+    border-bottom: 1px solid #444;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-all;
+    line-height: 1.2;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background-color: #4caf50;
+    color: white;
+}
+
+.autocomplete-item.highlighted {
+    background-color: #4caf50;
+    color: white;
+}
