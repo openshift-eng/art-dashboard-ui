@@ -21,9 +21,10 @@
                 </div>
                 <div class="input-container">
                     <label for="group">Group</label>
-                    <select id="group" name="group">
-                        <!-- Options will be populated dynamically -->
-                    </select>
+                    <div class="autocomplete-container">
+                        <input type="text" id="group" name="group" placeholder="Type to search branches..." autocomplete="off">
+                        <div id="group-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
                 </div>
                 <div class="input-container">
                     <label for="assembly">Assembly</label>
