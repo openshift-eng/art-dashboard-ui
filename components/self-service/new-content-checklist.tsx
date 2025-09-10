@@ -49,7 +49,7 @@ export function NewContentChecklist() {
                         label="You have performed a threat model assessment"/>
       <Tooltip title={`ProdSec no longer performs an assessment, instead requiring a self-assessment from this link`}>
         <IconButton color="primary" aria-label="help"
-                    href="https://docs.engineering.redhat.com/display/PRODSEC/Request+a+SD+Elements+Threat+Model+for+new+OCP+components"
+                    href="https://spaces.redhat.com/spaces/PRODSEC/pages/388107958/Request+an+SD+Elements+Threat+Model+for+new+OCP+components"
                     target="_blank">
           <HelpIcon/>
         </IconButton>
