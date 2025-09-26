@@ -1,0 +1,277 @@
+.sidebar {
+    width: 30%;
+    max-width: 250px;
+    min-width: 30px;
+    background-color: #2b2b2b;
+    padding: 20px;
+    border-right: 2px solid #3a3a3a;
+    transition: width 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.sidebar.collapsed {
+    width: 30px;
+    padding-top: 10px; /* so the toggle button isn't crushed */
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 0; /* no need for bottom padding */
+}
+
+.form-actions {
+    margin-top: auto;
+    padding: 20px;
+}
+
+.sidebar.collapsed .form-scroll-container,
+.sidebar.collapsed .form-actions {
+    display: none;
+}
+
+.sidebar h2 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed h2,
+.sidebar.collapsed .input-container,
+.sidebar.collapsed #searchForm button {
+    display: none;
+}
+
+.sidebar #searchForm {
+    margin-top: 30px;
+}
+
+.toggle-btn {
+    width: 100%;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    padding: 5px 0;
+    cursor: pointer;
+    font-size: 1.2em;
+    border-radius: 4px;
+    transition: background-color 0.3s; /* Ensures smooth hover transition */
+}
+
+.toggle-btn:hover {
+    background-color: #4caf50; /* Restores the hover effect */
+}
+
+.input-container {
+    margin-bottom: 40px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+}
+
+.form-scroll-container {
+    overflow-y: auto;
+    padding-right: 20px;
+    border-radius: 5px;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: unset;
+}
+
+form input, form label {
+    font-size: 14px;
+}
+
+input[type="text"] {
+    color: #f0f0f0;
+}
+
+input[type="date"] {
+    color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+#filterButton {
+    background-color: #2196f3;
+}
+
+#filterButton {
+    background-color: #2196f3;
+}
+
+#filterButton:hover {
+    background-color: #1e88e5;
+}
+
+#downloadButton {
+    background-color: #F5AC02;
+}
+
+#downloadButton:hover {
+    background-color: #DE9C02;
+}
+
+td.nvr-td {
+    text-align: left;
+}
+
+th.links-th {
+    min-width: 150px;
+}
+
+td a {
+    padding: 0 5px;
+}
+
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: #f0f0f0;
+    font-family: Arial, sans-serif;
+    appearance: none;
+    cursor: pointer;
+}
+
+select option {
+    padding: 10px;
+    color: #f0f0f0;
+}
+
+#noResultsMessage {
+    font-size: 1.5em;
+    margin-top: 50px;
+    color: #f0f0f0;
+    text-align: center;
+    display: none; /* Hidden by default */
+}
+
+#resetSearch {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+#instructionsDialog {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);  /* Initially position at the bottom */
+    background: linear-gradient(145deg, #404040, #2b2b2b);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 600px;
+    line-height: 1.5;
+    opacity: 0;  /* Start as invisible */
+    transition: opacity 0.3s ease;
+}
+
+#instructionsDialog.show {
+    animation: zoomIn 0.4s ease-out forwards;  /* Apply the animation when the dialog is shown */
+}
+
+#instructionsDialog.hide {
+    animation: zoomOut 0.4s ease-in forwards;  /* Animation when hiding */
+}
+
+@keyframes zoomIn {
+    0% {
+        transform: translate(-50%, 50%) scale(0.8);  /* Start from a smaller scale and below */
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);  /* End at full size and centered */
+        opacity: 1;  /* Fully visible */
+    }
+}
+
+@keyframes zoomOut {
+    0% {
+        transform: translate(-50%, -50%) scale(1);  /* Start from full size and centered */
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, 50%) scale(0.8);  /* Shrink and move to the bottom */
+        opacity: 0;
+    }
+}
+
+#instructionsContent {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#instructionsContent h3 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#instructionsContent button {
+    margin-top: 20px;
+}
+
+#loadingOverlay {
+    display: none; /* Hidden initially */
+    position: fixed; /* Stick to the viewport */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+    z-index: 1000; /* Ensure it appears above other content */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loadingOverlay img {
+    width: 100px;
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 5px;
+    font-size: 14px;
+    z-index: 5; /* Lower z-index to be behind the sidebar */
+    border-top: 1px solid #444; /* Slightly lighter border for contrast */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#statusText {
+    text-align: center;
+    flex-grow: 1;  /* Take up available space */
+}
+
+#helpIcon {
+    font-size: 18px;
+    background-color: #555;
+    padding: 5px;
+    border-radius: 50%;
+    margin-left: 10px;
+    cursor: pointer;
+}

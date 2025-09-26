@@ -1,0 +1,41 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: okd-build-history
+spec:
+  replicas: 1
+  selector:
+    app: okd-build-history
+  template:
+    metadata:
+      labels:
+        app: okd-build-history
+    spec:
+      containers:
+        - name: okd-build-history
+          image: okd-build-history:latest
+          imagePullPolicy: Always
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /etc/secrets/gcp/gcp-credentials.json
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /etc/secrets/gcp
+              readOnly: true
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: gcp-credentials
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - okd-build-history
+        from:
+          kind: ImageStreamTag
+          name: okd-build-history:latest

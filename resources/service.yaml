@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: okd-build-history
+    app.kubernetes.io/component: okd-build-history
+    app.kubernetes.io/instance: okd-build-history
+  name: okd-build-history
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: 8000-tcp
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    deploymentconfig: okd-build-history
+  sessionAffinity: None
+  type: ClusterIP

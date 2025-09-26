@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Build Logs{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="results-container">
+        <h2>Build logs for <span><a href="/build?nvr={{ nvr }}" target="_blank">{{ nvr }}</a></span></h2>
+        <div>
+            {% if containers %}
+                {% for container in containers %}
+                    <div class="container-log-item">
+                        <div class="container-header" onclick="toggleContainer(this)">
+                            <span class="container-info">
+                                <strong>{{ container.name }}</strong> - Exit Code: {{ container.exit_code }}
+                            </span>
+                            <span class="toggle-icon">▶</span>
+                        </div>
+                        <div class="container-logs" style="display: none;">
+                            <pre class="log-content">{{ container.log_output }}</pre>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-results-message">No logs available to display for this build.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
+{% endblock %}
+
