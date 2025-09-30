@@ -273,7 +273,7 @@ class KonfluxBuildHistory(Flask):
             extra_patterns=extra_patterns,
             order_by='end_time',
             limit=MAX_BUILDS
-        )]
+        ) if 'okd' in build.group]
 
         results = [
             {
