@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import subprocess
@@ -6,7 +7,7 @@ import re
 
 from artcommonlib import redis, bigquery
 from artcommonlib.constants import TASKRUN_TABLE_ID
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord
+from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 from sqlalchemy import Column, DateTime, String
@@ -100,6 +101,7 @@ class KonfluxBuildHistory(Flask):
             default_result = {}
             nvr = request.args.get('nvr')
             outcome = request.args.get('outcome')
+            build_type = request.args.get('type')
             redis_key = self.redis_build_key(nvr)
 
             if not nvr:
@@ -115,10 +117,15 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
-                    if request.args.get('type', 'image') == 'image':
-                        self.konflux_db.bind(KonfluxBuildRecord)
-                    else:
-                        self.konflux_db.bind(KonfluxBundleBuildRecord)
+                    match build_type:
+                        case 'image':
+                            self.konflux_db.bind(KonfluxBuildRecord)
+                        case 'bundle':
+                            self.konflux_db.bind(KonfluxBundleBuildRecord)
+                        case 'fbc':
+                            self.konflux_db.bind(KonfluxFbcBuildRecord)
+                        case _:
+                            raise ValueError(f"Unknown build type: {build_type}")
 
                     builds = [build async for build in self.konflux_db.search_builds_by_fields(
                         where={'nvr': nvr, 'outcome': outcome},
@@ -150,7 +157,9 @@ class KonfluxBuildHistory(Flask):
                         'Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
                     result = default_result
 
-            if result:
+            # FBCs are tagged to quay.io/redhat-user-workloads/ocp-art-tenant/art-fbc which is already public,
+            # so no need for art-images-share pullspec
+            if result and build_type != 'fbc':
                 result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
 
             return render_template("build.html",
@@ -267,31 +276,41 @@ class KonfluxBuildHistory(Flask):
         else:
             start_search = datetime.now() - DELTA_SEARCH
 
-        # Fetch image builds
-        self.konflux_db.bind(KonfluxBuildRecord)
-        image_builds = [build async for build in self.konflux_db.search_builds_by_fields(
-            start_search=start_search,
-            where=where_clauses,
-            extra_patterns=extra_patterns,
-            order_by='end_time',
-            limit=MAX_BUILDS
-        )]
-        image_builds = [b for b in image_builds if not b.embargoed]
+        async def search_for_build_type(record_class, filter_embargoed=False):
+            # Create separate KonfluxDb instance to avoid bind() race condition when running queries in parallel
+            db = KonfluxDb()
+            db.bind(record_class)
+            builds = [build async for build in db.search_builds_by_fields(
+                start_search=start_search,
+                where=where_clauses,
+                extra_patterns=extra_patterns,
+                order_by='end_time',
+                limit=MAX_BUILDS
+            )]
+            if filter_embargoed:
+                return [b for b in builds if not b.embargoed]
+            return builds
 
-        # Fetch bundle builds
-        self.konflux_db.bind(KonfluxBundleBuildRecord)
-        bundle_builds = [build async for build in self.konflux_db.search_builds_by_fields(
-            start_search=start_search,
-            where=where_clauses,
-            extra_patterns=extra_patterns,
-            order_by='end_time',
-            limit=MAX_BUILDS
-        )]
+        tasks = [
+            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True),
+            search_for_build_type(KonfluxBundleBuildRecord),
+            search_for_build_type(KonfluxFbcBuildRecord)
+        ]
+        image_builds, bundle_builds, fbc_builds = await asyncio.gather(*tasks)
 
         # Combine all builds, sort by end time if available (for completed builds), or by start time if not
-        all_builds = image_builds + bundle_builds
+        all_builds = image_builds + bundle_builds + fbc_builds
         all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)
         all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
+
+        def get_build_type(build):
+            if isinstance(build, KonfluxFbcBuildRecord):
+                return "fbc"
+            elif isinstance(build, KonfluxBundleBuildRecord):
+                return "bundle"
+            elif isinstance(build, KonfluxBuildRecord):
+                return "image"
+            raise ValueError(f"Unknown build type: {type(build)}")
 
         results = [
             {
@@ -306,7 +325,7 @@ class KonfluxBuildHistory(Flask):
                 "source": f'{b.source_repo}/tree/{b.commitish}',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
-                "type": "bundle" if isinstance(b, KonfluxBundleBuildRecord) else "image",
+                "type": get_build_type(b),
                 "record_id": b.record_id,
                 "start_time": b.start_time,
             } for b in all_builds
