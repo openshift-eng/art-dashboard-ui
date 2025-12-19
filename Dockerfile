@@ -6,10 +6,13 @@ COPY . /app
 
 USER root
 
+RUN wget -qO- https://astral.sh/uv/install.sh | sh
+ENV PATH="$HOME/.local/bin/:$PATH"
+
 RUN dnf update -y && \
     dnf install -y git && \
-    python -m pip install --upgrade pip && \
-    python -m pip install --no-cache-dir gunicorn -r requirements.txt
+    uv pip install --upgrade pip && \
+    uv pip install --no-cache-dir gunicorn -r requirements.txt
 
 USER 1001
 
