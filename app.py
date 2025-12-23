@@ -1,11 +1,13 @@
 import asyncio
 import json
 import logging
+import os
 import subprocess
 from datetime import datetime, timedelta
 import re
 
 from artcommonlib import redis, bigquery
+from google.cloud import bigquery as gcp_bigquery
 from artcommonlib.constants import TASKRUN_TABLE_ID
 from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord
 from artcommonlib.konflux.konflux_db import KonfluxDb
@@ -18,6 +20,8 @@ DELTA_SEARCH = timedelta(days=180)
 CACHE_EXPIRY = 60 * 60 * 24 * 7  # 1 week
 # How many build results can we handle?
 MAX_BUILDS = 1000
+# Dev mode: bypass Redis if unavailable (set ART_DASH_DEV=1)
+DEV_MODE = os.environ.get('ART_DASH_DEV', '').lower() in ('1', 'true', 'yes')
 
 
 class KonfluxBuildHistory(Flask):
@@ -28,7 +32,11 @@ class KonfluxBuildHistory(Flask):
         self.add_routes()
 
         self.konflux_db = KonfluxDb()
-        self._logger.info('Konflux DB initialized ')
+        self._logger.info('Konflux DB initialized')
+        self._redis_available = True  # Assume Redis is available until proven otherwise
+        self._memory_cache = {}  # In-memory fallback cache when Redis unavailable
+        if DEV_MODE:
+            self._logger.warning('Dev mode enabled (ART_DASH_DEV=1) - Redis errors will be bypassed')
 
     def init_logger(self):
         formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
@@ -37,6 +45,38 @@ class KonfluxBuildHistory(Flask):
         self._logger.addHandler(handler)
         self._logger.propagate = False
         self._logger.level = logging.INFO
+
+    async def safe_redis_get(self, key: str):
+        """Get value from Redis, falling back to memory cache if unavailable (in dev mode)."""
+        if not self._redis_available:
+            # Use in-memory cache as fallback
+            return self._memory_cache.get(key)
+        try:
+            return await redis.get_value(key)
+        except Exception as e:
+            if DEV_MODE:
+                self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                self._redis_available = False
+                return self._memory_cache.get(key)
+            raise
+
+    async def safe_redis_set(self, key: str, value: str, expiry: int = CACHE_EXPIRY):
+        """Set value in Redis and memory cache, silently failing Redis if unavailable (in dev mode)."""
+        if not self._redis_available:
+            # Use in-memory cache as fallback
+            self._memory_cache[key] = value
+            return
+        try:
+            await redis.set_value(key, value, expiry=expiry)
+            # Also store in memory cache for faster subsequent access
+            self._memory_cache[key] = value
+        except Exception as e:
+            if DEV_MODE:
+                self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                self._redis_available = False
+                self._memory_cache[key] = value
+            else:
+                raise
 
     def add_routes(self):
         @self.route("/")
@@ -50,7 +90,9 @@ class KonfluxBuildHistory(Flask):
         @self.route("/search", methods=["GET"])
         async def search():
             query_params = request.args.to_dict()
-            search_results = await self.query(query_params)
+            # Handle multi-select outcome values
+            outcomes = request.args.getlist('outcome')
+            search_results = await self.query(query_params, outcomes=outcomes)
 
             # Check if the request is an AJAX request
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -64,37 +106,55 @@ class KonfluxBuildHistory(Flask):
                 is_search_page=True  # Add flag to indicate this is a search result page
             )
 
-        @self.route("/get_versions", methods=["GET"])
-        def get_versions():
-            url = "https://github.com/openshift-eng/ocp-build-data"
-            command = ["git", "ls-remote", "--heads", url]
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
+        @self.route("/get_groups", methods=["GET"])
+        async def get_groups():
+            """Fetch distinct group names from BigQuery using efficient DISTINCT query."""
+            cache_key = self.redis_groups_key()
 
-            if result.stdout:
-                lines = result.stdout.splitlines()
-                all_branches = []
+            # Try to get from cache first
+            cached = await self.safe_redis_get(cache_key)
+            if cached:
+                self._logger.info('Returning cached group names')
+                return jsonify(json.loads(cached))
 
-                for line in lines:
-                    _, ref = line.split()
-                    branch_name = ref.replace("refs/heads/", "")
-                    all_branches.append(branch_name)
+            # Query BigQuery for distinct groups from last 180 days using efficient DISTINCT query
+            try:
+                self._logger.info('Fetching distinct group names from BigQuery')
+                start_date = datetime.now() - DELTA_SEARCH
+                start_timestamp = start_date.strftime('%Y-%m-%d')
 
-                # Sort branches openshift-X.Y at the top, then alphabetically the remaining branches
-                def sort_key(branch):
-                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", branch)
+                # Use Google Cloud BigQuery client directly for raw SQL query
+                client = gcp_bigquery.Client()
+                query = f"""
+                    SELECT DISTINCT `group`
+                    FROM `openshift-art.events.builds`
+                    WHERE start_time >= TIMESTAMP('{start_timestamp}')
+                    AND `group` IS NOT NULL
+                """
+                query_job = client.query(query)
+                rows = query_job.result()
+                all_groups = {row['group'] for row in rows if row.group}
+
+                # Sort groups: openshift-X.Y at the top (descending), then alphabetically
+                def sort_key(group):
+                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", group)
                     if openshift_pattern:
                         major, minor = map(int, openshift_pattern.groups())
                         return (0, -major, -minor)  # 0 for priority, negative for reverse order
-                    return (1, branch.lower())  # everything else alphabetically
+                    return (1, group.lower())  # everything else alphabetically
 
-                sorted_branches = sorted(all_branches, key=sort_key)
-                self._logger.info('Found %d branches, first 10: %s', len(sorted_branches), ', '.join(sorted_branches[:10]))
-                return jsonify(sorted_branches)
+                sorted_groups = sorted(all_groups, key=sort_key)
+                self._logger.info('Found %d distinct groups, first 10: %s',
+                                  len(sorted_groups), ', '.join(sorted_groups[:10]))
 
-            else:
-                if result.stderr:
-                    self._logger.error("Error fetching OCP versions: %s", result.stderr.strip())
-                raise RuntimeError('No matches found or an error occurred.')
+                # Cache for 1 hour (groups don't change frequently)
+                await self.safe_redis_set(cache_key, json.dumps(sorted_groups), expiry=60 * 60)
+
+                return jsonify(sorted_groups)
+
+            except Exception as e:
+                self._logger.error('Failed to fetch group names: %s', e)
+                return jsonify([])
 
         @self.route("/build")
         async def show_build():
@@ -109,7 +169,7 @@ class KonfluxBuildHistory(Flask):
                 nvr = '<undefined>'
                 result = default_result
 
-            elif redis_value := await redis.get_value(redis_key):
+            elif redis_value := await self.safe_redis_get(redis_key):
                 # nvr param was passed in, and there is a cached entry for it
                 result = json.loads(redis_value)
 
@@ -148,9 +208,7 @@ class KonfluxBuildHistory(Flask):
                             result = build.to_dict() if build else default_result
 
                             # Update the cache
-                            await redis.set_value(redis_key,
-                                                  json.dumps(result),
-                                                  expiry=CACHE_EXPIRY)
+                            await self.safe_redis_set(redis_key, json.dumps(result))
 
                 except Exception as e:
                     self._logger.error(
@@ -196,7 +254,7 @@ class KonfluxBuildHistory(Flask):
                 result = default_result
 
 
-            elif (raw_value := await redis.get_value(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
+            elif (raw_value := await self.safe_redis_get(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
                 # nvr param was passed in, and there is a cached entry for it,
                 # and the cached entry is not an empty list
                 result = parsed
@@ -214,9 +272,7 @@ class KonfluxBuildHistory(Flask):
                     result = build[0].installed_packages if build else []
 
                     # Update the cache
-                    await redis.set_value(self.redis_packages_key(nvr),
-                                          json.dumps(result),
-                                          expiry=CACHE_EXPIRY)
+                    await self.safe_redis_set(self.redis_packages_key(nvr), json.dumps(result))
 
                 except Exception as e:
                     self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
@@ -226,8 +282,8 @@ class KonfluxBuildHistory(Flask):
                                    nvr=nvr,
                                    packages=result)
 
-    async def query(self, params: dict):
-        self._logger.info("Search Parameters: %s", params)
+    async def query(self, params: dict, outcomes: list = None):
+        self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
 
         where_clauses = {}
 
@@ -239,13 +295,16 @@ class KonfluxBuildHistory(Flask):
         if commitish:
             where_clauses['commitish'] = commitish
 
-        assembly = params.get('assembly', 'stream').strip()
-        if assembly:
+        assembly = params.get('assembly', '').strip()
+        if assembly and assembly != '*':
             where_clauses['assembly'] = assembly
 
-        outcome = params.get('outcome', 'completed')
-        if outcome != 'completed':
-            where_clauses['outcome'] = outcome
+        # Handle multi-select outcomes
+        if outcomes and len(outcomes) > 0:
+            # If all three are selected, don't filter (equivalent to "completed")
+            all_outcomes = {'success', 'failure', 'pending'}
+            if set(outcomes) != all_outcomes:
+                where_clauses['outcome'] = outcomes
 
         engine = params.get('engine', 'both')
         if engine != 'both':
@@ -341,6 +400,10 @@ class KonfluxBuildHistory(Flask):
     @staticmethod
     def redis_build_key(nvr: str):
         return f'appdata:art-build-history:build:{nvr}'
+
+    @staticmethod
+    def redis_groups_key():
+        return 'appdata:art-build-history:distinct-groups'
 
 
 app = KonfluxBuildHistory()

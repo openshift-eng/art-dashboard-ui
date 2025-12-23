@@ -17,7 +17,7 @@
             <form id="searchForm" method="GET" action="/search">
                 <div class="input-container">
                     <label for="name">Name</label>
-                    <input type="text" id="name" name="name">
+                    <input type="text" id="name" name="name" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="group">Group</label>
@@ -28,16 +28,33 @@
                 </div>
                 <div class="input-container">
                     <label for="assembly">Assembly</label>
-                    <input type="text" id="assembly" name="assembly" value="stream">
+                    <div class="autocomplete-container">
+                        <input type="text" id="assembly" name="assembly" value="stream" autocomplete="off">
+                        <div id="assembly-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
                 </div>
                 <div class="input-container">
-                    <label for="outcome">Outcome</label>
-                    <select id="outcome" name="outcome">
-                        <option value="success" selected>✅</option>
-                        <option value="failure">❌</option>
-                        <option value="pending">⏳</option>
-                        <option value="completed">Completed</option>
-                    </select>
+                    <label>Outcome</label>
+                    <div class="multiselect-container" id="outcome-container">
+                        <div class="multiselect-display" id="outcome-display" tabindex="0">
+                            <span class="multiselect-text">Select outcomes...</span>
+                            <span class="multiselect-arrow">▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="outcome-dropdown" style="display: none;">
+                            <label class="multiselect-option">
+                                <input type="checkbox" name="outcome" value="success" checked>
+                                <span>✅ Success</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" name="outcome" value="failure">
+                                <span>❌ Failure</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" name="outcome" value="pending">
+                                <span>⏳ Pending</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="input-container">
                     <label for="engine">Engine</label>
@@ -53,15 +70,15 @@
                 </div>
                 <div class="input-container">
                     <label for="nvr">NVR</label>
-                    <input type="text" id="nvr" name="nvr">
+                    <input type="text" id="nvr" name="nvr" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="commitish">Commitish</label>
-                    <input type="text" id="commitish" name="commitish">
+                    <input type="text" id="commitish" name="commitish" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="art-job-url">ART job URL</label>
-                    <input type="text" id="art-job-url" name="art-job-url">
+                    <input type="text" id="art-job-url" name="art-job-url" placeholder="*">
                 </div>
             </form>
         </div> <!-- form-scroll-container -->

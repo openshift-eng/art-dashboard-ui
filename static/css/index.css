@@ -99,6 +99,12 @@ input[type="text"] {
     color: #f0f0f0;
 }
 
+input[type="text"]::placeholder {
+    color: #888;
+    font-style: italic;
+    opacity: 1;
+}
+
 input[type="date"] {
     color: #f0f0f0;
     font-family: Arial, sans-serif;
@@ -320,4 +326,85 @@ select option {
 .autocomplete-item.highlighted {
     background-color: #4caf50;
     color: white;
+}
+
+/* Multi-select dropdown styles */
+.multiselect-container {
+    position: relative;
+    width: 100%;
+}
+
+.multiselect-display {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: #f0f0f0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 36px;
+}
+
+.multiselect-display:focus {
+    outline: none;
+    border-color: #4caf50;
+}
+
+.multiselect-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.multiselect-arrow {
+    color: #888;
+    font-size: 10px;
+    margin-left: 8px;
+}
+
+.multiselect-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #333;
+    border: 1px solid #444;
+    border-radius: 4px;
+    margin-top: 2px;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.multiselect-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #f0f0f0;
+    border-bottom: 1px solid #444;
+    transition: background-color 0.2s;
+}
+
+.multiselect-option:last-child {
+    border-bottom: none;
+}
+
+.multiselect-option:hover {
+    background-color: #444;
+}
+
+.multiselect-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    accent-color: #4caf50;
+    cursor: pointer;
+}
+
+.multiselect-option span {
+    font-size: 14px;
 }

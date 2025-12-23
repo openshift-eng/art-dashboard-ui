@@ -8,6 +8,72 @@ document.getElementById("toggleButton").addEventListener("click", function() {
     this.innerHTML = sidebar.classList.contains("collapsed") ? "❯" : "❮";
 });
 
+// Multi-select dropdown functionality
+function setupMultiSelect(containerId, displayId, dropdownId) {
+    const container = document.getElementById(containerId);
+    const display = document.getElementById(displayId);
+    const dropdown = document.getElementById(dropdownId);
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+
+    const outcomeLabels = {
+        'success': '✅ Success',
+        'failure': '❌ Failure',
+        'pending': '⏳ Pending'
+    };
+
+    function updateDisplay() {
+        const selected = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => outcomeLabels[cb.value] || cb.value);
+
+        const textSpan = display.querySelector('.multiselect-text');
+        if (selected.length === 0) {
+            textSpan.textContent = 'Select outcomes...';
+        } else if (selected.length === checkboxes.length) {
+            textSpan.textContent = 'All outcomes';
+        } else {
+            textSpan.textContent = selected.join(', ');
+        }
+    }
+
+    function toggleDropdown() {
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        display.querySelector('.multiselect-arrow').textContent = isVisible ? '▼' : '▲';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        display.querySelector('.multiselect-arrow').textContent = '▼';
+    }
+
+    display.addEventListener('click', toggleDropdown);
+    display.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleDropdown();
+        }
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateDisplay);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+
+    // Initialize display
+    updateDisplay();
+}
+
+function getSelectedOutcomes() {
+    const checkboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
 function showLoading() {
     document.getElementById("loadingOverlay").style.display = "flex";
 }
@@ -208,16 +274,22 @@ function downloadResults() {
 }
 
 function matchesFilters(result, filterParams) {
+    // Collect all selected outcomes first (multi-select)
+    const selectedOutcomes = filterParams.getAll('outcome');
+
+    // Check outcome filter (must match at least one selected outcome)
+    if (selectedOutcomes.length > 0) {
+        if (!selectedOutcomes.includes(result['outcome'])) {
+            return false;
+        }
+    }
+
     for (let [key, value] of filterParams.entries()) {
         if (!value) continue; // Skip empty filter values
 
+        // Skip outcome - already handled above
         if (key === "outcome") {
-            if (value == 'completed') {
-                if(!['success', 'failure'].includes(result['outcome']))
-                    return false;
-            } else if(result['outcome'] != value) {
-                return false;
-            }
+            continue;
         } else if (key == 'group') {
             if (result['group'] != value) {
                 return false;
@@ -236,6 +308,11 @@ function matchesFilters(result, filterParams) {
             if (value != 'both' && result['engine'] != value) {
                 return false;
             }
+        } else if (key == 'assembly') {
+            // '*' matches any assembly
+            if (value != '*' && result['assembly'] != value) {
+                return false;
+            }
         } else {
             try {
                 const regex = new RegExp(value, "i");
@@ -250,6 +327,114 @@ function matchesFilters(result, filterParams) {
     }
 
     return true;
+}
+
+function setupStaticAutocomplete(input, dropdown, options) {
+    let highlightedIdx = -1;
+
+    function filterOptions(query) {
+        // For small option lists, always show all options
+        // This ensures users see all choices even when field has a value
+        if (options.length <= 5) return options;
+        if (!query) return options;
+        const lowercaseQuery = query.toLowerCase();
+        return options.filter(opt => opt.toLowerCase().includes(lowercaseQuery));
+    }
+
+    function showDropdown(items) {
+        dropdown.innerHTML = '';
+        highlightedIdx = -1;
+
+        if (items.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        items.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.textContent = item === '*' ? '* (any)' : item;
+            div.dataset.value = item;
+            div.dataset.index = index;
+
+            div.addEventListener('click', () => {
+                input.value = item;
+                dropdown.style.display = 'none';
+                highlightedIdx = -1;
+            });
+
+            dropdown.appendChild(div);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIdx = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        if (index >= 0 && items[index]) {
+            items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        const filtered = filterOptions(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        const filtered = filterOptions(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        const isVisible = dropdown.style.display === 'block';
+
+        if (!isVisible) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                highlightedIdx = Math.max(highlightedIdx - 1, -1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIdx >= 0 && items[highlightedIdx]) {
+                    input.value = items[highlightedIdx].dataset.value;
+                    hideDropdown();
+                } else if (items.length > 0) {
+                    input.value = items[0].dataset.value;
+                    hideDropdown();
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
 }
 
 function setupAutocomplete(input, dropdown) {
@@ -407,20 +592,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const groupInput = document.getElementById("group");
     const groupDropdown = document.getElementById("group-dropdown");
 
-    fetch("/get_versions")
+    fetch("/get_groups")
         .then((response) => response.json())
-        .then((branches) => {
-            allBranches = branches;
+        .then((groups) => {
+            allBranches = groups;
 
             // Set value from URL if present
             if (urlParams.has('group')) {
                 groupInput.value = urlParams.get('group');
             }
         })
-        .catch((error) => console.error("Error fetching branches:", error));
+        .catch((error) => console.error("Error fetching groups:", error));
 
     // Setup autocomplete functionality
     setupAutocomplete(groupInput, groupDropdown);
+
+    // Setup Assembly autocomplete with static options
+    const assemblyInput = document.getElementById("assembly");
+    const assemblyDropdown = document.getElementById("assembly-dropdown");
+    const assemblyOptions = ["stream", "test", "*"];
+    setupStaticAutocomplete(assemblyInput, assemblyDropdown, assemblyOptions);
+
+    // Setup Outcome multi-select
+    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+
+    // Set outcome checkboxes from URL if present
+    if (urlParams.has('outcome')) {
+        const outcomes = urlParams.getAll('outcome');
+        const checkboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = outcomes.includes(cb.value);
+        });
+        // Re-run updateDisplay after setting checkboxes
+        setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+    }
 });
 
 document.getElementById("searchButton").addEventListener("click", function (event) {
@@ -434,11 +639,6 @@ document.getElementById("searchButton").addEventListener("click", function (even
     window.history.pushState({}, '', `/?${queryParams.toString()}`);
 
     performSearch(formData);
-});
-
-document.getElementById("searchButton").addEventListener("click", function (event) {
-    event.preventDefault();
-    performSearch();
 });
 
 document.getElementById("filterButton").addEventListener("click", function (event) {
@@ -490,8 +690,15 @@ document.querySelector(".results-container h1").addEventListener("click", functi
     form.querySelector("#commitish").value = "";
     form.querySelector("#art-job-url").value = "";
 
+    // Reset outcome checkboxes (default: only success checked)
+    const outcomeCheckboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]');
+    outcomeCheckboxes.forEach(cb => {
+        cb.checked = cb.value === 'success';
+    });
+    // Re-initialize to update the display text
+    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+
     // Reset select dropdowns
-    form.querySelector("#outcome").value = "success";
     form.querySelector("#engine").value = "konflux";
     form.querySelector("#group").value = "";
 
