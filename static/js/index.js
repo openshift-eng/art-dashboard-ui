@@ -168,10 +168,13 @@ function createRow(result) {
     const buildTimeDisplay = `${localBuildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
 
     // Create the row
+    const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
+    const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank">${result.nvr}</a></td>
+        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank" title="Build details">${result.nvr}</a></td>
+        <td>${sourceLink}</td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${buildTimeDisplay}</td>

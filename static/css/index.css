@@ -14,6 +14,23 @@
     justify-content: flex-start;
 }
 
+.sidebar-title {
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4caf50;
+    text-align: center;
+}
+
+.sidebar-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.sidebar-title a:hover {
+    text-decoration: underline;
+}
+
 .sidebar.collapsed {
     width: 30px;
     padding-top: 10px; /* so the toggle button isn't crushed */
@@ -28,7 +45,8 @@
 }
 
 .sidebar.collapsed .form-scroll-container,
-.sidebar.collapsed .form-actions {
+.sidebar.collapsed .form-actions,
+.sidebar.collapsed .sidebar-title {
     display: none;
 }
 

@@ -12,6 +12,7 @@
 
 {% block content %}
     <div class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><a href="" title="Reset search form and clear results">ART build history</a></h3>
         <button id="toggleButton" class="toggle-btn">❮</button>
         <div class="form-scroll-container">
             <form id="searchForm" method="GET" action="/search">
@@ -97,8 +98,6 @@
     </div> <!-- sidebar -->
 
     <div class="results-container">
-        <h1><a href="" title="Reset search form and clear results">ART build history</a></h1>
-
         <div id="loadingOverlay">
             <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
         </div>
@@ -109,6 +108,7 @@
                     <th>Name</th>
                     <th>Outcome</th>
                     <th>NVR</th>
+                    <th>Source</th>
                     <th>Assembly</th>
                     <th>Group</th>
                     <th>Time</th>
