@@ -102,7 +102,7 @@ class KonfluxBuildHistory(Flask):
             return render_template(
                 "index.html",
                 query_params=query_params,
-                initial_results=search_results,  # Pass results to template
+                search_results=search_results,  # Pass results to template
                 is_search_page=True  # Add flag to indicate this is a search result page
             )
 
@@ -391,7 +391,12 @@ class KonfluxBuildHistory(Flask):
         else:
             start_search = datetime.now() - DELTA_SEARCH
 
-        async def search_for_build_type(record_class, filter_embargoed=False):
+        # Exclude large columns from search results to reduce data transfer and BigQuery costs
+        # These columns are only needed when viewing specific build details
+        # Only the 'builds' table (KonfluxBuildRecord) has these columns
+        IMAGE_BUILD_EXCLUDE_COLUMNS = ['installed_packages', 'installed_rpms']
+
+        async def search_for_build_type(record_class, filter_embargoed=False, exclude_columns=None):
             # Create separate KonfluxDb instance to avoid bind() race condition when running queries in parallel
             db = KonfluxDb()
             db.bind(record_class)
@@ -400,14 +405,15 @@ class KonfluxBuildHistory(Flask):
                 where=where_clauses,
                 extra_patterns=extra_patterns,
                 order_by='end_time',
-                limit=MAX_BUILDS
+                limit=MAX_BUILDS,
+                exclude_columns=exclude_columns
             )]
             if filter_embargoed:
                 return [b for b in builds if not b.embargoed]
             return builds
 
         tasks = [
-            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True),
+            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True, exclude_columns=IMAGE_BUILD_EXCLUDE_COLUMNS),
             search_for_build_type(KonfluxBundleBuildRecord),
             search_for_build_type(KonfluxFbcBuildRecord)
         ]
@@ -437,7 +443,8 @@ class KonfluxBuildHistory(Flask):
                 "commitish": b.commitish,
                 "time": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else b.start_time.strftime("%B %d, %Y, %I:%M:%S %p"),
                 "engine": str(b.engine),
-                "source": f'{b.source_repo}/tree/{b.commitish}',
+                "source": f'{b.source_repo}/tree/{b.commitish}' if b.source_repo else '',
+                "source_repo": b.source_repo or '',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
                 "type": get_build_type(b),

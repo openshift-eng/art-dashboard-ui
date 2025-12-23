@@ -224,7 +224,20 @@ function performSearch(queryParams = null) {
         method: "GET",
         headers: { "X-Requested-With": "XMLHttpRequest" },
     })
-    .then((response) => response.json())
+    .then((response) => {
+        if (!response.ok) {
+            // Try to extract error message from response
+            return response.text().then(text => {
+                // Check if it's an HTML error page (Flask debug page)
+                const titleMatch = text.match(/<title>([^<]+)/);
+                if (titleMatch) {
+                    throw new Error(titleMatch[1].replace(' // Werkzeug Debugger', '').trim());
+                }
+                throw new Error(`Server error: ${response.status} ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
     .then((data) => {
         cachedResults = data;
         displayResults(data);
@@ -232,8 +245,12 @@ function performSearch(queryParams = null) {
         scrollContainer.style.overflow = 'auto';
     })
     .catch((error) => {
-        console.error("Error:", error);
+        console.error("Search error:", error);
         hideLoading();
+        scrollContainer.style.overflow = 'auto';
+        cachedResults = [];
+        displayResults([]);
+        showCustomAlert(`Search failed: ${error.message}`, "❌");
     });
 }
 

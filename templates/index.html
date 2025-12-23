@@ -160,7 +160,7 @@
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
-        const initialResults = {{ search_results|tojson|safe }};
-        const initialQueryParams = {{ query_params|tojson|safe }};
+        const initialResults = {{ search_results|tojson|safe if search_results else '[]' }};
+        const initialQueryParams = {{ query_params|tojson|safe if query_params else '{}' }};
     </script>
 {% endblock %}
