@@ -325,6 +325,14 @@ function matchesFilters(result, filterParams) {
             if (!result['source'] || !result['source'].toLowerCase().includes(value.toLowerCase())) {
                 return false;
             }
+        } else if (key == 'image_sha_tag') {
+            // OR logic: matches image_pullspec with sha256:{value} OR image_tag containing value
+            const lowerValue = value.toLowerCase();
+            const pullspecMatch = result['image_pullspec'] && result['image_pullspec'].toLowerCase().includes('sha256:' + lowerValue);
+            const tagMatch = result['image_tag'] && result['image_tag'].toLowerCase().includes(lowerValue);
+            if (!pullspecMatch && !tagMatch) {
+                return false;
+            }
         } else if (key == 'after') {
             const resultDate = new Date(result['completed']);
             const afterDate = new Date(value);

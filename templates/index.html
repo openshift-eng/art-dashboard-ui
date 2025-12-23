@@ -12,7 +12,7 @@
 
 {% block content %}
     <div class="sidebar" id="sidebar">
-        <h3 class="sidebar-title"><a href="" title="Reset search form and clear results">ART build history</a></h3>
+        <h3 class="sidebar-title"><a href="/" title="Reset search form and clear results">ART build history</a></h3>
         <button id="toggleButton" class="toggle-btn">❮</button>
         <div class="form-scroll-container">
             <form id="searchForm" method="GET" action="/search">
@@ -72,6 +72,10 @@
                 <div class="input-container">
                     <label for="nvr">NVR</label>
                     <input type="text" id="nvr" name="nvr" placeholder="*">
+                </div>
+                <div class="input-container">
+                    <label for="image_sha_tag">Image sha256/tag</label>
+                    <input type="text" id="image_sha_tag" name="image_sha_tag" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="source_repo">Source repository</label>

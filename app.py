@@ -376,6 +376,9 @@ class KonfluxBuildHistory(Flask):
         if nvr:
             extra_patterns['nvr'] = nvr
 
+        # image_sha_tag is handled specially as it needs OR logic between image_pullspec and image_tag
+        image_sha_tag = params.get('image_sha_tag', '').strip()
+
         art_job_url = params.get('art-job-url', '').strip()
         if art_job_url:
             extra_patterns['art_job_url'] = art_job_url
@@ -421,6 +424,17 @@ class KonfluxBuildHistory(Flask):
 
         # Combine all builds, sort by end time if available (for completed builds), or by start time if not
         all_builds = image_builds + bundle_builds + fbc_builds
+
+        # Filter by image_sha_tag if specified (OR logic: matches image_pullspec sha256 OR image_tag substring)
+        if image_sha_tag:
+            sha_pattern = re.compile(f'.*sha256:{re.escape(image_sha_tag)}.*', re.IGNORECASE)
+            tag_pattern = re.compile(f'.*{re.escape(image_sha_tag)}.*', re.IGNORECASE)
+            all_builds = [
+                b for b in all_builds
+                if (hasattr(b, 'image_pullspec') and b.image_pullspec and sha_pattern.match(b.image_pullspec))
+                or (hasattr(b, 'image_tag') and b.image_tag and tag_pattern.match(b.image_tag))
+            ]
+
         all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)
         all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
 
@@ -445,6 +459,8 @@ class KonfluxBuildHistory(Flask):
                 "engine": str(b.engine),
                 "source": f'{b.source_repo}/tree/{b.commitish}' if b.source_repo else '',
                 "source_repo": b.source_repo or '',
+                "image_pullspec": getattr(b, 'image_pullspec', '') or '',
+                "image_tag": getattr(b, 'image_tag', '') or '',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
                 "type": get_build_type(b),
