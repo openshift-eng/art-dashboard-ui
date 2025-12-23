@@ -156,6 +156,56 @@ class KonfluxBuildHistory(Flask):
                 self._logger.error('Failed to fetch group names: %s', e)
                 return jsonify([])
 
+        @self.route("/get_source_repos", methods=["GET"])
+        async def get_source_repos():
+            """Fetch distinct source repository URLs from BigQuery using efficient DISTINCT query."""
+            cache_key = self.redis_source_repos_key()
+
+            # Try to get from cache first
+            cached = await self.safe_redis_get(cache_key)
+            if cached:
+                self._logger.info('Returning cached source repos')
+                return jsonify(json.loads(cached))
+
+            # Query BigQuery for distinct source repos from last 180 days
+            try:
+                self._logger.info('Fetching distinct source repos from BigQuery')
+                start_date = datetime.now() - DELTA_SEARCH
+                start_timestamp = start_date.strftime('%Y-%m-%d')
+
+                # Use Google Cloud BigQuery client directly for raw SQL query
+                client = gcp_bigquery.Client()
+                query = f"""
+                    SELECT DISTINCT source_repo
+                    FROM `openshift-art.events.builds`
+                    WHERE start_time >= TIMESTAMP('{start_timestamp}')
+                    AND source_repo IS NOT NULL
+                """
+                query_job = client.query(query)
+                rows = query_job.result()
+
+                # Strip https://github.com/ prefix for cleaner display
+                github_prefix = 'https://github.com/'
+                all_repos = set()
+                for row in rows:
+                    if row.source_repo:
+                        repo = row.source_repo
+                        if repo.startswith(github_prefix):
+                            repo = repo[len(github_prefix):]
+                        all_repos.add(repo)
+                all_repos = sorted(all_repos)
+
+                self._logger.info('Found %d distinct source repos', len(all_repos))
+
+                # Cache for 1 week
+                await self.safe_redis_set(cache_key, json.dumps(all_repos), expiry=CACHE_EXPIRY)
+
+                return jsonify(all_repos)
+
+            except Exception as e:
+                self._logger.error('Failed to fetch source repos: %s', e)
+                return jsonify([])
+
         @self.route("/build")
         async def show_build():
             default_result = {}
@@ -291,10 +341,6 @@ class KonfluxBuildHistory(Flask):
         if group:
             where_clauses['group'] = group
 
-        commitish = params.get('commitish', '').strip()
-        if commitish:
-            where_clauses['commitish'] = commitish
-
         assembly = params.get('assembly', '').strip()
         if assembly and assembly != '*':
             where_clauses['assembly'] = assembly
@@ -315,6 +361,16 @@ class KonfluxBuildHistory(Flask):
         name = params.get('name', '').strip()
         if name:
             extra_patterns['name'] = name
+
+        source_repo = params.get('source_repo', '').strip()
+        if source_repo:
+            # Use pattern matching since we strip https://github.com/ from displayed options
+            extra_patterns['source_repo'] = source_repo
+
+        commitish = params.get('commitish', '').strip().lower()
+        if commitish:
+            # Use pattern matching with starts-with logic
+            extra_patterns['commitish'] = f'^{commitish}'
 
         nvr = params.get('nvr', '').strip()
         if nvr:
@@ -404,6 +460,10 @@ class KonfluxBuildHistory(Flask):
     @staticmethod
     def redis_groups_key():
         return 'appdata:art-build-history:distinct-groups'
+
+    @staticmethod
+    def redis_source_repos_key():
+        return 'appdata:art-build-history:distinct-source-repos'
 
 
 app = KonfluxBuildHistory()

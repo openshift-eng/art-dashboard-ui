@@ -328,6 +328,12 @@ select option {
     color: white;
 }
 
+/* Wider dropdown for source repository */
+#source_repo-dropdown .autocomplete-item {
+    white-space: normal;
+    word-break: break-all;
+}
+
 /* Multi-select dropdown styles */
 .multiselect-container {
     position: relative;

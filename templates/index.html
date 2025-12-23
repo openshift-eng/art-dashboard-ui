@@ -73,7 +73,14 @@
                     <input type="text" id="nvr" name="nvr" placeholder="*">
                 </div>
                 <div class="input-container">
-                    <label for="commitish">Commitish</label>
+                    <label for="source_repo">Source repository</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="source_repo" name="source_repo" placeholder="*" autocomplete="off">
+                        <div id="source_repo-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
+                </div>
+                <div class="input-container">
+                    <label for="commitish">Source commit</label>
                     <input type="text" id="commitish" name="commitish" placeholder="*">
                 </div>
                 <div class="input-container">

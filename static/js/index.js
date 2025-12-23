@@ -1,5 +1,6 @@
 let cachedResults = [];
 let allBranches = [];
+let allSourceRepos = [];
 let highlightedIndex = -1;
 
 document.getElementById("toggleButton").addEventListener("click", function() {
@@ -295,7 +296,13 @@ function matchesFilters(result, filterParams) {
                 return false;
             }
         } else if (key == 'commitish') {
-            if (result['commitish'] != value) {
+            // Starts-with matching for commitish/source commit (case-insensitive)
+            if (!result['commitish'] || !result['commitish'].toLowerCase().startsWith(value.toLowerCase())) {
+                return false;
+            }
+        } else if (key == 'source_repo') {
+            // Pattern match since displayed names have https://github.com/ stripped
+            if (!result['source'] || !result['source'].toLowerCase().includes(value.toLowerCase())) {
                 return false;
             }
         } else if (key == 'after') {
@@ -421,6 +428,110 @@ function setupStaticAutocomplete(input, dropdown, options) {
                     hideDropdown();
                 } else if (items.length > 0) {
                     input.value = items[0].dataset.value;
+                    hideDropdown();
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+}
+
+function setupSourceRepoAutocomplete(input, dropdown) {
+    let highlightedIdx = -1;
+
+    function filterRepos(query) {
+        if (!query) return allSourceRepos;
+        const lowercaseQuery = query.toLowerCase();
+        return allSourceRepos.filter(repo => repo.toLowerCase().includes(lowercaseQuery));
+    }
+
+    function showDropdown(repos) {
+        dropdown.innerHTML = '';
+        highlightedIdx = -1;
+
+        if (repos.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        repos.forEach((repo, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.textContent = repo;
+            item.dataset.index = index;
+
+            item.addEventListener('click', () => {
+                input.value = repo;
+                dropdown.style.display = 'none';
+                highlightedIdx = -1;
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIdx = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        if (index >= 0 && items[index]) {
+            items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        const filtered = filterRepos(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        const filtered = filterRepos(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        const isVisible = dropdown.style.display === 'block';
+
+        if (!isVisible) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                highlightedIdx = Math.max(highlightedIdx - 1, -1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIdx >= 0 && items[highlightedIdx]) {
+                    input.value = items[highlightedIdx].textContent;
+                    hideDropdown();
+                } else if (items.length > 0) {
+                    input.value = items[0].textContent;
                     hideDropdown();
                 }
                 break;
@@ -607,6 +718,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // Setup autocomplete functionality
     setupAutocomplete(groupInput, groupDropdown);
 
+    // Fetch source repos for autocomplete
+    const sourceRepoInput = document.getElementById("source_repo");
+    const sourceRepoDropdown = document.getElementById("source_repo-dropdown");
+
+    fetch("/get_source_repos")
+        .then((response) => response.json())
+        .then((repos) => {
+            allSourceRepos = repos;
+
+            // Set value from URL if present
+            if (urlParams.has('source_repo')) {
+                sourceRepoInput.value = urlParams.get('source_repo');
+            }
+        })
+        .catch((error) => console.error("Error fetching source repos:", error));
+
+    // Setup source repo autocomplete
+    setupSourceRepoAutocomplete(sourceRepoInput, sourceRepoDropdown);
+
     // Setup Assembly autocomplete with static options
     const assemblyInput = document.getElementById("assembly");
     const assemblyDropdown = document.getElementById("assembly-dropdown");
@@ -687,6 +817,7 @@ document.querySelector(".results-container h1").addEventListener("click", functi
     form.querySelector("#name").value = "";
     form.querySelector("#nvr").value = "";
     form.querySelector("#assembly").value = "stream";
+    form.querySelector("#source_repo").value = "";
     form.querySelector("#commitish").value = "";
     form.querySelector("#art-job-url").value = "";
 
