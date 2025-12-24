@@ -47,36 +47,43 @@ class KonfluxBuildHistory(Flask):
         self._logger.level = logging.INFO
 
     async def safe_redis_get(self, key: str):
-        """Get value from Redis, falling back to memory cache if unavailable (in dev mode)."""
+        """Get value from Redis, falling back to memory cache if unavailable.
+        
+        In dev mode, silently falls back to in-memory cache.
+        In production, logs warning but still falls back to keep app functional.
+        """
         if not self._redis_available:
-            # Use in-memory cache as fallback
             return self._memory_cache.get(key)
         try:
             return await redis.get_value(key)
         except Exception as e:
-            if DEV_MODE:
-                self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+            if self._redis_available:  # Only log on first failure
+                if DEV_MODE:
+                    self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                else:
+                    self._logger.error('Redis unavailable, falling back to in-memory cache: %s', e)
                 self._redis_available = False
-                return self._memory_cache.get(key)
-            raise
+            return self._memory_cache.get(key)
 
     async def safe_redis_set(self, key: str, value: str, expiry: int = CACHE_EXPIRY):
-        """Set value in Redis and memory cache, silently failing Redis if unavailable (in dev mode)."""
+        """Set value in Redis and memory cache, with graceful fallback if Redis unavailable.
+        
+        Always stores in memory cache. Redis failures are logged but don't break the app.
+        """
+        # Always store in memory cache
+        self._memory_cache[key] = value
+        
         if not self._redis_available:
-            # Use in-memory cache as fallback
-            self._memory_cache[key] = value
             return
         try:
             await redis.set_value(key, value, expiry=expiry)
-            # Also store in memory cache for faster subsequent access
-            self._memory_cache[key] = value
         except Exception as e:
-            if DEV_MODE:
-                self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+            if self._redis_available:  # Only log on first failure
+                if DEV_MODE:
+                    self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                else:
+                    self._logger.error('Redis unavailable, falling back to in-memory cache: %s', e)
                 self._redis_available = False
-                self._memory_cache[key] = value
-            else:
-                raise
 
     def add_routes(self):
         @self.route("/")
@@ -250,7 +257,10 @@ class KonfluxBuildHistory(Flask):
                         # We expect only one build for a given NVR and outcome
                         self._logger.info('Found %d builds for NVR %s with state %s', len(builds), nvr, outcome)
                         build = builds[0]
-                        if getattr(build, 'embargoed', False):
+                        # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
+                        # (golang builder images are incorrectly flagged as embargoed)
+                        is_embargoed = getattr(build, 'embargoed', False) and 'golang' not in (getattr(build, 'group', '') or '').lower()
+                        if is_embargoed:
                             self._logger.warning('Build %s is embargoed, not displaying details', nvr)
                             result = default_result
 
@@ -417,7 +427,9 @@ class KonfluxBuildHistory(Flask):
                 exclude_columns=exclude_columns
             )]
             if filter_embargoed:
-                return [b for b in builds if not b.embargoed]
+                # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
+                # (golang builder images are incorrectly flagged as embargoed)
+                return [b for b in builds if not b.embargoed or 'golang' in (b.group or '').lower()]
             return builds
 
         tasks = [
@@ -430,7 +442,7 @@ class KonfluxBuildHistory(Flask):
         # Combine all builds, sort by end time if available (for completed builds), or by start time if not
         all_builds = image_builds + bundle_builds + fbc_builds
 
-        # Filter by image_sha_tag if specified (OR logic: matches image_pullspec sha256 OR image_tag substring)
+        # Filter by image_sha_tag if specified (OR logic: matches image_pullspec sha256 OR image_tag substring OR nvr substring)
         if image_sha_tag:
             sha_pattern = re.compile(f'.*sha256:{re.escape(image_sha_tag)}.*', re.IGNORECASE)
             tag_pattern = re.compile(f'.*{re.escape(image_sha_tag)}.*', re.IGNORECASE)
@@ -438,6 +450,7 @@ class KonfluxBuildHistory(Flask):
                 b for b in all_builds
                 if (hasattr(b, 'image_pullspec') and b.image_pullspec and sha_pattern.match(b.image_pullspec))
                 or (hasattr(b, 'image_tag') and b.image_tag and tag_pattern.match(b.image_tag))
+                or (hasattr(b, 'nvr') and b.nvr and tag_pattern.match(b.nvr))
             ]
 
         all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)

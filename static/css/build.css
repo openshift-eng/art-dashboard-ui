@@ -273,6 +273,30 @@
     background: #252525;
 }
 
+.parent-image-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.parent-image-item span {
+    flex: 1;
+    word-break: break-all;
+}
+
+.parent-search-link {
+    flex-shrink: 0;
+    text-decoration: none;
+    font-size: 1rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.parent-search-link:hover {
+    opacity: 1;
+}
+
 .inline-list li {
     padding: 4px 0;
     border-bottom: 1px solid #333;

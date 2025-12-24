@@ -326,11 +326,12 @@ function matchesFilters(result, filterParams) {
                 return false;
             }
         } else if (key == 'image_sha_tag') {
-            // OR logic: matches image_pullspec with sha256:{value} OR image_tag containing value
+            // OR logic: matches image_pullspec with sha256:{value} OR image_tag containing value OR nvr containing value
             const lowerValue = value.toLowerCase();
             const pullspecMatch = result['image_pullspec'] && result['image_pullspec'].toLowerCase().includes('sha256:' + lowerValue);
             const tagMatch = result['image_tag'] && result['image_tag'].toLowerCase().includes(lowerValue);
-            if (!pullspecMatch && !tagMatch) {
+            const nvrMatch = result['nvr'] && result['nvr'].toLowerCase().includes(lowerValue);
+            if (!pullspecMatch && !tagMatch && !nvrMatch) {
                 return false;
             }
         } else if (key == 'after') {

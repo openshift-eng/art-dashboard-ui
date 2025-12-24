@@ -18,7 +18,7 @@
                 </div>
             </div>
 
-        {% if build %}
+            {% if build %}
             <!-- Build Identity Section -->
             <section class="build-section">
                 <h3>Build Identity</h3>
@@ -271,11 +271,17 @@
                 <ul class="image-list">
                     {% if build.parent_images is string %}
                         {% for image in build.parent_images.split('\n') if image.strip() %}
-                        <li class="monospace">{{ image.strip() }}</li>
+                        <li class="monospace parent-image-item">
+                            <span>{{ image.strip() }}</span>
+                            <a href="#" class="parent-search-link" data-image="{{ image.strip() }}" title="Search for builds using this parent image">🔍</a>
+                        </li>
                         {% endfor %}
                     {% else %}
                         {% for image in build.parent_images if image %}
-                        <li class="monospace">{{ image }}</li>
+                        <li class="monospace parent-image-item">
+                            <span>{{ image }}</span>
+                            <a href="#" class="parent-search-link" data-image="{{ image }}" title="Search for builds using this parent image">🔍</a>
+                        </li>
                         {% endfor %}
                     {% endif %}
                 </ul>
@@ -350,7 +356,7 @@
                                       'build_pipeline_url', 'art_job_url', 'parent_images', 'installed_packages', 
                                       'installed_rpms', 'embargoed'] %}
             {% set other_fields = [] %}
-            {% for key, value in build.items() %}
+                    {% for key, value in build.items() %}
                 {% if key not in displayed_keys and value %}
                     {% set _ = other_fields.append((key, value)) %}
                 {% endif %}
@@ -406,14 +412,14 @@
                                             <li>{{ item }}</li>
                                         {% endfor %}
                                         </ul>
-                                    {% else %}
-                                        {{ value }}
-                                    {% endif %}
-                                </td>
-                            </tr>
+                            {% else %}
+                                {{ value }}
                             {% endif %}
-                        {% endfor %}
-                    </table>
+                        </td>
+                    </tr>
+                        {% endif %}
+                    {% endfor %}
+                </table>
                 </div>
             </section>
             {% endif %}
@@ -422,7 +428,7 @@
             <div class="no-results">
                 <p>No information available to display for this build.</p>
                 <p class="hint">The build may not exist, may be embargoed, or the NVR may be incorrect.</p>
-            </div>
+        </div>
         {% endif %}
         </div> <!-- .build-content -->
     </div>
@@ -499,6 +505,60 @@
                     durationEl.textContent = 'N/A';
                 }
             }
+
+            // Set up parent image search links
+            const startTimeStr = '{{ build.start_time if build else "" }}';
+            document.querySelectorAll('.parent-search-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const image = this.dataset.image;
+                    
+                    // Extract sha256 or tag from image reference
+                    let searchTerm = '';
+                    if (image.includes('@sha256:')) {
+                        // Extract sha256 hash (first 12 chars for search)
+                        searchTerm = image.split('@sha256:')[1].substring(0, 12);
+                    } else if (image.includes(':')) {
+                        // Extract tag (last part after colon, but not if it's a port number)
+                        const parts = image.split(':');
+                        const lastPart = parts[parts.length - 1];
+                        // Check if it looks like a tag (not a port number or sha)
+                        if (lastPart && !lastPart.match(/^\d+$/) && !lastPart.includes('/')) {
+                            searchTerm = lastPart;
+                        }
+                    }
+                    
+                    if (!searchTerm) {
+                        // Fallback: use last path segment
+                        const pathParts = image.split('/');
+                        searchTerm = pathParts[pathParts.length - 1];
+                    }
+                    
+                    // Calculate date 30 days before start_time
+                    let afterDate = '';
+                    if (startTimeStr) {
+                        try {
+                            const startDate = new Date(startTimeStr);
+                            startDate.setDate(startDate.getDate() - 30);
+                            afterDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+                        } catch (e) {
+                            console.error('Failed to parse start time:', e);
+                        }
+                    }
+                    
+                    // Build search URL
+                    const searchUrl = new URL('/', window.location.origin);
+                    searchUrl.pathname = '/search';
+                    searchUrl.searchParams.set('image_sha_tag', searchTerm);
+                    searchUrl.searchParams.set('assembly', '*');
+                    if (afterDate) {
+                        searchUrl.searchParams.set('after', afterDate);
+                    }
+                    
+                    // Open in new tab
+                    window.open(searchUrl.toString(), '_blank');
+                });
+            });
         });
     </script>
 {% endblock %}
