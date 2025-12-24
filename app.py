@@ -270,8 +270,13 @@ class KonfluxBuildHistory(Flask):
             if result and build_type != 'fbc':
                 result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
 
+            # Support JSON download via Accept header or format query param
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify(result)
+
             return render_template("build.html",
                                    nvr=nvr,
+                                   build_type=build_type,
                                    build=result)
 
         @self.route("/logs")
