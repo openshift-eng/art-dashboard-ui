@@ -10,69 +10,103 @@ document.getElementById("toggleButton").addEventListener("click", function() {
 });
 
 // Multi-select dropdown functionality
+const multiSelectState = {};
+
+const outcomeLabels = {
+    'success': '✅ Success',
+    'failure': '❌ Failure',
+    'pending': '⏳ Pending'
+};
+
+function getOutcomeValue(checkbox) {
+    return checkbox.dataset.value || checkbox.value;
+}
+
+// Get outcome checkboxes by their specific IDs to avoid browser auto-fill corruption
+function getOutcomeCheckboxes() {
+    return [
+        document.getElementById('outcome-success'),
+        document.getElementById('outcome-failure'),
+        document.getElementById('outcome-pending')
+    ].filter(cb => cb !== null);
+}
+
+function normalizeOutcomeCheckboxValues() {
+    const success = document.getElementById('outcome-success');
+    const failure = document.getElementById('outcome-failure');
+    const pending = document.getElementById('outcome-pending');
+
+    if (success) success.value = success.dataset.value || 'success';
+    if (failure) failure.value = failure.dataset.value || 'failure';
+    if (pending) pending.value = pending.dataset.value || 'pending';
+}
+
+// Standalone function to update outcome display text based on current checkbox state
+function updateOutcomeDisplay() {
+    const display = document.getElementById('outcome-display');
+    if (!display) return;
+
+    const checkboxes = getOutcomeCheckboxes();
+    const selected = checkboxes
+        .filter(cb => cb.checked)
+        .map(cb => outcomeLabels[getOutcomeValue(cb)] || getOutcomeValue(cb));
+
+    const textSpan = display.querySelector('.multiselect-text');
+    if (selected.length === 0) {
+        textSpan.textContent = 'Select outcomes...';
+    } else if (selected.length === checkboxes.length) {
+        textSpan.textContent = 'All outcomes';
+    } else {
+        textSpan.textContent = selected.join(', ');
+    }
+}
+
 function setupMultiSelect(containerId, displayId, dropdownId) {
     const container = document.getElementById(containerId);
     const display = document.getElementById(displayId);
     const dropdown = document.getElementById(dropdownId);
-    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
 
-    const outcomeLabels = {
-        'success': '✅ Success',
-        'failure': '❌ Failure',
-        'pending': '⏳ Pending'
-    };
+    // Only add event listeners once
+    if (!multiSelectState[containerId]) {
+        multiSelectState[containerId] = true;
 
-    function updateDisplay() {
-        const selected = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => outcomeLabels[cb.value] || cb.value);
-
-        const textSpan = display.querySelector('.multiselect-text');
-        if (selected.length === 0) {
-            textSpan.textContent = 'Select outcomes...';
-        } else if (selected.length === checkboxes.length) {
-            textSpan.textContent = 'All outcomes';
-        } else {
-            textSpan.textContent = selected.join(', ');
+        function toggleDropdown() {
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            display.querySelector('.multiselect-arrow').textContent = isVisible ? '▼' : '▲';
         }
+
+        function hideDropdown() {
+            dropdown.style.display = 'none';
+            display.querySelector('.multiselect-arrow').textContent = '▼';
+        }
+
+        display.addEventListener('click', toggleDropdown);
+        display.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleDropdown();
+            }
+        });
+
+        const checkboxes = getOutcomeCheckboxes();
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateOutcomeDisplay);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                hideDropdown();
+            }
+        });
     }
 
-    function toggleDropdown() {
-        const isVisible = dropdown.style.display === 'block';
-        dropdown.style.display = isVisible ? 'none' : 'block';
-        display.querySelector('.multiselect-arrow').textContent = isVisible ? '▼' : '▲';
-    }
-
-    function hideDropdown() {
-        dropdown.style.display = 'none';
-        display.querySelector('.multiselect-arrow').textContent = '▼';
-    }
-
-    display.addEventListener('click', toggleDropdown);
-    display.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleDropdown();
-        }
-    });
-
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', updateDisplay);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!container.contains(e.target)) {
-            hideDropdown();
-        }
-    });
-
-    // Initialize display
-    updateDisplay();
+    // Always update display (for when checkboxes are programmatically changed)
+    updateOutcomeDisplay();
 }
 
 function getSelectedOutcomes() {
-    const checkboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
+    return getOutcomeCheckboxes().filter(cb => cb.checked).map(cb => getOutcomeValue(cb));
 }
 
 function showLoading() {
@@ -170,6 +204,9 @@ function createRow(result) {
     // Create the row
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
+    const isFailure = (result.outcome || '').toLowerCase() === 'failure';
+    const logsTitle = isFailure ? 'Build logs' : 'Build logs are only available for failed builds';
+    const logsClass = isFailure ? '' : 'logs-disabled';
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
@@ -181,7 +218,7 @@ function createRow(result) {
         <td>${engineDisplay}</td>
         <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
         <td>
-            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}&after=${result.start_time}" target="_blank" title="Build logs">📜️</a>
+            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}&after=${result.start_time}" target="_blank" title="${logsTitle}" class="${logsClass}">📜️</a>
             <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
@@ -772,18 +809,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const assemblyOptions = ["stream", "test", "*"];
     setupStaticAutocomplete(assemblyInput, assemblyDropdown, assemblyOptions);
 
+    normalizeOutcomeCheckboxValues();
+
     // Setup Outcome multi-select
     setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
 
     // Set outcome checkboxes from URL if present
     if (urlParams.has('outcome')) {
         const outcomes = urlParams.getAll('outcome');
-        const checkboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]');
+        const checkboxes = getOutcomeCheckboxes();
         checkboxes.forEach(cb => {
-            cb.checked = outcomes.includes(cb.value);
+            cb.checked = outcomes.includes(getOutcomeValue(cb));
         });
-        // Re-run updateDisplay after setting checkboxes
-        setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+        updateOutcomeDisplay();
     }
 });
 
@@ -838,7 +876,8 @@ document.getElementById("alertOverlay").addEventListener("click", function() {
     hideCustomAlert();
 });
 
-document.querySelector(".results-container h1").addEventListener("click", function() {
+document.querySelector(".sidebar-title a").addEventListener("click", function(e) {
+    e.preventDefault();
     // Reset form
     const form = document.getElementById("searchForm");
 
@@ -851,12 +890,11 @@ document.querySelector(".results-container h1").addEventListener("click", functi
     form.querySelector("#art-job-url").value = "";
 
     // Reset outcome checkboxes (default: only success checked)
-    const outcomeCheckboxes = document.querySelectorAll('#outcome-dropdown input[type="checkbox"]');
+    const outcomeCheckboxes = getOutcomeCheckboxes();
     outcomeCheckboxes.forEach(cb => {
-        cb.checked = cb.value === 'success';
+        cb.checked = getOutcomeValue(cb) === 'success';
     });
-    // Re-initialize to update the display text
-    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+    updateOutcomeDisplay();
 
     // Reset select dropdowns
     form.querySelector("#engine").value = "konflux";

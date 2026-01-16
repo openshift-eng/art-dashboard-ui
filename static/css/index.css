@@ -160,6 +160,10 @@ td a {
     padding: 0 5px;
 }
 
+td a.logs-disabled {
+    opacity: 0.2;
+}
+
 select {
     width: 100%;
     padding: 8px;

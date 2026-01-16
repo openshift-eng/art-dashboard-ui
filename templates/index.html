@@ -41,17 +41,17 @@
                             <span class="multiselect-text">Select outcomes...</span>
                             <span class="multiselect-arrow">▼</span>
                         </div>
-                        <div class="multiselect-dropdown" id="outcome-dropdown" style="display: none;">
+                        <div class="multiselect-dropdown" id="outcome-dropdown" style="display: none;" autocomplete="off">
                             <label class="multiselect-option">
-                                <input type="checkbox" name="outcome" value="success" checked>
+                                <input type="checkbox" id="outcome-success" name="outcome" value="success" data-value="success" checked autocomplete="off">
                                 <span>✅ Success</span>
                             </label>
                             <label class="multiselect-option">
-                                <input type="checkbox" name="outcome" value="failure">
+                                <input type="checkbox" id="outcome-failure" name="outcome" value="failure" data-value="failure" autocomplete="off">
                                 <span>❌ Failure</span>
                             </label>
                             <label class="multiselect-option">
-                                <input type="checkbox" name="outcome" value="pending">
+                                <input type="checkbox" id="outcome-pending" name="outcome" value="pending" data-value="pending" autocomplete="off">
                                 <span>⏳ Pending</span>
                             </label>
                         </div>
