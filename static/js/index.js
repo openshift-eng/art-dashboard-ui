@@ -2,6 +2,31 @@ let cachedResults = [];
 let allBranches = [];
 let allSourceRepos = [];
 let highlightedIndex = -1;
+let lastSearchParamsKey = '';
+
+function buildParamsKey(params) {
+    const entries = Array.from(params.entries()).sort(([aKey, aVal], [bKey, bVal]) => {
+        if (aKey === bKey) return aVal.localeCompare(bVal);
+        return aKey.localeCompare(bKey);
+    });
+    return entries.map(([key, value]) => `${key}=${value}`).join('&');
+}
+
+function getCurrentSearchParams() {
+    const form = document.getElementById("searchForm");
+    return new URLSearchParams(new FormData(form));
+}
+
+function updateFilterButtonVisibility() {
+    const filterButton = document.getElementById("filterButton");
+    if (!filterButton) return;
+    if (!cachedResults || cachedResults.length === 0) {
+        filterButton.style.display = "none";
+        return;
+    }
+    const currentKey = buildParamsKey(getCurrentSearchParams());
+    filterButton.style.display = currentKey !== lastSearchParamsKey ? "inline-block" : "none";
+}
 
 document.getElementById("toggleButton").addEventListener("click", function() {
     const sidebar = document.getElementById("sidebar");
@@ -256,6 +281,7 @@ function performSearch(queryParams = null) {
 
     const form = document.getElementById("searchForm");
     const formData = queryParams || new FormData(form);
+    const paramsKey = buildParamsKey(new URLSearchParams(formData));
 
     const queryString = new URLSearchParams(formData).toString();
     const url = `/search?${queryString}`;
@@ -283,6 +309,8 @@ function performSearch(queryParams = null) {
         displayResults(data);
         hideLoading();
         scrollContainer.style.overflow = 'auto';
+        lastSearchParamsKey = paramsKey;
+        updateFilterButtonVisibility();
     })
     .catch((error) => {
         console.error("Search error:", error);
@@ -291,6 +319,7 @@ function performSearch(queryParams = null) {
         cachedResults = [];
         displayResults([]);
         showCustomAlert(`Search failed: ${error.message}`, "❌");
+        updateFilterButtonVisibility();
     });
 }
 
@@ -300,6 +329,7 @@ function filterResults() {
 
     const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
+    updateFilterButtonVisibility();
 }
 
 function downloadResults() {
@@ -748,22 +778,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const isSearchPage = document.body.dataset.isSearchPage === 'true';
     const urlParams = new URLSearchParams(window.location.search);
 
+    const form = document.getElementById("searchForm");
+
     // If we have initial results from server, cache them
     if (isSearchPage && window.initialResults) {
         cachedResults = window.initialResults;
         displayResults(cachedResults);
+        lastSearchParamsKey = buildParamsKey(urlParams);
+        updateFilterButtonVisibility();
     }
     // Otherwise, if we have search parameters, perform search
     else if (urlParams.size > 0) {
         // Populate form fields from URL
-        const form = document.getElementById("searchForm");
         urlParams.forEach((value, key) => {
             const input = form.querySelector(`[name="${key}"]`);
             if (input) input.value = value;
         });
 
         performSearch(urlParams);
+        lastSearchParamsKey = buildParamsKey(urlParams);
     }
+    else {
+        lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+        updateFilterButtonVisibility();
+    }
+
+    form.addEventListener('input', updateFilterButtonVisibility);
+    form.addEventListener('change', updateFilterButtonVisibility);
 
     // Fetch all branches for autocomplete (independent of search)
     const groupInput = document.getElementById("group");
@@ -917,4 +958,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
 
     // Clear cached results
     cachedResults = [];
+
+    lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+    updateFilterButtonVisibility();
 });

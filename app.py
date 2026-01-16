@@ -1,5 +1,6 @@
 import asyncio
 import json
+from urllib.parse import unquote
 import logging
 import os
 import subprocess
@@ -395,8 +396,19 @@ class KonfluxBuildHistory(Flask):
         image_sha_tag = params.get('image_sha_tag', '').strip()
 
         art_job_url = params.get('art-job-url', '').strip()
+        art_job_url_variants = None
         if art_job_url:
-            extra_patterns['art_job_url'] = art_job_url
+            # ART job URLs can be encoded multiple times in records (e.g. %252F).
+            # Build normalized variants and apply filtering in Python to avoid
+            # BigQuery regex mismatches.
+            variants = set()
+            current = art_job_url
+            for _ in range(4):
+                if current in variants:
+                    break
+                variants.add(current)
+                current = unquote(current)
+            art_job_url_variants = {v.lower() for v in variants}
 
         after = params.get('after', '').strip()
         if after:
@@ -441,6 +453,17 @@ class KonfluxBuildHistory(Flask):
 
         # Combine all builds, sort by end time if available (for completed builds), or by start time if not
         all_builds = image_builds + bundle_builds + fbc_builds
+
+        # Filter by ART job URL if specified (match any encoded variant as substring)
+        if art_job_url_variants:
+            def matches_art_job_url(build):
+                value = getattr(build, 'art_job_url', None)
+                if not value:
+                    return False
+                lower_value = value.lower()
+                return any(variant in lower_value for variant in art_job_url_variants)
+
+            all_builds = [b for b in all_builds if matches_art_job_url(b)]
 
         # Filter by image_sha_tag if specified (OR logic: matches image_pullspec sha256 OR image_tag substring OR nvr substring)
         if image_sha_tag:

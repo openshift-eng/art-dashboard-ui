@@ -247,16 +247,24 @@
                     {% if build.build_pipeline_url %}
                     <div class="info-item">
                         <label>Pipeline URL</label>
+                        {% set pipeline_display = build.build_pipeline_url.split('://')[-1] %}
+                        {% if '/' in pipeline_display %}
+                            {% set pipeline_display = pipeline_display.split('/', 1)[1] %}
+                        {% endif %}
                         <a href="{{ build.build_pipeline_url }}" target="_blank" rel="noopener">
-                            <i class="fas fa-external-link-alt"></i> View Pipeline
+                            <i class="fas fa-external-link-alt"></i> {{ pipeline_display }}
                         </a>
                     </div>
                     {% endif %}
                     {% if build.art_job_url %}
                     <div class="info-item">
                         <label>ART Job URL</label>
+                        {% set art_job_display = build.art_job_url.split('://')[-1] %}
+                        {% if '/' in art_job_display %}
+                            {% set art_job_display = art_job_display.split('/', 1)[1] %}
+                        {% endif %}
                         <a href="{{ build.art_job_url }}" target="_blank" rel="noopener">
-                            <i class="fas fa-external-link-alt"></i> View ART Job
+                            <i class="fas fa-external-link-alt"></i> {{ art_job_display }}
                         </a>
                     </div>
                     {% endif %}
