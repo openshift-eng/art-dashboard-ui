@@ -160,7 +160,8 @@ td a {
     padding: 0 5px;
 }
 
-td a.logs-disabled {
+
+td a.packages-disabled {
     opacity: 0.2;
 }
 

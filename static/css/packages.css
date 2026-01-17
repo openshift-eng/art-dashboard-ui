@@ -1,4 +1,3 @@
-#packagesTable td {
-    text-align: left;
-    font-size: 1.2em;
+.build-page .no-results-message {
+    margin: 0;
 }

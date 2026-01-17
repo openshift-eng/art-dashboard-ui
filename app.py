@@ -10,7 +10,12 @@ import re
 from artcommonlib import redis, bigquery
 from google.cloud import bigquery as gcp_bigquery
 from artcommonlib.constants import TASKRUN_TABLE_ID
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord
+from artcommonlib.konflux.konflux_build_record import (
+    KonfluxBuildRecord,
+    KonfluxBundleBuildRecord,
+    KonfluxFbcBuildRecord,
+    KonfluxBuildOutcome,
+)
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 from sqlalchemy import Column, DateTime, String
@@ -87,6 +92,16 @@ class KonfluxBuildHistory(Flask):
                 self._redis_available = False
 
     def add_routes(self):
+        def extract_nvr_start_time(nvr_value: str):
+            if not nvr_value:
+                return None
+            match = re.search(r'-(\d{12})\.', nvr_value)
+            if not match:
+                return None
+            try:
+                return datetime.strptime(match.group(1), '%Y%m%d%H%M')
+            except ValueError:
+                return None
         @self.route("/")
         def index():
             return render_template(
@@ -220,12 +235,22 @@ class KonfluxBuildHistory(Flask):
             nvr = request.args.get('nvr')
             outcome = request.args.get('outcome')
             build_type = request.args.get('type')
-            redis_key = self.redis_build_key(nvr)
+            record_id = request.args.get('record_id')
+            group = request.args.get('group')
+            redis_key = self.redis_build_record_key(record_id) if record_id else self.redis_build_key(nvr)
+            search_outcomes = [outcome] if outcome else ['success', 'failure', 'pending']
 
-            if not nvr:
-                # nvr param was not passed in
-                nvr = '<undefined>'
-                result = default_result
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view build details.'
+                return render_template(
+                    "build.html",
+                    nvr=nvr or '<undefined>',
+                    build_type=build_type,
+                    build=default_result,
+                    logs_after=None,
+                    group=group,
+                    error_message=error_message
+                )
 
             elif redis_value := await self.safe_redis_get(redis_key):
                 # nvr param was passed in, and there is a cached entry for it
@@ -235,23 +260,36 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
-                    match build_type:
-                        case 'image':
-                            self.konflux_db.bind(KonfluxBuildRecord)
-                        case 'bundle':
-                            self.konflux_db.bind(KonfluxBundleBuildRecord)
-                        case 'fbc':
-                            self.konflux_db.bind(KonfluxFbcBuildRecord)
-                        case _:
-                            raise ValueError(f"Unknown build type: {build_type}")
+                    async def fetch_build(record_class):
+                        db = KonfluxDb()
+                        db.bind(record_class)
+                        if record_id:
+                            where = {'record_id': record_id, 'outcome': ['success', 'failure', 'pending']}
+                        else:
+                            where = {'nvr': nvr, 'outcome': search_outcomes}
+                        if group:
+                            where['group'] = group
+                        return [build async for build in db.search_builds_by_fields(where=where, limit=1)]
 
-                    builds = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where={'nvr': nvr, 'outcome': outcome},
-                        limit=1
-                    )]
+                    builds = []
+                    if build_type:
+                        match build_type:
+                            case 'image':
+                                builds = await fetch_build(KonfluxBuildRecord)
+                            case 'bundle':
+                                builds = await fetch_build(KonfluxBundleBuildRecord)
+                            case 'fbc':
+                                builds = await fetch_build(KonfluxFbcBuildRecord)
+                            case _:
+                                raise ValueError(f"Unknown build type: {build_type}")
+                    else:
+                        for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                            builds = await fetch_build(record_class)
+                            if builds:
+                                break
 
                     if not builds:
-                        self._logger.warning('No builds found for NVR %s with state %s', nvr, outcome)
+                        self._logger.warning('No builds found for NVR %s record_id %s with state %s', nvr, record_id, outcome)
                         result = default_result
 
                     else:
@@ -285,45 +323,176 @@ class KonfluxBuildHistory(Flask):
             if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
                 return jsonify(result)
 
+            logs_after = extract_nvr_start_time(nvr)
+            logs_after = logs_after.isoformat() if logs_after else None
+
             return render_template("build.html",
                                    nvr=nvr,
                                    build_type=build_type,
-                                   build=result)
+                                   build=result,
+                                   logs_after=logs_after,
+                                   group=group or (result.get('group') if result else None),
+                                   error_message=None)
 
         @self.route("/logs")
         async def show_logs():
             nvr = request.args.get('nvr')
             record_id = request.args.get('record_id')
-            after = datetime.strptime(request.args.get('after'), "%a, %d %b %Y %H:%M:%S %Z")
+            group = request.args.get('group')
+            after = request.args.get('after')
+            start_after = None
+            nvr_after = extract_nvr_start_time(nvr)
+            if nvr_after:
+                start_after = nvr_after
+            elif after:
+                try:
+                    start_after = datetime.strptime(after, "%a, %d %b %Y %H:%M:%S %Z")
+                except ValueError:
+                    try:
+                        start_after = datetime.fromisoformat(after)
+                    except ValueError:
+                        self._logger.warning('Failed parsing logs "after" value: %s', after)
 
-            # Fetch task runs
-            bq_client = bigquery.BigQueryClient()
-            bq_client.bind(TASKRUN_TABLE_ID)
-            where_clauses = [
-                    Column('start_time', DateTime) >= after,
-                    Column('record_id', String) == record_id,
-            ]
-            rows = await bq_client.select(where_clauses)
+            build_outcome = None
+            build_pipeline_url = None
+            art_job_url = None
+            build_identity = None
+            error_message = None
 
-            # Gather container logs
-            containers = [container for row in rows for container in row.get('containers', []) if container.get('log_output')]
-            return render_template("logs.html", nvr=nvr, containers=containers)
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view logs.'
+                return render_template(
+                    "logs.html",
+                    nvr=nvr or '<undefined>',
+                    containers=[],
+                    logs_available=False,
+                    build_outcome=None,
+                    build_pipeline_url=None,
+                    art_job_url=None,
+                    build_identity=None,
+                    error_message=error_message
+                )
+
+            if record_id or nvr:
+                for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                    try:
+                        db = KonfluxDb()
+                        db.bind(record_class)
+                        where = {'outcome': ['success', 'failure', 'pending']}
+                        if record_id:
+                            where['record_id'] = record_id
+                        else:
+                            where['nvr'] = nvr
+                        if group:
+                            where['group'] = group
+                        builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]
+                        if builds:
+                            build = builds[0]
+                            build_outcome = getattr(build, 'outcome', None)
+                            build_pipeline_url = getattr(build, 'build_pipeline_url', None)
+                            art_job_url = getattr(build, 'art_job_url', None)
+                            build_identity = {
+                                'nvr': getattr(build, 'nvr', None),
+                                'name': getattr(build, 'name', None),
+                                'version': getattr(build, 'version', None),
+                                'release': getattr(build, 'release', None),
+                                'el_target': getattr(build, 'el_target', None),
+                                'group': getattr(build, 'group', None),
+                                'assembly': getattr(build, 'assembly', None),
+                                'component': getattr(build, 'component', None),
+                            }
+                            break
+                    except Exception as e:
+                        self._logger.warning('Failed looking up build details for logs (%s): %s', record_class, e)
+
+            containers = []
+            if record_id and start_after:
+                end_after = start_after + timedelta(days=2)
+                # Fetch task runs
+                bq_client = bigquery.BigQueryClient()
+                bq_client.bind(TASKRUN_TABLE_ID)
+                where_clauses = [
+                        Column('creation_time', DateTime) >= start_after,
+                        Column('creation_time', DateTime) < end_after,
+                        Column('record_id', String) == record_id,
+                ]
+                rows = await bq_client.select(where_clauses)
+
+                # Gather container logs (include containers even when log_output is empty)
+                containers = [container for row in rows for container in (row.get('containers', []) or [])]
+
+            # Support JSON download via Accept header or format query param
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify({
+                    'nvr': nvr,
+                    'record_id': record_id,
+                    'group': group or (build_identity.get('group') if build_identity else None),
+                    'build_identity': build_identity,
+                    'build_pipeline_url': build_pipeline_url,
+                    'art_job_url': art_job_url,
+                    'containers': containers,
+                })
+
+            return render_template(
+                "logs.html",
+                nvr=nvr,
+                record_id=record_id,
+                group=group or (build_identity.get('group') if build_identity else None),
+                containers=containers,
+                build_pipeline_url=build_pipeline_url,
+                art_job_url=art_job_url,
+                build_identity=build_identity,
+                error_message=error_message,
+            )
 
         @self.route("/packages")
         async def show_packages():
             nvr = request.args.get("nvr")
+            record_id = request.args.get("record_id")
+            group = request.args.get("group")
             default_result = []
+            build_identity = None
+            error_message = None
 
-            if not nvr:
-                # nvr param was not passed in
-                nvr = '<undefined>'
-                result = default_result
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view packages.'
+                return render_template(
+                    "packages.html",
+                    nvr=nvr or '<undefined>',
+                    packages=default_result,
+                    build_identity=None,
+                    group=group,
+                    error_message=error_message
+                )
 
 
-            elif (raw_value := await self.safe_redis_get(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
+            elif not record_id and (raw_value := await self.safe_redis_get(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
                 # nvr param was passed in, and there is a cached entry for it,
                 # and the cached entry is not an empty list
                 result = parsed
+                try:
+                    self.konflux_db.bind(KonfluxBuildRecord)
+                    where = {'nvr': nvr, 'outcome': ['success', 'failure', 'pending']}
+                    if group:
+                        where['group'] = group
+                    build = [build async for build in self.konflux_db.search_builds_by_fields(
+                        where=where,
+                        limit=1
+                    )]
+                    if build:
+                        build = build[0]
+                        build_identity = {
+                            'nvr': getattr(build, 'nvr', None),
+                            'name': getattr(build, 'name', None),
+                            'version': getattr(build, 'version', None),
+                            'release': getattr(build, 'release', None),
+                            'el_target': getattr(build, 'el_target', None),
+                            'group': getattr(build, 'group', None),
+                            'assembly': getattr(build, 'assembly', None),
+                            'component': getattr(build, 'component', None),
+                        }
+                except Exception as e:
+                    self._logger.warning('Failed looking up build details for packages: %s', e)
 
             else:
                 # nvr param was passed in, but there is no cached entry for it,
@@ -331,22 +500,53 @@ class KonfluxBuildHistory(Flask):
                 # fetch the build record from Konflux DB
                 try:
                     self.konflux_db.bind(KonfluxBuildRecord)
-                    build = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where={'nvr': nvr, 'outcome': ['success', 'failure']},
-                        limit=1
-                    )]
+                    where = {'outcome': ['success', 'failure', 'pending']}
+                    if record_id:
+                        where['record_id'] = record_id
+                    else:
+                        where['nvr'] = nvr
+                    if group:
+                        where['group'] = group
+                    build = [build async for build in self.konflux_db.search_builds_by_fields(where=where, limit=1)]
                     result = build[0].installed_packages if build else []
+                    if build:
+                        build = build[0]
+                        build_identity = {
+                            'nvr': getattr(build, 'nvr', None),
+                            'name': getattr(build, 'name', None),
+                            'version': getattr(build, 'version', None),
+                            'release': getattr(build, 'release', None),
+                            'el_target': getattr(build, 'el_target', None),
+                            'group': getattr(build, 'group', None),
+                            'assembly': getattr(build, 'assembly', None),
+                            'component': getattr(build, 'component', None),
+                        }
 
                     # Update the cache
-                    await self.safe_redis_set(self.redis_packages_key(nvr), json.dumps(result))
+                    if nvr:
+                        await self.safe_redis_set(self.redis_packages_key(nvr), json.dumps(result))
 
                 except Exception as e:
                     self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
                     result = default_result
 
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify({
+                    'nvr': nvr,
+                    'record_id': record_id,
+                    'group': group or (build_identity.get('group') if build_identity else None),
+                    'packages': result,
+                    'build_identity': build_identity,
+                    'error': error_message,
+                })
+
             return render_template("packages.html",
                                    nvr=nvr,
-                                   packages=result)
+                                   record_id=record_id,
+                                   group=group or (build_identity.get('group') if build_identity else None),
+                                   packages=result,
+                                   build_identity=build_identity,
+                                   error_message=error_message)
 
     async def query(self, params: dict, outcomes: list = None):
         self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
@@ -391,6 +591,10 @@ class KonfluxBuildHistory(Flask):
         nvr = params.get('nvr', '').strip()
         if nvr:
             extra_patterns['nvr'] = nvr
+
+        record_id = params.get('record_id', '').strip()
+        if record_id:
+            where_clauses['record_id'] = record_id
 
         # image_sha_tag is handled specially as it needs OR logic between image_pullspec and image_tag
         image_sha_tag = params.get('image_sha_tag', '').strip()
@@ -520,6 +724,10 @@ class KonfluxBuildHistory(Flask):
     @staticmethod
     def redis_build_key(nvr: str):
         return f'appdata:art-build-history:build:{nvr}'
+
+    @staticmethod
+    def redis_build_record_key(record_id: str):
+        return f'appdata:art-build-history:build-record:{record_id}'
 
     @staticmethod
     def redis_groups_key():

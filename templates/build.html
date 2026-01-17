@@ -18,6 +18,12 @@
                 </div>
             </div>
 
+            {% if error_message %}
+            <div class="no-results">
+                <p>{{ error_message }}</p>
+            </div>
+            {% endif %}
+
             {% if build %}
             <!-- Build Identity Section -->
             <section class="build-section">
@@ -253,6 +259,14 @@
                         {% endif %}
                         <a href="{{ build.build_pipeline_url }}" target="_blank" rel="noopener">
                             <i class="fas fa-external-link-alt"></i> {{ pipeline_display }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if build.record_id %}
+                    <div class="info-item">
+                        <label>Logs</label>
+                        <a href="/logs?nvr={{ nvr|urlencode }}&record_id={{ build.record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> View logs
                         </a>
                     </div>
                     {% endif %}

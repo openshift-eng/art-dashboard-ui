@@ -3,35 +3,177 @@
 {% block title %}Build Logs{% endblock %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="results-container">
-        <h2>Build logs for <span><a href="/build?nvr={{ nvr }}" target="_blank">{{ nvr }}</a></span></h2>
-        <div>
-            {% if containers %}
-                {% for container in containers %}
-                    <div class="container-log-item">
-                        <div class="container-header" onclick="toggleContainer(this)">
-                            <span class="container-info">
-                                <strong>{{ container.name }}</strong> - Exit Code: {{ container.exit_code }}
-                            </span>
-                            <span class="toggle-icon">▶</span>
-                        </div>
-                        <div class="container-logs" style="display: none;">
-                            <pre class="log-content">{{ container.log_output }}</pre>
-                        </div>
+    <div class="build-page">
+        <div class="build-content">
+            <div class="build-header">
+                <h2>Build Logs</h2>
+                <div class="header-actions">
+                    <button id="downloadLogsBtn" class="download-btn" title="Download as JSON">
+                        <i class="fas fa-download"></i> Download JSON
+                    </button>
+                </div>
+            </div>
+
+            {% if build_identity %}
+            <section class="build-section">
+                <h3>Build Identity</h3>
+                <div class="info-grid">
+                    {% if build_identity.nvr %}
+                    <div class="info-item full-width">
+                        <label>NVR</label>
+                        <span class="field-value" style="font-weight: bold; font-size: 1.1rem;">{{ build_identity.nvr }}</span>
                     </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-results-message">No logs available to display for this build.</p>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if build_identity.name %}
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span>{{ build_identity.name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.version %}
+                    <div class="info-item">
+                        <label>Version</label>
+                        <span>{{ build_identity.version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.release %}
+                    <div class="info-item">
+                        <label>Release</label>
+                        <span>{{ build_identity.release }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.el_target %}
+                    <div class="info-item">
+                        <label>EL Target</label>
+                        <span>{{ build_identity.el_target }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if build_identity.group %}
+                    <div class="info-item">
+                        <label>Group</label>
+                        <span>{{ build_identity.group }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.assembly %}
+                    <div class="info-item">
+                        <label>Assembly</label>
+                        <span>{{ build_identity.assembly }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.component %}
+                    <div class="info-item">
+                        <label>Component</label>
+                        <span>{{ build_identity.component }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <label>Details</label>
+                        <a href="/build?nvr={{ nvr }}&record_id={{ record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> View build details
+                        </a>
+                    </div>
+                </div>
+            </section>
             {% endif %}
+
+            <section class="build-section">
+                <h3>Logs</h3>
+                {% if error_message %}
+                    <p class="no-results-message">{{ error_message }}</p>
+                {% else %}
+                    {% if containers %}
+                        {% for container in containers %}
+                            <div class="container-log-item">
+                                <div class="container-header{% if container.log_output %} expanded{% endif %}" onclick="toggleContainer(this)">
+                                    <span class="container-info">
+                                        <strong>{{ container.name }}</strong> - {% if container.exit_code != 0 %}<span style="color: #f44336; font-weight: bold;">Exit Code: {{ container.exit_code }}</span>{% else %}Exit Code: {{ container.exit_code }}{% endif %}
+                                    </span>
+                                    <span class="toggle-icon">{% if container.log_output %}▼{% else %}▶{% endif %}</span>
+                                </div>
+                                <div class="container-logs" style="display: {% if container.log_output %}block{% else %}none{% endif %};">
+                                    {% if container.log_output %}
+                                    <pre class="log-content">{{ container.log_output }}</pre>
+                                    {% else %}
+                                    <pre class="log-content">No log output available for this container.{% if container.exit_code == 0 %} Logs are not collected for the dashboard when a container terminates successfully.{% endif %}</pre>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-results-message">No logs available to display for this build.</p>
+                    {% endif %}
+                {% endif %}
+
+                {% if not error_message and not containers %}
+                    {% if build_pipeline_url or art_job_url %}
+                        <div class="info-grid">
+                            {% if build_pipeline_url %}
+                                <div class="info-item">
+                                    <label>Pipeline URL</label>
+                                    {% set pipeline_display = build_pipeline_url.split('://')[-1] %}
+                                    {% if '/' in pipeline_display %}
+                                        {% set pipeline_display = pipeline_display.split('/', 1)[1] %}
+                                    {% endif %}
+                                    <a href="{{ build_pipeline_url }}" target="_blank" rel="noopener">
+                                        <i class="fas fa-external-link-alt"></i> {{ pipeline_display }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% if art_job_url %}
+                                <div class="info-item">
+                                    <label>ART Job URL</label>
+                                    {% set art_job_display = art_job_url.split('://')[-1] %}
+                                    {% if '/' in art_job_display %}
+                                        {% set art_job_display = art_job_display.split('/', 1)[1] %}
+                                    {% endif %}
+                                    <a href="{{ art_job_url }}" target="_blank" rel="noopener">
+                                        <i class="fas fa-external-link-alt"></i> {{ art_job_display }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
+    <script>
+        // Download JSON functionality
+        document.getElementById('downloadLogsBtn')?.addEventListener('click', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('format', 'json');
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `logs-${data.nvr || 'build'}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(downloadUrl);
+                })
+                .catch(error => {
+                    console.error('Download failed:', error);
+                    alert('Failed to download JSON');
+                });
+        });
+    </script>
 {% endblock %}
 

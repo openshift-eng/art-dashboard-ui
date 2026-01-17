@@ -24,8 +24,17 @@ function updateFilterButtonVisibility() {
         filterButton.style.display = "none";
         return;
     }
+    if (filterButton.dataset.visible === 'true') {
+        filterButton.style.display = "inline-block";
+        return;
+    }
     const currentKey = buildParamsKey(getCurrentSearchParams());
-    filterButton.style.display = currentKey !== lastSearchParamsKey ? "inline-block" : "none";
+    if (currentKey !== lastSearchParamsKey) {
+        filterButton.dataset.visible = 'true';
+        filterButton.style.display = "inline-block";
+    } else {
+        filterButton.style.display = "none";
+    }
 }
 
 document.getElementById("toggleButton").addEventListener("click", function() {
@@ -229,21 +238,23 @@ function createRow(result) {
     // Create the row
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
-    const isFailure = (result.outcome || '').toLowerCase() === 'failure';
-    const logsTitle = isFailure ? 'Build logs' : 'Build logs are only available for failed builds';
-    const logsClass = isFailure ? '' : 'logs-disabled';
+    const outcomeLower = (result.outcome || '').toLowerCase();
+    const isSuccess = outcomeLower === 'success';
+    const packagesTitle = isSuccess ? 'Packages' : 'Package information is only available for successful builds';
+    const packagesClass = isSuccess ? '' : 'packages-disabled';
+    const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank" title="Build details">${result.nvr}</a></td>
+        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td>${sourceLink}</td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${buildTimeDisplay}</td>
         <td>${engineDisplay}</td>
-        <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
+        <td><a href="/packages?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="${packagesTitle}" class="${packagesClass}">🔍</a></td>
         <td>
-            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}&after=${result.start_time}" target="_blank" title="${logsTitle}" class="${logsClass}">📜️</a>
+            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
@@ -252,9 +263,16 @@ function createRow(result) {
     return row;
 }
 
-function updateStatusBar(cachedCount, filteredCount) {
+const MAX_RESULTS = 1000;
+
+function updateStatusBar(cachedCount, displayedCount) {
     const statusTextBar = document.getElementById("statusText");
-    statusTextBar.textContent = `Results: ${cachedCount} cached, ${filteredCount} filtered`;
+    const hiddenCount = cachedCount - displayedCount;
+    let message = `Results: ${displayedCount} (${hiddenCount} filtered)`;
+    if (cachedCount >= MAX_RESULTS) {
+        message += ` — Results may be truncated (limit: ${MAX_RESULTS})`;
+    }
+    statusTextBar.textContent = message;
 }
 
 function displayResults(results) {
@@ -310,6 +328,10 @@ function performSearch(queryParams = null) {
         hideLoading();
         scrollContainer.style.overflow = 'auto';
         lastSearchParamsKey = paramsKey;
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
         updateFilterButtonVisibility();
     })
     .catch((error) => {
@@ -319,6 +341,10 @@ function performSearch(queryParams = null) {
         cachedResults = [];
         displayResults([]);
         showCustomAlert(`Search failed: ${error.message}`, "❌");
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
         updateFilterButtonVisibility();
     });
 }
@@ -329,7 +355,11 @@ function filterResults() {
 
     const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
-    updateFilterButtonVisibility();
+    const filterButton = document.getElementById("filterButton");
+    if (filterButton) {
+        filterButton.dataset.visible = 'true';
+        filterButton.style.display = "inline-block";
+    }
 }
 
 function downloadResults() {
@@ -380,6 +410,10 @@ function matchesFilters(result, filterParams) {
             continue;
         } else if (key == 'group') {
             if (result['group'] != value) {
+                return false;
+            }
+        } else if (key == 'record_id') {
+            if (!result['record_id'] || result['record_id'] !== value) {
                 return false;
             }
         } else if (key == 'commitish') {
@@ -763,14 +797,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize Flatpickr
     flatpickr("#after", {
         dateFormat: "Y-m-d",
-        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        defaultDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     });
 
     hideLoading();
 
     // Set default date cut off
     const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 7);
+    currentDate.setDate(currentDate.getDate() - 2);
     const formattedDate = currentDate.toISOString().split('T')[0];
     document.getElementById('after').value = formattedDate;
 
@@ -785,6 +819,10 @@ document.addEventListener("DOMContentLoaded", () => {
         cachedResults = window.initialResults;
         displayResults(cachedResults);
         lastSearchParamsKey = buildParamsKey(urlParams);
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
         updateFilterButtonVisibility();
     }
     // Otherwise, if we have search parameters, perform search
@@ -800,6 +838,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     else {
         lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
         updateFilterButtonVisibility();
     }
 
@@ -925,6 +967,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     // Reset text inputs
     form.querySelector("#name").value = "";
     form.querySelector("#nvr").value = "";
+    form.querySelector("#record_id").value = "";
     form.querySelector("#assembly").value = "stream";
     form.querySelector("#source_repo").value = "";
     form.querySelector("#commitish").value = "";
@@ -960,5 +1003,9 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     cachedResults = [];
 
     lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+    const filterButton = document.getElementById("filterButton");
+    if (filterButton) {
+        filterButton.dataset.visible = 'false';
+    }
     updateFilterButtonVisibility();
 });

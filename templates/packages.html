@@ -3,22 +3,126 @@
 {% block title %}Installed Packages{% endblock %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/build.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/packages.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="results-container">
-        <h2>Package list for <span>{{ nvr }}</span></h2>
-        <div>
-            {% if packages %}
-                <table id="packagesTable">
-                    {% for package in packages %}
-                    <tr><td>{{ package }}</td></tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p class="no-results-message">No packages available to display.</p>
+    <div class="build-page">
+        <div class="build-content">
+            <div class="build-header">
+                <h2>Package List</h2>
+                <div class="header-actions">
+                    <button id="downloadPackagesBtn" class="download-btn" title="Download as JSON">
+                        <i class="fas fa-download"></i> Download JSON
+                    </button>
+                </div>
+            </div>
+            {% if build_identity %}
+            <section class="build-section">
+                <h3>Build Identity</h3>
+                <div class="info-grid">
+                    {% if build_identity.nvr %}
+                    <div class="info-item full-width">
+                        <label>NVR</label>
+                        <span class="field-value" style="font-weight: bold; font-size: 1.1rem;">{{ build_identity.nvr }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if build_identity.name %}
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span>{{ build_identity.name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.version %}
+                    <div class="info-item">
+                        <label>Version</label>
+                        <span>{{ build_identity.version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.release %}
+                    <div class="info-item">
+                        <label>Release</label>
+                        <span>{{ build_identity.release }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.el_target %}
+                    <div class="info-item">
+                        <label>EL Target</label>
+                        <span>{{ build_identity.el_target }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if build_identity.group %}
+                    <div class="info-item">
+                        <label>Group</label>
+                        <span>{{ build_identity.group }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.assembly %}
+                    <div class="info-item">
+                        <label>Assembly</label>
+                        <span>{{ build_identity.assembly }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.component %}
+                    <div class="info-item">
+                        <label>Component</label>
+                        <span>{{ build_identity.component }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <label>Details</label>
+                        <a href="/build?nvr={{ nvr }}&record_id={{ record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> View build details
+                        </a>
+                    </div>
+                </div>
+            </section>
             {% endif %}
+            <section class="build-section">
+                <h3>Installed Packages</h3>
+                {% if error_message %}
+                    <p class="no-results-message">{{ error_message }}</p>
+                {% else %}
+                {% if packages %}
+                    <ul class="package-list">
+                        {% for package in packages %}
+                        <li>{{ package }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-results-message">No packages available to display.</p>
+                {% endif %}
+                {% endif %}
+            </section>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.getElementById('downloadPackagesBtn')?.addEventListener('click', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('format', 'json');
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = '{{ nvr }}-packages.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(downloadUrl);
+                })
+                .catch(err => console.error('Download failed:', err));
+        });
+    </script>
 {% endblock %}
