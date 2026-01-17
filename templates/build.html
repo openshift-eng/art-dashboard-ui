@@ -295,14 +295,22 @@
                         {% for image in build.parent_images.split('\n') if image.strip() %}
                         <li class="monospace parent-image-item">
                             <span>{{ image.strip() }}</span>
-                            <a href="#" class="parent-search-link" data-image="{{ image.strip() }}" title="Search for builds using this parent image">🔍</a>
+                            {% if '/' in image.strip() %}
+                            <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% else %}
+                            <a href="#" class="parent-search-link" data-nvr="{{ image.strip() }}" title="Search for builds with this NVR">🔍</a>
+                            {% endif %}
                         </li>
                         {% endfor %}
                     {% else %}
                         {% for image in build.parent_images if image %}
                         <li class="monospace parent-image-item">
                             <span>{{ image }}</span>
-                            <a href="#" class="parent-search-link" data-image="{{ image }}" title="Search for builds using this parent image">🔍</a>
+                            {% if '/' in image %}
+                            <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% else %}
+                            <a href="#" class="parent-search-link" data-nvr="{{ image }}" title="Search for builds with this NVR">🔍</a>
+                            {% endif %}
                         </li>
                         {% endfor %}
                     {% endif %}
@@ -534,32 +542,26 @@
                 }
             }
 
-            // Set up parent image search links
+            // Set up parent image search links (for NVR entries only)
             const startTimeStr = '{{ build.start_time if build else "" }}';
-            document.querySelectorAll('.parent-search-link').forEach(link => {
+            document.querySelectorAll('a.parent-search-link').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const image = this.dataset.image;
+                    const nvr = this.dataset.nvr;
                     
-                    // Extract sha256 or tag from image reference
-                    let searchTerm = '';
-                    if (image.includes('@sha256:')) {
-                        // Extract sha256 hash (first 12 chars for search)
-                        searchTerm = image.split('@sha256:')[1].substring(0, 12);
-                    } else if (image.includes(':')) {
-                        // Extract tag (last part after colon, but not if it's a port number)
-                        const parts = image.split(':');
-                        const lastPart = parts[parts.length - 1];
-                        // Check if it looks like a tag (not a port number or sha)
-                        if (lastPart && !lastPart.match(/^\d+$/) && !lastPart.includes('/')) {
-                            searchTerm = lastPart;
+                    // Extract name from NVR (everything before -v<version>-<release>)
+                    // NVR format: <name>-<version>-<release>
+                    // Version typically starts with 'v' followed by digits (e.g., v4.18.0)
+                    let name = '';
+                    const versionMatch = nvr.match(/^(.+)-v\d+\.\d+/);
+                    if (versionMatch) {
+                        name = versionMatch[1];
+                    } else {
+                        // Fallback: try to find pattern like -<digits>.<digits>
+                        const fallbackMatch = nvr.match(/^(.+)-\d+\.\d+/);
+                        if (fallbackMatch) {
+                            name = fallbackMatch[1];
                         }
-                    }
-                    
-                    if (!searchTerm) {
-                        // Fallback: use last path segment
-                        const pathParts = image.split('/');
-                        searchTerm = pathParts[pathParts.length - 1];
                     }
                     
                     // Calculate date 30 days before start_time
@@ -574,13 +576,15 @@
                         }
                     }
                     
-                    // Build search URL
+                    // Build search URL with name (for clustering efficiency) and NVR
                     const searchUrl = new URL('/', window.location.origin);
-                    searchUrl.pathname = '/search';
-                    searchUrl.searchParams.set('image_sha_tag', searchTerm);
+                    if (name) {
+                        searchUrl.searchParams.set('name', name);
+                    }
+                    searchUrl.searchParams.set('nvr', nvr);
                     searchUrl.searchParams.set('assembly', '*');
                     if (afterDate) {
-                        searchUrl.searchParams.set('after', afterDate);
+                        searchUrl.searchParams.set('dateRange', afterDate);
                     }
                     
                     // Open in new tab

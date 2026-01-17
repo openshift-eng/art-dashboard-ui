@@ -277,14 +277,16 @@
 }
 
 .parent-image-item {
-    display: flex;
+    display: flex !important;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+    flex-wrap: nowrap;
 }
 
-.parent-image-item span {
+.parent-image-item > span:first-child {
     flex: 1;
+    min-width: 0;
     word-break: break-all;
 }
 
@@ -298,6 +300,11 @@
 
 .parent-search-link:hover {
     opacity: 1;
+}
+
+.parent-search-link.disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
 }
 
 .inline-list li {

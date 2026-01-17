@@ -318,6 +318,15 @@ function performSearch(queryParams = null) {
         return response.json();
     })
     .then((data) => {
+        // Check if the response contains an error
+        if (data && data.error) {
+            cachedResults = [];
+            displayResults([]);
+            hideLoading();
+            scrollContainer.style.overflow = 'auto';
+            showCustomAlert(data.error, "⚠️");
+            return;
+        }
         cachedResults = data;
         displayResults(data);
         hideLoading();

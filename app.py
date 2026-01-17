@@ -91,17 +91,21 @@ class KonfluxBuildHistory(Flask):
                     self._logger.error('Redis unavailable, falling back to in-memory cache: %s', e)
                 self._redis_available = False
 
+    @staticmethod
+    def extract_nvr_start_time(nvr_value: str):
+        """Extract datetime from NVR string (format YYYYMMDDHHMM embedded in NVR)."""
+        if not nvr_value:
+            return None
+        match = re.search(r'-(\d{12})\.', nvr_value)
+        if not match:
+            return None
+        try:
+            return datetime.strptime(match.group(1), '%Y%m%d%H%M')
+        except ValueError:
+            return None
+
     def add_routes(self):
-        def extract_nvr_start_time(nvr_value: str):
-            if not nvr_value:
-                return None
-            match = re.search(r'-(\d{12})\.', nvr_value)
-            if not match:
-                return None
-            try:
-                return datetime.strptime(match.group(1), '%Y%m%d%H%M')
-            except ValueError:
-                return None
+        extract_nvr_start_time = self.extract_nvr_start_time
         @self.route("/")
         def index():
             return render_template(
@@ -531,7 +535,18 @@ class KonfluxBuildHistory(Flask):
                 self._logger.warning('Failed parsing date range %s: %s', date_range, e)
         
         if not start_search:
-            start_search = datetime.now(timezone.utc) - DELTA_SEARCH
+            # If NVR contains a datetime, use it to set a narrow search window
+            nvr_datetime = self.extract_nvr_start_time(nvr) if nvr else None
+            if nvr_datetime:
+                nvr_datetime = nvr_datetime.replace(tzinfo=timezone.utc)
+                start_search = nvr_datetime - timedelta(days=2)
+                end_search = nvr_datetime + timedelta(days=2)
+            else:
+                # Require either a date range or an NVR with a datetime
+                return {
+                    'error': 'A date range or an NVR with an embedded datetime is required for search.',
+                    'builds': []
+                }
 
         # Exclude large columns from search results to reduce data transfer and BigQuery costs
         # These columns are only needed when viewing specific build details
