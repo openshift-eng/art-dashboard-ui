@@ -337,6 +337,32 @@
     margin-top: 15px;
 }
 
+/* Filter input for lists */
+.filter-container {
+    margin-bottom: 15px;
+}
+
+.filter-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: #f0f0f0;
+}
+
+.filter-input::placeholder {
+    color: #888;
+    font-style: italic;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #4caf50;
+}
+
 /* Other fields table */
 .other-fields-table {
     width: 100%;

@@ -4,7 +4,7 @@ from urllib.parse import unquote
 import logging
 import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 
 from artcommonlib import redis, bigquery
@@ -445,109 +445,6 @@ class KonfluxBuildHistory(Flask):
                 error_message=error_message,
             )
 
-        @self.route("/packages")
-        async def show_packages():
-            nvr = request.args.get("nvr")
-            record_id = request.args.get("record_id")
-            group = request.args.get("group")
-            default_result = []
-            build_identity = None
-            error_message = None
-
-            if not nvr or not record_id:
-                error_message = 'Both nvr and record_id are required to view packages.'
-                return render_template(
-                    "packages.html",
-                    nvr=nvr or '<undefined>',
-                    packages=default_result,
-                    build_identity=None,
-                    group=group,
-                    error_message=error_message
-                )
-
-
-            elif not record_id and (raw_value := await self.safe_redis_get(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
-                # nvr param was passed in, and there is a cached entry for it,
-                # and the cached entry is not an empty list
-                result = parsed
-                try:
-                    self.konflux_db.bind(KonfluxBuildRecord)
-                    where = {'nvr': nvr, 'outcome': ['success', 'failure', 'pending']}
-                    if group:
-                        where['group'] = group
-                    build = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where=where,
-                        limit=1
-                    )]
-                    if build:
-                        build = build[0]
-                        build_identity = {
-                            'nvr': getattr(build, 'nvr', None),
-                            'name': getattr(build, 'name', None),
-                            'version': getattr(build, 'version', None),
-                            'release': getattr(build, 'release', None),
-                            'el_target': getattr(build, 'el_target', None),
-                            'group': getattr(build, 'group', None),
-                            'assembly': getattr(build, 'assembly', None),
-                            'component': getattr(build, 'component', None),
-                        }
-                except Exception as e:
-                    self._logger.warning('Failed looking up build details for packages: %s', e)
-
-            else:
-                # nvr param was passed in, but there is no cached entry for it,
-                # or the cached entry is an empty list
-                # fetch the build record from Konflux DB
-                try:
-                    self.konflux_db.bind(KonfluxBuildRecord)
-                    where = {'outcome': ['success', 'failure', 'pending']}
-                    if record_id:
-                        where['record_id'] = record_id
-                    else:
-                        where['nvr'] = nvr
-                    if group:
-                        where['group'] = group
-                    build = [build async for build in self.konflux_db.search_builds_by_fields(where=where, limit=1)]
-                    result = build[0].installed_packages if build else []
-                    if build:
-                        build = build[0]
-                        build_identity = {
-                            'nvr': getattr(build, 'nvr', None),
-                            'name': getattr(build, 'name', None),
-                            'version': getattr(build, 'version', None),
-                            'release': getattr(build, 'release', None),
-                            'el_target': getattr(build, 'el_target', None),
-                            'group': getattr(build, 'group', None),
-                            'assembly': getattr(build, 'assembly', None),
-                            'component': getattr(build, 'component', None),
-                        }
-
-                    # Update the cache
-                    if nvr:
-                        await self.safe_redis_set(self.redis_packages_key(nvr), json.dumps(result))
-
-                except Exception as e:
-                    self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
-                    result = default_result
-
-            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
-                return jsonify({
-                    'nvr': nvr,
-                    'record_id': record_id,
-                    'group': group or (build_identity.get('group') if build_identity else None),
-                    'packages': result,
-                    'build_identity': build_identity,
-                    'error': error_message,
-                })
-
-            return render_template("packages.html",
-                                   nvr=nvr,
-                                   record_id=record_id,
-                                   group=group or (build_identity.get('group') if build_identity else None),
-                                   packages=result,
-                                   build_identity=build_identity,
-                                   error_message=error_message)
-
     async def query(self, params: dict, outcomes: list = None):
         self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
 
@@ -614,16 +511,27 @@ class KonfluxBuildHistory(Flask):
                 current = unquote(current)
             art_job_url_variants = {v.lower() for v in variants}
 
-        after = params.get('after', '').strip()
-        if after:
+        # Parse date range "YYYY-MM-DD to YYYY-MM-DD" or just "YYYY-MM-DD"
+        date_range = params.get('dateRange', '').strip()
+        start_search = None
+        end_search = None
+        
+        if date_range:
+            dates = date_range.split(' to ')
             try:
-                start_search = datetime.strptime(after, '%Y-%m-%d')
+                if dates[0]:
+                    start_search = datetime.strptime(dates[0].strip(), '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                if len(dates) > 1 and dates[1]:
+                    # Set end date to end of day (UTC)
+                    end_search = datetime.strptime(dates[1].strip(), '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+                elif start_search:
+                    # Single date provided - treat as one-day range
+                    end_search = start_search.replace(hour=23, minute=59, second=59)
             except Exception as e:
-                self._logger.warning('Failed parsing date string %s: %s', after, e)
-                start_search = None
-
-        else:
-            start_search = datetime.now() - DELTA_SEARCH
+                self._logger.warning('Failed parsing date range %s: %s', date_range, e)
+        
+        if not start_search:
+            start_search = datetime.now(timezone.utc) - DELTA_SEARCH
 
         # Exclude large columns from search results to reduce data transfer and BigQuery costs
         # These columns are only needed when viewing specific build details
@@ -636,6 +544,7 @@ class KonfluxBuildHistory(Flask):
             db.bind(record_class)
             builds = [build async for build in db.search_builds_by_fields(
                 start_search=start_search,
+                end_search=end_search,
                 where=where_clauses,
                 extra_patterns=extra_patterns,
                 order_by='end_time',
@@ -716,10 +625,6 @@ class KonfluxBuildHistory(Flask):
 
         # Return the results as JSON
         return results
-
-    @staticmethod
-    def redis_packages_key(nvr: str):
-        return f'appdata:art-build-history:installed-packages:{nvr}'
 
     @staticmethod
     def redis_build_key(nvr: str):

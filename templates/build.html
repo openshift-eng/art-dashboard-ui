@@ -316,7 +316,7 @@
                 <h3 class="collapsible-header" onclick="toggleSection(this)">
                     <span class="collapse-icon">▶</span>
                     Installed Packages
-                    <span class="item-count">
+                    <span class="item-count" id="packages-count">
                         {% if build.installed_packages is string %}
                             ({{ build.installed_packages.split('\n') | length }} packages)
                         {% else %}
@@ -325,7 +325,10 @@
                     </span>
                 </h3>
                 <div class="collapsible-content" style="display: none;">
-                    <ul class="package-list">
+                    <div class="filter-container">
+                        <input type="text" id="packages-filter" class="filter-input" placeholder="Type to filter packages..." oninput="filterList('packages-filter', 'packages-list', 'packages-count', 'packages')">
+                    </div>
+                    <ul class="package-list" id="packages-list">
                         {% if build.installed_packages is string %}
                             {% for pkg in build.installed_packages.split('\n') if pkg.strip() %}
                             <li>{{ pkg.strip() }}</li>
@@ -346,7 +349,7 @@
                 <h3 class="collapsible-header" onclick="toggleSection(this)">
                     <span class="collapse-icon">▶</span>
                     Installed RPMs
-                    <span class="item-count">
+                    <span class="item-count" id="rpms-count">
                         {% if build.installed_rpms is string %}
                             ({{ build.installed_rpms.split('\n') | length }} RPMs)
                         {% else %}
@@ -355,7 +358,10 @@
                     </span>
                 </h3>
                 <div class="collapsible-content" style="display: none;">
-                    <ul class="package-list">
+                    <div class="filter-container">
+                        <input type="text" id="rpms-filter" class="filter-input" placeholder="Type to filter RPMs..." oninput="filterList('rpms-filter', 'rpms-list', 'rpms-count', 'RPMs')">
+                    </div>
+                    <ul class="package-list" id="rpms-list">
                         {% if build.installed_rpms is string %}
                             {% for rpm in build.installed_rpms.split('\n') if rpm.strip() %}
                             <li>{{ rpm.strip() }}</li>

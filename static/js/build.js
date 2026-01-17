@@ -1,3 +1,30 @@
+// Filter list functionality for packages and RPMs
+function filterList(inputId, listId, countId, label) {
+    const filter = document.getElementById(inputId).value.toLowerCase();
+    const list = document.getElementById(listId);
+    const items = list.querySelectorAll('li');
+    let visibleCount = 0;
+    let totalCount = items.length;
+    
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(filter)) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Update the count display
+    const countElement = document.getElementById(countId);
+    if (filter) {
+        countElement.textContent = `(${visibleCount} of ${totalCount} ${label})`;
+    } else {
+        countElement.textContent = `(${totalCount} ${label})`;
+    }
+}
+
 // Copy to clipboard functionality for build details page
 async function copyToClipboard(text, button) {
     try {

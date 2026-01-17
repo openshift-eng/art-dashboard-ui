@@ -1,6 +1,6 @@
 .sidebar {
     width: 30%;
-    max-width: 250px;
+    max-width: 280px;
     min-width: 30px;
     background-color: #2b2b2b;
     padding: 20px;
@@ -123,6 +123,11 @@ input[type="text"]::placeholder {
     opacity: 1;
 }
 
+#dateRange {
+    font-size: 12px;
+    padding: 6px 4px;
+}
+
 input[type="date"] {
     color: #f0f0f0;
     font-family: Arial, sans-serif;
@@ -161,9 +166,6 @@ td a {
 }
 
 
-td a.packages-disabled {
-    opacity: 0.2;
-}
 
 select {
     width: 100%;

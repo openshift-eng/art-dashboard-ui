@@ -238,10 +238,6 @@ function createRow(result) {
     // Create the row
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
-    const outcomeLower = (result.outcome || '').toLowerCase();
-    const isSuccess = outcomeLower === 'success';
-    const packagesTitle = isSuccess ? 'Packages' : 'Package information is only available for successful builds';
-    const packagesClass = isSuccess ? '' : 'packages-disabled';
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
@@ -252,7 +248,6 @@ function createRow(result) {
         <td>${result["group"]}</td>
         <td>${buildTimeDisplay}</td>
         <td>${engineDisplay}</td>
-        <td><a href="/packages?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="${packagesTitle}" class="${packagesClass}">🔍</a></td>
         <td>
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
@@ -435,11 +430,23 @@ function matchesFilters(result, filterParams) {
             if (!pullspecMatch && !tagMatch && !nvrMatch) {
                 return false;
             }
-        } else if (key == 'after') {
+        } else if (key == 'dateRange') {
             const resultDate = new Date(result['completed']);
-            const afterDate = new Date(value);
-            if (resultDate < afterDate) {
-                return false;
+            // Parse date range "YYYY-MM-DD to YYYY-MM-DD"
+            const dates = value.split(' to ');
+            if (dates.length >= 1 && dates[0]) {
+                const startDate = new Date(dates[0]);
+                if (resultDate < startDate) {
+                    return false;
+                }
+            }
+            if (dates.length >= 2 && dates[1]) {
+                const endDate = new Date(dates[1]);
+                // Set end date to end of day
+                endDate.setHours(23, 59, 59, 999);
+                if (resultDate > endDate) {
+                    return false;
+                }
             }
         } else if (key == 'engine') {
             if (value != 'both' && result['engine'] != value) {
@@ -794,19 +801,18 @@ function setupAutocomplete(input, dropdown) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Flatpickr
-    flatpickr("#after", {
+    // Initialize Flatpickr with date range mode
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 2);
+    const endDate = new Date();
+    
+    flatpickr("#dateRange", {
+        mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+        defaultDate: [startDate, endDate]
     });
 
     hideLoading();
-
-    // Set default date cut off
-    const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 2);
-    const formattedDate = currentDate.toISOString().split('T')[0];
-    document.getElementById('after').value = formattedDate;
 
     // Check if we're on a search results page (from server-side render)
     const isSearchPage = document.body.dataset.isSearchPage === 'true';
@@ -985,9 +991,13 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     form.querySelector("#group").value = "";
 
     // Reset date picker
-    flatpickr("#after", {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 2);
+    const endDate = new Date();
+    flatpickr("#dateRange", {
+        mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        defaultDate: [startDate, endDate]
     });
 
     // Clear any existing search results
