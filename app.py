@@ -9,7 +9,7 @@ import re
 
 from artcommonlib import redis, bigquery
 from google.cloud import bigquery as gcp_bigquery
-from artcommonlib.constants import TASKRUN_TABLE_ID
+from artcommonlib.constants import TASKRUN_TABLE_ID, GOOGLE_CLOUD_PROJECT
 from artcommonlib.konflux.konflux_build_record import (
     KonfluxBuildRecord,
     KonfluxBundleBuildRecord,
@@ -35,7 +35,6 @@ class KonfluxBuildHistory(Flask):
         super().__init__(__name__)
         self._logger = logging.getLogger(__name__)  # logger field is already used by Flask, not overwriting
         self.init_logger()
-        self.add_routes()
 
         self.konflux_db = KonfluxDb()
         self._logger.info('Konflux DB initialized')
@@ -43,6 +42,7 @@ class KonfluxBuildHistory(Flask):
         self._memory_cache = {}  # In-memory fallback cache when Redis unavailable
         if DEV_MODE:
             self._logger.warning('Dev mode enabled (ART_DASH_DEV=1) - Redis errors will be bypassed')
+        self.add_routes()
 
     def init_logger(self):
         formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
@@ -151,7 +151,7 @@ class KonfluxBuildHistory(Flask):
                 start_timestamp = start_date.strftime('%Y-%m-%d')
 
                 # Use Google Cloud BigQuery client directly for raw SQL query
-                client = gcp_bigquery.Client()
+                client = gcp_bigquery.Client(project=GOOGLE_CLOUD_PROJECT)
                 query = f"""
                     SELECT DISTINCT `group`
                     FROM `openshift-art.events.builds`
@@ -201,7 +201,7 @@ class KonfluxBuildHistory(Flask):
                 start_timestamp = start_date.strftime('%Y-%m-%d')
 
                 # Use Google Cloud BigQuery client directly for raw SQL query
-                client = gcp_bigquery.Client()
+                client = gcp_bigquery.Client(project=GOOGLE_CLOUD_PROJECT)
                 query = f"""
                     SELECT DISTINCT source_repo
                     FROM `openshift-art.events.builds`
@@ -474,10 +474,6 @@ class KonfluxBuildHistory(Flask):
             where_clauses['engine'] = engine
 
         extra_patterns = {}
-
-        # When no group is specified, filter to only openshift-4.x groups (exclude OKD builds)
-        if not group:
-            extra_patterns['group'] = 'openshift-4.'
 
         name = params.get('name', '').strip()
         if name:
