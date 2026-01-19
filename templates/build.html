@@ -292,24 +292,38 @@
                 <h3>Parent Images</h3>
                 <ul class="image-list">
                     {% if build.parent_images is string %}
-                        {% for image in build.parent_images.split('\n') if image.strip() %}
+                        {% set parent_list = build.parent_images.split('\n') | select | list %}
+                        {% for image in parent_list if image.strip() %}
                         <li class="monospace parent-image-item">
                             <span>{{ image.strip() }}</span>
                             {% if '/' in image.strip() %}
                             <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% if loop.last %}
+                            <span class="parent-diff-link disabled" title="Diff is only available for parents known by NVR">⚖️</span>
+                            {% endif %}
                             {% else %}
                             <a href="#" class="parent-search-link" data-nvr="{{ image.strip() }}" title="Search for builds with this NVR">🔍</a>
+                            {% if loop.last %}
+                            <a href="/diff?nvr={{ nvr|urlencode }}&record_id={{ build.record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}&compare={{ image.strip()|urlencode }}" class="parent-diff-link" target="_blank" rel="noopener" title="Compare packages with this parent">⚖️</a>
+                            {% endif %}
                             {% endif %}
                         </li>
                         {% endfor %}
                     {% else %}
-                        {% for image in build.parent_images if image %}
+                        {% set parent_list = build.parent_images | select | list %}
+                        {% for image in parent_list if image %}
                         <li class="monospace parent-image-item">
                             <span>{{ image }}</span>
                             {% if '/' in image %}
                             <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% if loop.last %}
+                            <span class="parent-diff-link disabled" title="Diff is only available for parents known by NVR">⚖️</span>
+                            {% endif %}
                             {% else %}
                             <a href="#" class="parent-search-link" data-nvr="{{ image }}" title="Search for builds with this NVR">🔍</a>
+                            {% if loop.last %}
+                            <a href="/diff?nvr={{ nvr|urlencode }}&record_id={{ build.record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}&compare={{ image|urlencode }}" class="parent-diff-link" target="_blank" rel="noopener" title="Compare packages with this parent">⚖️</a>
+                            {% endif %}
                             {% endif %}
                         </li>
                         {% endfor %}

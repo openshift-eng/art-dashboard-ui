@@ -449,6 +449,252 @@ class KonfluxBuildHistory(Flask):
                 error_message=error_message,
             )
 
+        @self.route("/diff")
+        async def show_diff():
+            """Show package differences between a build and a comparison build."""
+            nvr = request.args.get('nvr')
+            record_id = request.args.get('record_id')
+            group = request.args.get('group')
+            compare_nvr = request.args.get('compare')
+            
+            error_message = None
+            build_identity = None
+            compare_identity = None
+            replaced_packages = []
+            shared_packages = []
+            build_packages_map = {}
+            compare_packages_map = {}
+
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view package diff.'
+                return render_template(
+                    "diff.html",
+                    nvr=nvr or '<undefined>',
+                    compare_nvr=compare_nvr,
+                    group=group,
+                    build_identity=None,
+                    compare_identity=None,
+                    replaced_packages=[],
+                    shared_packages=[],
+                    error_message=error_message
+                )
+            
+            if not compare_nvr:
+                error_message = 'A compare NVR is required to view package diff.'
+                return render_template(
+                    "diff.html",
+                    nvr=nvr,
+                    compare_nvr=None,
+                    group=group,
+                    build_identity=None,
+                    compare_identity=None,
+                    replaced_packages=[],
+                    shared_packages=[],
+                    error_message=error_message
+                )
+
+            # Fetch the main build by record_id
+            main_build = None
+            for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                try:
+                    db = KonfluxDb()
+                    db.bind(record_class)
+                    where = {'record_id': record_id, 'outcome': ['success', 'failure', 'pending']}
+                    if group:
+                        where['group'] = group
+                    builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]
+                    if builds:
+                        main_build = builds[0]
+                        break
+                except Exception as e:
+                    self._logger.warning('Failed fetching main build for diff (%s): %s', record_class, e)
+
+            if not main_build:
+                error_message = f'Unable to find build with record_id: {record_id}'
+                return render_template(
+                    "diff.html",
+                    nvr=nvr,
+                    compare_nvr=compare_nvr,
+                    group=group,
+                    build_identity=None,
+                    compare_identity=None,
+                    replaced_packages=[],
+                    shared_packages=[],
+                    error_message=error_message
+                )
+
+            build_identity = {
+                'nvr': getattr(main_build, 'nvr', None),
+                'name': getattr(main_build, 'name', None),
+                'version': getattr(main_build, 'version', None),
+                'release': getattr(main_build, 'release', None),
+                'group': getattr(main_build, 'group', None),
+                'assembly': getattr(main_build, 'assembly', None),
+                'record_id': getattr(main_build, 'record_id', None),
+            }
+
+            # Get installed packages from main build
+            main_packages = getattr(main_build, 'installed_packages', None) or []
+            if isinstance(main_packages, str):
+                main_packages = [p.strip() for p in main_packages.split('\n') if p.strip()]
+
+            # Parse main packages into name -> version map
+            for pkg in main_packages:
+                # Package format is typically "name-version" or "name-version-release.arch"
+                # We'll use the full package as the key for simplicity
+                # Try to extract name portion (everything before the version)
+                parts = pkg.rsplit('-', 2)
+                if len(parts) >= 2:
+                    # Assume name is parts[0] for comparison
+                    pkg_name = parts[0]
+                    build_packages_map[pkg_name] = pkg
+                else:
+                    build_packages_map[pkg] = pkg
+
+            # Search for comparison build by NVR
+            # Extract datetime from compare_nvr for search range
+            compare_datetime = extract_nvr_start_time(compare_nvr)
+            if compare_datetime:
+                compare_datetime = compare_datetime.replace(tzinfo=timezone.utc)
+                compare_start_search = compare_datetime - timedelta(days=2)
+                compare_end_search = compare_datetime + timedelta(days=2)
+            else:
+                # No datetime in NVR - use a wider window
+                compare_start_search = datetime.now(timezone.utc) - DELTA_SEARCH
+                compare_end_search = datetime.now(timezone.utc)
+
+            # Extract name from compare_nvr (strip -container suffix if present)
+            compare_name = compare_nvr.split('-')[0] if '-' in compare_nvr else compare_nvr
+            # Try to get a better name by finding the pattern before version
+            nvr_match = re.match(r'^(.+?)-v?\d', compare_nvr)
+            if nvr_match:
+                compare_name = nvr_match.group(1)
+                if compare_name.endswith('-container'):
+                    compare_name = compare_name[:-10]
+
+            compare_build = None
+            compare_search_url = None
+            for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                try:
+                    db = KonfluxDb()
+                    db.bind(record_class)
+                    where = {
+                        'outcome': ['success'],  # Only successful builds have reliable packages
+                    }
+                    extra_patterns = {'nvr': compare_nvr}
+                    if compare_name:
+                        extra_patterns['name'] = compare_name
+                    builds = [build async for build in db.search_builds_by_fields(
+                        start_search=compare_start_search,
+                        end_search=compare_end_search,
+                        where=where,
+                        extra_patterns=extra_patterns,
+                        order_by='end_time',
+                        limit=1
+                    )]
+                    if builds:
+                        compare_build = builds[0]
+                        break
+                except Exception as e:
+                    self._logger.warning('Failed fetching comparison build for diff (%s): %s', record_class, e)
+
+            # Build search URL for error message
+            compare_search_url = f"/?name={compare_name}&nvr={compare_nvr}&outcome=success"
+
+            if not compare_build:
+                error_message = f'Unable to find successful build for comparison NVR: {compare_nvr}'
+                return render_template(
+                    "diff.html",
+                    nvr=nvr,
+                    compare_nvr=compare_nvr,
+                    group=group,
+                    build_identity=build_identity,
+                    compare_identity=None,
+                    replaced_packages=[],
+                    shared_packages=[],
+                    error_message=error_message,
+                    compare_search_url=compare_search_url
+                )
+
+            compare_identity = {
+                'nvr': getattr(compare_build, 'nvr', None),
+                'name': getattr(compare_build, 'name', None),
+                'version': getattr(compare_build, 'version', None),
+                'release': getattr(compare_build, 'release', None),
+                'group': getattr(compare_build, 'group', None),
+                'assembly': getattr(compare_build, 'assembly', None),
+                'record_id': getattr(compare_build, 'record_id', None),
+            }
+
+            # Get installed packages from comparison build
+            compare_packages = getattr(compare_build, 'installed_packages', None) or []
+            if isinstance(compare_packages, str):
+                compare_packages = [p.strip() for p in compare_packages.split('\n') if p.strip()]
+
+            # Parse comparison packages into name -> version map
+            for pkg in compare_packages:
+                parts = pkg.rsplit('-', 2)
+                if len(parts) >= 2:
+                    pkg_name = parts[0]
+                    compare_packages_map[pkg_name] = pkg
+                else:
+                    compare_packages_map[pkg] = pkg
+
+            # Compare packages
+            all_pkg_names = set(build_packages_map.keys()) | set(compare_packages_map.keys())
+            for pkg_name in sorted(all_pkg_names):
+                build_pkg = build_packages_map.get(pkg_name)
+                compare_pkg = compare_packages_map.get(pkg_name)
+                
+                if build_pkg and compare_pkg:
+                    if build_pkg != compare_pkg:
+                        # Package exists in both but version differs
+                        replaced_packages.append({
+                            'name': pkg_name,
+                            'build_version': build_pkg,
+                            'compare_version': compare_pkg
+                        })
+                    else:
+                        # Package is identical
+                        shared_packages.append(build_pkg)
+                elif build_pkg:
+                    # Package only in build (new package)
+                    replaced_packages.append({
+                        'name': pkg_name,
+                        'build_version': build_pkg,
+                        'compare_version': None
+                    })
+                else:
+                    # Package only in comparison (removed package)
+                    replaced_packages.append({
+                        'name': pkg_name,
+                        'build_version': None,
+                        'compare_version': compare_pkg
+                    })
+
+            # Support JSON download
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify({
+                    'nvr': nvr,
+                    'compare_nvr': compare_nvr,
+                    'build_identity': build_identity,
+                    'compare_identity': compare_identity,
+                    'replaced_packages': replaced_packages,
+                    'shared_packages': shared_packages,
+                })
+
+            return render_template(
+                "diff.html",
+                nvr=nvr,
+                compare_nvr=compare_nvr,
+                group=group,
+                build_identity=build_identity,
+                compare_identity=compare_identity,
+                replaced_packages=replaced_packages,
+                shared_packages=shared_packages,
+                error_message=error_message
+            )
+
     async def query(self, params: dict, outcomes: list = None):
         self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
 
