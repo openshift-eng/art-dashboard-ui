@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="results-container build-page">
+    <div class="results-container build-page" {% if build.start_time %}data-start-time="{{ build.start_time }}"{% endif %}>
         <div class="build-content">
             <div class="build-header">
                 <h2>Build Details</h2>
@@ -138,7 +138,7 @@
                     {% if build.start_time and build.end_time %}
                     <div class="info-item">
                         <label>Duration</label>
-                        <span id="build-duration">Calculating...</span>
+                        <span id="build-duration" data-start-time="{{ build.start_time }}" data-end-time="{{ build.end_time }}">Calculating...</span>
                     </div>
                     {% endif %}
                 </div>
@@ -472,125 +472,4 @@
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/build.js') }}"></script>
-    <script>
-        // Download JSON functionality
-        document.getElementById('downloadBtn')?.addEventListener('click', function() {
-            const url = new URL(window.location.href);
-            url.searchParams.set('format', 'json');
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const downloadUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = '{{ nvr }}.json';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(downloadUrl);
-                })
-                .catch(err => console.error('Download failed:', err));
-        });
-
-        // Toggle collapsible sections
-        function toggleSection(header) {
-            const content = header.nextElementSibling;
-            const icon = header.querySelector('.collapse-icon');
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.textContent = '▼';
-            } else {
-                content.style.display = 'none';
-                icon.textContent = '▶';
-            }
-        }
-
-        // Calculate and display build duration
-        document.addEventListener('DOMContentLoaded', function() {
-            const durationEl = document.getElementById('build-duration');
-            if (durationEl) {
-                const startTime = '{{ build.start_time if build else "" }}';
-                const endTime = '{{ build.end_time if build else "" }}';
-                
-                if (startTime && endTime) {
-                    try {
-                        const start = new Date(startTime);
-                        const end = new Date(endTime);
-                        const diffMs = end - start;
-                        
-                        if (diffMs >= 0) {
-                            const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-                            
-                            let durationStr = '';
-                            if (hours > 0) durationStr += hours + 'h ';
-                            if (minutes > 0 || hours > 0) durationStr += minutes + 'm ';
-                            durationStr += seconds + 's';
-                            
-                            durationEl.textContent = durationStr.trim();
-                        } else {
-                            durationEl.textContent = 'N/A';
-                        }
-                    } catch (e) {
-                        durationEl.textContent = 'N/A';
-                    }
-                } else {
-                    durationEl.textContent = 'N/A';
-                }
-            }
-
-            // Set up parent image search links (for NVR entries only)
-            const startTimeStr = '{{ build.start_time if build else "" }}';
-            document.querySelectorAll('a.parent-search-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const nvr = this.dataset.nvr;
-                    
-                    // Extract name from NVR (everything before -v<version>-<release>)
-                    // NVR format: <name>-<version>-<release>
-                    // Version typically starts with 'v' followed by digits (e.g., v4.18.0)
-                    let name = '';
-                    const versionMatch = nvr.match(/^(.+)-v\d+\.\d+/);
-                    if (versionMatch) {
-                        name = versionMatch[1];
-                    } else {
-                        // Fallback: try to find pattern like -<digits>.<digits>
-                        const fallbackMatch = nvr.match(/^(.+)-\d+\.\d+/);
-                        if (fallbackMatch) {
-                            name = fallbackMatch[1];
-                        }
-                    }
-                    
-                    // Calculate date 30 days before start_time
-                    let afterDate = '';
-                    if (startTimeStr) {
-                        try {
-                            const startDate = new Date(startTimeStr);
-                            startDate.setDate(startDate.getDate() - 30);
-                            afterDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-                        } catch (e) {
-                            console.error('Failed to parse start time:', e);
-                        }
-                    }
-                    
-                    // Build search URL with name (for clustering efficiency) and NVR
-                    const searchUrl = new URL('/', window.location.origin);
-                    if (name) {
-                        searchUrl.searchParams.set('name', name);
-                    }
-                    searchUrl.searchParams.set('nvr', nvr);
-                    searchUrl.searchParams.set('assembly', '*');
-                    if (afterDate) {
-                        searchUrl.searchParams.set('dateRange', afterDate);
-                    }
-                    
-                    // Open in new tab
-                    window.open(searchUrl.toString(), '_blank');
-                });
-            });
-        });
-    </script>
 {% endblock %}

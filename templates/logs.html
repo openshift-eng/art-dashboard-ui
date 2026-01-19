@@ -150,30 +150,5 @@
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
-    <script>
-        // Download JSON functionality
-        document.getElementById('downloadLogsBtn')?.addEventListener('click', function() {
-            const url = new URL(window.location.href);
-            url.searchParams.set('format', 'json');
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-                    const downloadUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = `logs-${data.nvr || 'build'}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(downloadUrl);
-                })
-                .catch(error => {
-                    console.error('Download failed:', error);
-                    alert('Failed to download JSON');
-                });
-        });
-    </script>
 {% endblock %}
 
