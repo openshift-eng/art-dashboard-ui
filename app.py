@@ -475,6 +475,10 @@ class KonfluxBuildHistory(Flask):
 
         extra_patterns = {}
 
+        # When no group is specified, filter to only openshift-4.x groups (exclude OKD builds)
+        if not group:
+            extra_patterns['group'] = 'openshift-4.'
+
         name = params.get('name', '').strip()
         if name:
             extra_patterns['name'] = name
