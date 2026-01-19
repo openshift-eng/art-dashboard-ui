@@ -149,9 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Set up parent image search links (for NVR entries only)
-    const buildPage = document.querySelector('.build-page');
-    const startTimeStr = buildPage ? buildPage.dataset.startTime : '';
-
     document.querySelectorAll('a.parent-search-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -172,28 +169,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Calculate date 30 days before start_time
-            let afterDate = '';
-            if (startTimeStr) {
-                try {
-                    const startDate = new Date(startTimeStr);
-                    startDate.setDate(startDate.getDate() - 30);
-                    afterDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-                } catch (e) {
-                    console.error('Failed to parse start time:', e);
-                }
-            }
-
             // Build search URL with name (for clustering efficiency) and NVR
+            // The NVR contains an embedded datetime which the backend will extract
+            // to derive the appropriate date range
             const searchUrl = new URL('/', window.location.origin);
             if (name) {
                 searchUrl.searchParams.set('name', name);
             }
             searchUrl.searchParams.set('nvr', nvr);
             searchUrl.searchParams.set('assembly', '*');
-            if (afterDate) {
-                searchUrl.searchParams.set('dateRange', afterDate);
-            }
 
             // Open in new tab
             window.open(searchUrl.toString(), '_blank');

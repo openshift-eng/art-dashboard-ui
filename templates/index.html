@@ -154,12 +154,16 @@
                 <button id="alertOkButton">OK</button>
             </div>
         </div>
+
+        <!-- Toast notification container -->
+        <div id="toastContainer" class="toast-container"></div>
     </div>
 
     <div id="statusBar" class="status-bar">
         <span id="statusText">
             Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
         </span>
+        <span id="warningIndicator" class="warning-indicator" style="display: none;" title="Click to show warnings">⚠️</span>
         <span id="helpIcon" style="cursor: pointer;">?</span>
     </div>
 {% endblock %}

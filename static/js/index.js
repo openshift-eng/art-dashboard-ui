@@ -151,6 +151,70 @@ function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
 }
 
+// Store current warnings for re-display
+let currentWarnings = [];
+
+function showToast(message, icon = "⚠️", duration = 8000) {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-content">${message}</span>
+        <button class="toast-close" title="Dismiss">&times;</button>
+    `;
+
+    // Add close button handler
+    toast.querySelector(".toast-close").addEventListener("click", () => {
+        closeToast(toast);
+    });
+
+    container.appendChild(toast);
+
+    // Auto-dismiss after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            closeToast(toast);
+        }, duration);
+    }
+}
+
+function closeToast(toast) {
+    if (!toast || toast.classList.contains("closing")) return;
+    toast.classList.add("closing");
+    setTimeout(() => {
+        toast.remove();
+    }, 300); // Match animation duration
+}
+
+function showWarnings(warnings) {
+    if (!warnings || !Array.isArray(warnings) || warnings.length === 0) {
+        currentWarnings = [];
+        updateWarningIndicator();
+        return;
+    }
+    currentWarnings = warnings;
+    updateWarningIndicator();
+    warnings.forEach(warning => {
+        showToast(warning, "⚠️");
+    });
+}
+
+function updateWarningIndicator() {
+    const indicator = document.getElementById("warningIndicator");
+    if (!indicator) return;
+    indicator.style.display = currentWarnings.length > 0 ? "inline" : "none";
+}
+
+function redisplayWarnings() {
+    if (currentWarnings.length === 0) return;
+    currentWarnings.forEach(warning => {
+        showToast(warning, "⚠️");
+    });
+}
+
 function showCustomAlert(message, icon = "⚠️") {
     const overlay = document.getElementById("alertOverlay");
     const dialog = document.getElementById("customAlertDialog");
@@ -327,10 +391,19 @@ function performSearch(queryParams = null) {
             showCustomAlert(data.error, "⚠️");
             return;
         }
-        cachedResults = data;
-        displayResults(data);
+        
+        // Handle new response format with builds and warnings
+        const builds = data.builds || data;  // Support both old and new format
+        const warnings = data.warnings || [];
+        
+        cachedResults = builds;
+        displayResults(builds);
         hideLoading();
         scrollContainer.style.overflow = 'auto';
+        
+        // Show any warnings as toast notifications
+        showWarnings(warnings);
+        
         lastSearchParamsKey = paramsKey;
         const filterButton = document.getElementById("filterButton");
         if (filterButton) {
@@ -454,7 +527,7 @@ function matchesFilters(result, filterParams) {
                 // Set end date to end of day
                 endDate.setHours(23, 59, 59, 999);
                 if (resultDate > endDate) {
-                    return false;
+                return false;
                 }
             }
         } else if (key == 'engine') {
@@ -809,23 +882,59 @@ function setupAutocomplete(input, dropdown) {
     });
 }
 
+// Extract datetime from NVR string (format YYYYMMDDHHMM embedded in NVR)
+function extractNvrDatetime(nvr) {
+    if (!nvr) return null;
+    const match = nvr.match(/-(\d{12})\./);
+    if (!match) return null;
+    try {
+        const dtStr = match[1];
+        const year = parseInt(dtStr.substring(0, 4));
+        const month = parseInt(dtStr.substring(4, 6)) - 1; // JS months are 0-indexed
+        const day = parseInt(dtStr.substring(6, 8));
+        return new Date(year, month, day);
+    } catch (e) {
+        return null;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Flatpickr with date range mode
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 2);
-    const endDate = new Date();
+    // Check URL parameters to determine date range initialization
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDateRange = urlParams.get('dateRange');
+    const urlNvr = urlParams.get('nvr');
+    
+    let datePickerDefault = null;
+    
+    if (urlDateRange) {
+        // Use explicit dateRange from URL
+        const dates = urlDateRange.split(' to ');
+        if (dates.length >= 2) {
+            datePickerDefault = [dates[0], dates[1]];
+        } else if (dates.length === 1 && dates[0]) {
+            datePickerDefault = [dates[0]];
+        }
+    } else if (urlNvr && extractNvrDatetime(urlNvr)) {
+        // NVR has embedded datetime - leave dateRange empty so backend derives it
+        datePickerDefault = null;
+    } else {
+        // Default: 2 days ago to today
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 2);
+        const endDate = new Date();
+        datePickerDefault = [startDate, endDate];
+    }
     
     flatpickr("#dateRange", {
         mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: [startDate, endDate]
+        defaultDate: datePickerDefault
     });
 
     hideLoading();
 
     // Check if we're on a search results page (from server-side render)
     const isSearchPage = document.body.dataset.isSearchPage === 'true';
-    const urlParams = new URLSearchParams(window.location.search);
 
     const form = document.getElementById("searchForm");
 
@@ -944,6 +1053,10 @@ document.getElementById("filterButton").addEventListener("click", function (even
 document.getElementById("downloadButton").addEventListener("click", function (event) {
     event.preventDefault();
     downloadResults();
+});
+
+document.getElementById("warningIndicator").addEventListener("click", function() {
+    redisplayWarnings();
 });
 
 document.getElementById("helpIcon").addEventListener("click", function() {

@@ -90,27 +90,27 @@
                 {% if error_message %}
                     <p class="no-results-message">{{ error_message }}</p>
                 {% else %}
-                    {% if containers %}
-                        {% for container in containers %}
-                            <div class="container-log-item">
+            {% if containers %}
+                {% for container in containers %}
+                    <div class="container-log-item">
                                 <div class="container-header{% if container.log_output %} expanded{% endif %}" onclick="toggleContainer(this)">
-                                    <span class="container-info">
+                            <span class="container-info">
                                         <strong>{{ container.name }}</strong> - {% if container.exit_code != 0 %}<span style="color: #f44336; font-weight: bold;">Exit Code: {{ container.exit_code }}</span>{% else %}Exit Code: {{ container.exit_code }}{% endif %}
-                                    </span>
+                            </span>
                                     <span class="toggle-icon">{% if container.log_output %}▼{% else %}▶{% endif %}</span>
-                                </div>
+                        </div>
                                 <div class="container-logs" style="display: {% if container.log_output %}block{% else %}none{% endif %};">
                                     {% if container.log_output %}
-                                    <pre class="log-content">{{ container.log_output }}</pre>
+                            <pre class="log-content">{{ container.log_output }}</pre>
                                     {% else %}
                                     <pre class="log-content">No log output available for this container.{% if container.exit_code == 0 %} Logs are not collected for the dashboard when a container terminates successfully.{% endif %}</pre>
                                     {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="no-results-message">No logs available to display for this build.</p>
-                    {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-results-message">No logs available to display for this build.</p>
+            {% endif %}
                 {% endif %}
 
                 {% if not error_message and not containers %}

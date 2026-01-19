@@ -474,9 +474,15 @@ class KonfluxBuildHistory(Flask):
             where_clauses['engine'] = engine
 
         extra_patterns = {}
+        warnings = []
 
         name = params.get('name', '').strip()
+        original_name = name
         if name:
+            # NVRs often have "-container" suffix, but the "name" column in the database does not
+            if name.endswith('-container'):
+                name = name[:-10]  # Remove "-container" suffix
+                warnings.append(f'The "-container" suffix was removed from the name for searching. Using: "{name}"')
             extra_patterns['name'] = name
 
         source_repo = params.get('source_repo', '').strip()
@@ -534,11 +540,14 @@ class KonfluxBuildHistory(Flask):
             except Exception as e:
                 self._logger.warning('Failed parsing date range %s: %s', date_range, e)
         
+        # Check if NVR has an embedded datetime
+        nvr_datetime = self.extract_nvr_start_time(nvr) if nvr else None
+        if nvr_datetime:
+            nvr_datetime = nvr_datetime.replace(tzinfo=timezone.utc)
+        
         if not start_search:
             # If NVR contains a datetime, use it to set a narrow search window
-            nvr_datetime = self.extract_nvr_start_time(nvr) if nvr else None
             if nvr_datetime:
-                nvr_datetime = nvr_datetime.replace(tzinfo=timezone.utc)
                 start_search = nvr_datetime - timedelta(days=2)
                 end_search = nvr_datetime + timedelta(days=2)
             else:
@@ -547,6 +556,11 @@ class KonfluxBuildHistory(Flask):
                     'error': 'A date range or an NVR with an embedded datetime is required for search.',
                     'builds': []
                 }
+        elif nvr_datetime:
+            # Both explicit date range and NVR datetime provided - check for contradiction
+            nvr_date_str = nvr_datetime.strftime('%Y-%m-%d')
+            if nvr_datetime < start_search or nvr_datetime > end_search:
+                warnings.append(f'The NVR contains datetime {nvr_date_str}, which is outside the specified date range. Results may be empty.')
 
         # Exclude large columns from search results to reduce data transfer and BigQuery costs
         # These columns are only needed when viewing specific build details
@@ -638,8 +652,8 @@ class KonfluxBuildHistory(Flask):
             } for b in all_builds
         ]
 
-        # Return the results as JSON
-        return results
+        # Return the results along with any warnings
+        return {'builds': results, 'warnings': warnings}
 
     @staticmethod
     def redis_build_key(nvr: str):
