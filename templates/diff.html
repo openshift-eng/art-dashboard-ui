@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Package Diff{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/diff.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="results-container build-page">
+        <div class="build-content">
+            <div class="build-header">
+                <h2>Package Diff</h2>
+                <div class="header-actions">
+                    <button id="downloadBtn" class="download-btn" title="Download as JSON">
+                        <i class="fas fa-download"></i> Download JSON
+                    </button>
+                </div>
+            </div>
+
+            {% if error_message %}
+            <div class="no-results">
+                <p>{{ error_message }}</p>
+                {% if compare_search_url %}
+                <p class="hint">
+                    <a href="{{ compare_search_url }}" target="_blank" rel="noopener">Search for parent build →</a>
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if build_identity %}
+            <!-- Build Identity Section -->
+            <section class="build-section">
+                <h3>Build Identity</h3>
+                <div class="info-grid">
+                    <div class="info-item full-width">
+                        <label>NVR</label>
+                        <div class="field-with-copy">
+                            <span class="field-value" style="font-weight: bold; font-size: 1.1rem;">{{ build_identity.nvr }}</span>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build_identity.nvr|e }}', this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-row">
+                    {% if build_identity.name %}
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span>{{ build_identity.name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.version %}
+                    <div class="info-item">
+                        <label>Version</label>
+                        <span>{{ build_identity.version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.release %}
+                    <div class="info-item">
+                        <label>Release</label>
+                        <span>{{ build_identity.release }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if build_identity.group %}
+                    <div class="info-item">
+                        <label>Group</label>
+                        <span>{{ build_identity.group }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build_identity.assembly %}
+                    <div class="info-item">
+                        <label>Assembly</label>
+                        <span>{{ build_identity.assembly }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <label>Build Details</label>
+                        <a href="/build?nvr={{ nvr|urlencode }}&record_id={{ build_identity.record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            View build details →
+                        </a>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if compare_identity %}
+            <!-- Comparison Build Identity Section -->
+            <section class="build-section">
+                <h3>Comparison Build</h3>
+                <div class="info-grid">
+                    <div class="info-item full-width">
+                        <label>Comparison NVR</label>
+                        <div class="field-with-copy">
+                            <span class="field-value" style="font-weight: bold; font-size: 1.1rem;">{{ compare_identity.nvr }}</span>
+                            <button class="copy-button" onclick="copyToClipboard('{{ compare_identity.nvr|e }}', this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-row">
+                    {% if compare_identity.name %}
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span>{{ compare_identity.name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if compare_identity.version %}
+                    <div class="info-item">
+                        <label>Version</label>
+                        <span>{{ compare_identity.version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if compare_identity.release %}
+                    <div class="info-item">
+                        <label>Release</label>
+                        <span>{{ compare_identity.release }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="info-row">
+                    {% if compare_identity.group %}
+                    <div class="info-item">
+                        <label>Group</label>
+                        <span>{{ compare_identity.group }}</span>
+                    </div>
+                    {% endif %}
+                    {% if compare_identity.assembly %}
+                    <div class="info-item">
+                        <label>Assembly</label>
+                        <span>{{ compare_identity.assembly }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item">
+                        <label>Build Details</label>
+                        <a href="/build?nvr={{ compare_identity.nvr|urlencode }}&record_id={{ compare_identity.record_id|urlencode }}{% if compare_identity.group %}&group={{ compare_identity.group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            View build details →
+                        </a>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if replaced_packages or shared_packages %}
+            <!-- Replaced Packages Section -->
+            <section class="build-section">
+                <h3>
+                    Changed Packages
+                    <span class="item-count" id="replaced-count">({{ replaced_packages | length }} packages)</span>
+                </h3>
+                <div class="filter-container">
+                    <input type="text" id="replaced-filter" class="filter-input" placeholder="Type to filter packages..." oninput="filterReplacedPackages()">
+                </div>
+                {% if replaced_packages %}
+                <div class="diff-table-container">
+                    <table class="diff-table" id="replaced-table">
+                        <thead>
+                            <tr>
+                                <th>Package</th>
+                                <th class="nvr-col">Build</th>
+                                <th class="nvr-col">Comparison Build</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pkg in replaced_packages %}
+                            <tr class="diff-row">
+                                <td class="pkg-name">{{ pkg.name }}</td>
+                                <td class="pkg-version {% if pkg.build_version and not pkg.compare_version %}added{% elif not pkg.build_version %}removed{% else %}changed{% endif %}">
+                                    {{ pkg.build_version or '—' }}
+                                </td>
+                                <td class="pkg-version {% if pkg.compare_version and not pkg.build_version %}removed{% elif not pkg.compare_version %}added{% else %}changed{% endif %}">
+                                    {{ pkg.compare_version or '—' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="no-diff-message">No package differences found.</p>
+                {% endif %}
+            </section>
+
+            <!-- Shared Packages Section -->
+            <section class="build-section collapsible">
+                <h3 class="collapsible-header" onclick="toggleSection(this)">
+                    <span class="collapse-icon">▶</span>
+                    Shared Packages
+                    <span class="item-count" id="shared-count">({{ shared_packages | length }} packages)</span>
+                </h3>
+                <div class="collapsible-content" style="display: none;">
+                    <div class="filter-container">
+                        <input type="text" id="shared-filter" class="filter-input" placeholder="Type to filter packages..." oninput="filterSharedPackages()">
+                    </div>
+                    {% if shared_packages %}
+                    <ul class="package-list" id="shared-list">
+                        {% for pkg in shared_packages %}
+                        <li>{{ pkg }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="no-diff-message">No shared packages found.</p>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if not build_identity and not error_message %}
+            <div class="no-results">
+                <p>No information available to display for this diff.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/diff.js') }}"></script>
+{% endblock %}
