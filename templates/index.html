@@ -12,12 +12,13 @@
 
 {% block content %}
     <div class="sidebar" id="sidebar">
+        <h3 class="sidebar-title"><a href="/" title="Reset search form and clear results">ART build history</a></h3>
         <button id="toggleButton" class="toggle-btn">❮</button>
         <div class="form-scroll-container">
             <form id="searchForm" method="GET" action="/search">
                 <div class="input-container">
                     <label for="name">Name</label>
-                    <input type="text" id="name" name="name">
+                    <input type="text" id="name" name="name" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="group">Group</label>
@@ -28,16 +29,33 @@
                 </div>
                 <div class="input-container">
                     <label for="assembly">Assembly</label>
-                    <input type="text" id="assembly" name="assembly" value="stream">
+                    <div class="autocomplete-container">
+                        <input type="text" id="assembly" name="assembly" value="stream" autocomplete="off">
+                        <div id="assembly-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
                 </div>
                 <div class="input-container">
-                    <label for="outcome">Outcome</label>
-                    <select id="outcome" name="outcome">
-                        <option value="success" selected>✅</option>
-                        <option value="failure">❌</option>
-                        <option value="pending">⏳</option>
-                        <option value="completed">Completed</option>
-                    </select>
+                    <label>Outcome</label>
+                    <div class="multiselect-container" id="outcome-container">
+                        <div class="multiselect-display" id="outcome-display" tabindex="0">
+                            <span class="multiselect-text">Select outcomes...</span>
+                            <span class="multiselect-arrow">▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="outcome-dropdown" style="display: none;" autocomplete="off">
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="outcome-success" name="outcome" value="success" data-value="success" checked autocomplete="off">
+                                <span>✅ Success</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="outcome-failure" name="outcome" value="failure" data-value="failure" autocomplete="off">
+                                <span>❌ Failure</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="outcome-pending" name="outcome" value="pending" data-value="pending" autocomplete="off">
+                                <span>⏳ Pending</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="input-container">
                     <label for="engine">Engine</label>
@@ -48,33 +66,46 @@
                     </select>
                 </div>
                 <div class="input-container">
-                    <label for="after">Completed after</label>
-                    <input type="text" id="after" name="after" placeholder="YYYY-MM-DD">
+                    <label for="dateRange">Completed between (UTC)</label>
+                    <input type="text" id="dateRange" name="dateRange" placeholder="YYYY-MM-DD to YYYY-MM-DD">
                 </div>
                 <div class="input-container">
                     <label for="nvr">NVR</label>
-                    <input type="text" id="nvr" name="nvr">
+                    <input type="text" id="nvr" name="nvr" placeholder="*">
                 </div>
                 <div class="input-container">
-                    <label for="commitish">Commitish</label>
-                    <input type="text" id="commitish" name="commitish">
+                    <label for="record_id">Record ID</label>
+                    <input type="text" id="record_id" name="record_id" placeholder="*">
+                </div>
+                <div class="input-container">
+                    <label for="image_sha_tag">Image sha256/tag</label>
+                    <input type="text" id="image_sha_tag" name="image_sha_tag" placeholder="*">
+                </div>
+                <div class="input-container">
+                    <label for="source_repo">Source repository</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="source_repo" name="source_repo" placeholder="*" autocomplete="off">
+                        <div id="source_repo-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
+                </div>
+                <div class="input-container">
+                    <label for="commitish">Source commit</label>
+                    <input type="text" id="commitish" name="commitish" placeholder="*">
                 </div>
                 <div class="input-container">
                     <label for="art-job-url">ART job URL</label>
-                    <input type="text" id="art-job-url" name="art-job-url">
+                    <input type="text" id="art-job-url" name="art-job-url" placeholder="*">
                 </div>
             </form>
         </div> <!-- form-scroll-container -->
         <div class="form-actions">
             <button type="submit" form="searchForm" id="searchButton">Search</button>
-            <button type="button" form="filterButton" id="filterButton">Filter</button>
+            <button type="button" form="filterButton" id="filterButton" title="Applies updated search criteria to current results without a new Search" style="display: none;">Filter Results</button>
             <button type="button" form="downloadButton" id="downloadButton">Download</button>
         </div>
     </div> <!-- sidebar -->
 
     <div class="results-container">
-        <h1><a href="" title="Reset search form and clear results">ART build history</a></h1>
-
         <div id="loadingOverlay">
             <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
         </div>
@@ -85,11 +116,11 @@
                     <th>Name</th>
                     <th>Outcome</th>
                     <th>NVR</th>
+                    <th>Source</th>
                     <th>Assembly</th>
                     <th>Group</th>
                     <th>Time</th>
                     <th>Engine</th>
-                    <th>Packages</th>
                     <th class="links-th">Links</th>
                 </tr>
             </thead>
@@ -123,12 +154,16 @@
                 <button id="alertOkButton">OK</button>
             </div>
         </div>
+
+        <!-- Toast notification container -->
+        <div id="toastContainer" class="toast-container"></div>
     </div>
 
     <div id="statusBar" class="status-bar">
         <span id="statusText">
             Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
         </span>
+        <span id="warningIndicator" class="warning-indicator" style="display: none;" title="Click to show warnings">⚠️</span>
         <span id="helpIcon" style="cursor: pointer;">?</span>
     </div>
 {% endblock %}
@@ -136,7 +171,7 @@
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
     <script>
-        const initialResults = {{ search_results|tojson|safe }};
-        const initialQueryParams = {{ query_params|tojson|safe }};
+        const initialResults = {{ search_results|tojson|safe if search_results else '[]' }};
+        const initialQueryParams = {{ query_params|tojson|safe if query_params else '{}' }};
     </script>
 {% endblock %}

@@ -1,6 +1,41 @@
 let cachedResults = [];
 let allBranches = [];
+let allSourceRepos = [];
 let highlightedIndex = -1;
+let lastSearchParamsKey = '';
+
+function buildParamsKey(params) {
+    const entries = Array.from(params.entries()).sort(([aKey, aVal], [bKey, bVal]) => {
+        if (aKey === bKey) return aVal.localeCompare(bVal);
+        return aKey.localeCompare(bKey);
+    });
+    return entries.map(([key, value]) => `${key}=${value}`).join('&');
+}
+
+function getCurrentSearchParams() {
+    const form = document.getElementById("searchForm");
+    return new URLSearchParams(new FormData(form));
+}
+
+function updateFilterButtonVisibility() {
+    const filterButton = document.getElementById("filterButton");
+    if (!filterButton) return;
+    if (!cachedResults || cachedResults.length === 0) {
+        filterButton.style.display = "none";
+        return;
+    }
+    if (filterButton.dataset.visible === 'true') {
+        filterButton.style.display = "inline-block";
+        return;
+    }
+    const currentKey = buildParamsKey(getCurrentSearchParams());
+    if (currentKey !== lastSearchParamsKey) {
+        filterButton.dataset.visible = 'true';
+        filterButton.style.display = "inline-block";
+    } else {
+        filterButton.style.display = "none";
+    }
+}
 
 document.getElementById("toggleButton").addEventListener("click", function() {
     const sidebar = document.getElementById("sidebar");
@@ -8,12 +43,176 @@ document.getElementById("toggleButton").addEventListener("click", function() {
     this.innerHTML = sidebar.classList.contains("collapsed") ? "❯" : "❮";
 });
 
+// Multi-select dropdown functionality
+const multiSelectState = {};
+
+const outcomeLabels = {
+    'success': '✅ Success',
+    'failure': '❌ Failure',
+    'pending': '⏳ Pending'
+};
+
+function getOutcomeValue(checkbox) {
+    return checkbox.dataset.value || checkbox.value;
+}
+
+// Get outcome checkboxes by their specific IDs to avoid browser auto-fill corruption
+function getOutcomeCheckboxes() {
+    return [
+        document.getElementById('outcome-success'),
+        document.getElementById('outcome-failure'),
+        document.getElementById('outcome-pending')
+    ].filter(cb => cb !== null);
+}
+
+function normalizeOutcomeCheckboxValues() {
+    const success = document.getElementById('outcome-success');
+    const failure = document.getElementById('outcome-failure');
+    const pending = document.getElementById('outcome-pending');
+
+    if (success) success.value = success.dataset.value || 'success';
+    if (failure) failure.value = failure.dataset.value || 'failure';
+    if (pending) pending.value = pending.dataset.value || 'pending';
+}
+
+// Standalone function to update outcome display text based on current checkbox state
+function updateOutcomeDisplay() {
+    const display = document.getElementById('outcome-display');
+    if (!display) return;
+
+    const checkboxes = getOutcomeCheckboxes();
+    const selected = checkboxes
+        .filter(cb => cb.checked)
+        .map(cb => outcomeLabels[getOutcomeValue(cb)] || getOutcomeValue(cb));
+
+    const textSpan = display.querySelector('.multiselect-text');
+    if (selected.length === 0) {
+        textSpan.textContent = 'Select outcomes...';
+    } else if (selected.length === checkboxes.length) {
+        textSpan.textContent = 'All outcomes';
+    } else {
+        textSpan.textContent = selected.join(', ');
+    }
+}
+
+function setupMultiSelect(containerId, displayId, dropdownId) {
+    const container = document.getElementById(containerId);
+    const display = document.getElementById(displayId);
+    const dropdown = document.getElementById(dropdownId);
+
+    // Only add event listeners once
+    if (!multiSelectState[containerId]) {
+        multiSelectState[containerId] = true;
+
+        function toggleDropdown() {
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            display.querySelector('.multiselect-arrow').textContent = isVisible ? '▼' : '▲';
+        }
+
+        function hideDropdown() {
+            dropdown.style.display = 'none';
+            display.querySelector('.multiselect-arrow').textContent = '▼';
+        }
+
+        display.addEventListener('click', toggleDropdown);
+        display.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleDropdown();
+            }
+        });
+
+        const checkboxes = getOutcomeCheckboxes();
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateOutcomeDisplay);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                hideDropdown();
+            }
+        });
+    }
+
+    // Always update display (for when checkboxes are programmatically changed)
+    updateOutcomeDisplay();
+}
+
+function getSelectedOutcomes() {
+    return getOutcomeCheckboxes().filter(cb => cb.checked).map(cb => getOutcomeValue(cb));
+}
+
 function showLoading() {
     document.getElementById("loadingOverlay").style.display = "flex";
 }
 
 function hideLoading() {
     document.getElementById("loadingOverlay").style.display = "none";
+}
+
+// Store current warnings for re-display
+let currentWarnings = [];
+
+function showToast(message, icon = "⚠️", duration = 8000) {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-content">${message}</span>
+        <button class="toast-close" title="Dismiss">&times;</button>
+    `;
+
+    // Add close button handler
+    toast.querySelector(".toast-close").addEventListener("click", () => {
+        closeToast(toast);
+    });
+
+    container.appendChild(toast);
+
+    // Auto-dismiss after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            closeToast(toast);
+        }, duration);
+    }
+}
+
+function closeToast(toast) {
+    if (!toast || toast.classList.contains("closing")) return;
+    toast.classList.add("closing");
+    setTimeout(() => {
+        toast.remove();
+    }, 300); // Match animation duration
+}
+
+function showWarnings(warnings) {
+    if (!warnings || !Array.isArray(warnings) || warnings.length === 0) {
+        currentWarnings = [];
+        updateWarningIndicator();
+        return;
+    }
+    currentWarnings = warnings;
+    updateWarningIndicator();
+    warnings.forEach(warning => {
+        showToast(warning, "⚠️");
+    });
+}
+
+function updateWarningIndicator() {
+    const indicator = document.getElementById("warningIndicator");
+    if (!indicator) return;
+    indicator.style.display = currentWarnings.length > 0 ? "inline" : "none";
+}
+
+function redisplayWarnings() {
+    if (currentWarnings.length === 0) return;
+    currentWarnings.forEach(warning => {
+        showToast(warning, "⚠️");
+    });
 }
 
 function showCustomAlert(message, icon = "⚠️") {
@@ -101,17 +300,20 @@ function createRow(result) {
     const buildTimeDisplay = `${localBuildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
 
     // Create the row
+    const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
+    const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
+    const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&outcome=${result.outcome}&type=${result.type}" target="_blank">${result.nvr}</a></td>
+        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build details">${result.nvr}</a></td>
+        <td>${sourceLink}</td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>
         <td>${buildTimeDisplay}</td>
         <td>${engineDisplay}</td>
-        <td><a href="/packages?nvr=${result.nvr}" target="_blank">🔍</a></td>
         <td>
-            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}&after=${result.start_time}" target="_blank" title="Build logs">📜️</a>
+            <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
@@ -120,9 +322,16 @@ function createRow(result) {
     return row;
 }
 
-function updateStatusBar(cachedCount, filteredCount) {
+const MAX_RESULTS = 1000;
+
+function updateStatusBar(cachedCount, displayedCount) {
     const statusTextBar = document.getElementById("statusText");
-    statusTextBar.textContent = `Results: ${cachedCount} cached, ${filteredCount} filtered`;
+    const hiddenCount = cachedCount - displayedCount;
+    let message = `Results: ${displayedCount} (${hiddenCount} filtered)`;
+    if (cachedCount >= MAX_RESULTS) {
+        message += ` — Results may be truncated (limit: ${MAX_RESULTS})`;
+    }
+    statusTextBar.textContent = message;
 }
 
 function displayResults(results) {
@@ -149,6 +358,7 @@ function performSearch(queryParams = null) {
 
     const form = document.getElementById("searchForm");
     const formData = queryParams || new FormData(form);
+    const paramsKey = buildParamsKey(new URLSearchParams(formData));
 
     const queryString = new URLSearchParams(formData).toString();
     const url = `/search?${queryString}`;
@@ -157,16 +367,62 @@ function performSearch(queryParams = null) {
         method: "GET",
         headers: { "X-Requested-With": "XMLHttpRequest" },
     })
-    .then((response) => response.json())
+    .then((response) => {
+        if (!response.ok) {
+            // Try to extract error message from response
+            return response.text().then(text => {
+                // Check if it's an HTML error page (Flask debug page)
+                const titleMatch = text.match(/<title>([^<]+)/);
+                if (titleMatch) {
+                    throw new Error(titleMatch[1].replace(' // Werkzeug Debugger', '').trim());
+                }
+                throw new Error(`Server error: ${response.status} ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
     .then((data) => {
-        cachedResults = data;
-        displayResults(data);
+        // Check if the response contains an error
+        if (data && data.error) {
+            cachedResults = [];
+            displayResults([]);
+            hideLoading();
+            scrollContainer.style.overflow = 'auto';
+            showCustomAlert(data.error, "⚠️");
+            return;
+        }
+        
+        // Handle new response format with builds and warnings
+        const builds = data.builds || data;  // Support both old and new format
+        const warnings = data.warnings || [];
+        
+        cachedResults = builds;
+        displayResults(builds);
         hideLoading();
         scrollContainer.style.overflow = 'auto';
+        
+        // Show any warnings as toast notifications
+        showWarnings(warnings);
+        
+        lastSearchParamsKey = paramsKey;
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
+        updateFilterButtonVisibility();
     })
     .catch((error) => {
-        console.error("Error:", error);
+        console.error("Search error:", error);
         hideLoading();
+        scrollContainer.style.overflow = 'auto';
+        cachedResults = [];
+        displayResults([]);
+        showCustomAlert(`Search failed: ${error.message}`, "❌");
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
+        updateFilterButtonVisibility();
     });
 }
 
@@ -176,6 +432,11 @@ function filterResults() {
 
     const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
+    const filterButton = document.getElementById("filterButton");
+    if (filterButton) {
+        filterButton.dataset.visible = 'true';
+        filterButton.style.display = "inline-block";
+    }
 }
 
 function downloadResults() {
@@ -208,32 +469,74 @@ function downloadResults() {
 }
 
 function matchesFilters(result, filterParams) {
+    // Collect all selected outcomes first (multi-select)
+    const selectedOutcomes = filterParams.getAll('outcome');
+
+    // Check outcome filter (must match at least one selected outcome)
+    if (selectedOutcomes.length > 0) {
+        if (!selectedOutcomes.includes(result['outcome'])) {
+            return false;
+        }
+    }
+
     for (let [key, value] of filterParams.entries()) {
         if (!value) continue; // Skip empty filter values
 
+        // Skip outcome - already handled above
         if (key === "outcome") {
-            if (value == 'completed') {
-                if(!['success', 'failure'].includes(result['outcome']))
-                    return false;
-            } else if(result['outcome'] != value) {
-                return false;
-            }
+            continue;
         } else if (key == 'group') {
             if (result['group'] != value) {
                 return false;
             }
-        } else if (key == 'commitish') {
-            if (result['commitish'] != value) {
+        } else if (key == 'record_id') {
+            if (!result['record_id'] || result['record_id'] !== value) {
                 return false;
             }
-        } else if (key == 'after') {
-            const resultDate = new Date(result['completed']);
-            const afterDate = new Date(value);
-            if (resultDate < afterDate) {
+        } else if (key == 'commitish') {
+            // Starts-with matching for commitish/source commit (case-insensitive)
+            if (!result['commitish'] || !result['commitish'].toLowerCase().startsWith(value.toLowerCase())) {
                 return false;
+            }
+        } else if (key == 'source_repo') {
+            // Pattern match since displayed names have https://github.com/ stripped
+            if (!result['source'] || !result['source'].toLowerCase().includes(value.toLowerCase())) {
+                return false;
+            }
+        } else if (key == 'image_sha_tag') {
+            // OR logic: matches image_pullspec with sha256:{value} OR image_tag containing value OR nvr containing value
+            const lowerValue = value.toLowerCase();
+            const pullspecMatch = result['image_pullspec'] && result['image_pullspec'].toLowerCase().includes('sha256:' + lowerValue);
+            const tagMatch = result['image_tag'] && result['image_tag'].toLowerCase().includes(lowerValue);
+            const nvrMatch = result['nvr'] && result['nvr'].toLowerCase().includes(lowerValue);
+            if (!pullspecMatch && !tagMatch && !nvrMatch) {
+                return false;
+            }
+        } else if (key == 'dateRange') {
+            const resultDate = new Date(result['completed']);
+            // Parse date range "YYYY-MM-DD to YYYY-MM-DD"
+            const dates = value.split(' to ');
+            if (dates.length >= 1 && dates[0]) {
+                const startDate = new Date(dates[0]);
+                if (resultDate < startDate) {
+                    return false;
+                }
+            }
+            if (dates.length >= 2 && dates[1]) {
+                const endDate = new Date(dates[1]);
+                // Set end date to end of day
+                endDate.setHours(23, 59, 59, 999);
+                if (resultDate > endDate) {
+                return false;
+                }
             }
         } else if (key == 'engine') {
             if (value != 'both' && result['engine'] != value) {
+                return false;
+            }
+        } else if (key == 'assembly') {
+            // '*' matches any assembly
+            if (value != '*' && result['assembly'] != value) {
                 return false;
             }
         } else {
@@ -250,6 +553,218 @@ function matchesFilters(result, filterParams) {
     }
 
     return true;
+}
+
+function setupStaticAutocomplete(input, dropdown, options) {
+    let highlightedIdx = -1;
+
+    function filterOptions(query) {
+        // For small option lists, always show all options
+        // This ensures users see all choices even when field has a value
+        if (options.length <= 5) return options;
+        if (!query) return options;
+        const lowercaseQuery = query.toLowerCase();
+        return options.filter(opt => opt.toLowerCase().includes(lowercaseQuery));
+    }
+
+    function showDropdown(items) {
+        dropdown.innerHTML = '';
+        highlightedIdx = -1;
+
+        if (items.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        items.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.textContent = item === '*' ? '* (any)' : item;
+            div.dataset.value = item;
+            div.dataset.index = index;
+
+            div.addEventListener('click', () => {
+                input.value = item;
+                dropdown.style.display = 'none';
+                highlightedIdx = -1;
+            });
+
+            dropdown.appendChild(div);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIdx = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        if (index >= 0 && items[index]) {
+            items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        const filtered = filterOptions(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        const filtered = filterOptions(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        const isVisible = dropdown.style.display === 'block';
+
+        if (!isVisible) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                highlightedIdx = Math.max(highlightedIdx - 1, -1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIdx >= 0 && items[highlightedIdx]) {
+                    input.value = items[highlightedIdx].dataset.value;
+                    hideDropdown();
+                } else if (items.length > 0) {
+                    input.value = items[0].dataset.value;
+                    hideDropdown();
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+}
+
+function setupSourceRepoAutocomplete(input, dropdown) {
+    let highlightedIdx = -1;
+
+    function filterRepos(query) {
+        if (!query) return allSourceRepos;
+        const lowercaseQuery = query.toLowerCase();
+        return allSourceRepos.filter(repo => repo.toLowerCase().includes(lowercaseQuery));
+    }
+
+    function showDropdown(repos) {
+        dropdown.innerHTML = '';
+        highlightedIdx = -1;
+
+        if (repos.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        repos.forEach((repo, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.textContent = repo;
+            item.dataset.index = index;
+
+            item.addEventListener('click', () => {
+                input.value = repo;
+                dropdown.style.display = 'none';
+                highlightedIdx = -1;
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIdx = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        if (index >= 0 && items[index]) {
+            items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const query = input.value.trim();
+        const filtered = filterRepos(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value.trim();
+        const filtered = filterRepos(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        const isVisible = dropdown.style.display === 'block';
+
+        if (!isVisible) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                highlightedIdx = Math.max(highlightedIdx - 1, -1);
+                highlightItem(highlightedIdx);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIdx >= 0 && items[highlightedIdx]) {
+                    input.value = items[highlightedIdx].textContent;
+                    hideDropdown();
+                } else if (items.length > 0) {
+                    input.value = items[0].textContent;
+                    hideDropdown();
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
 }
 
 function setupAutocomplete(input, dropdown) {
@@ -367,60 +882,154 @@ function setupAutocomplete(input, dropdown) {
     });
 }
 
+// Extract datetime from NVR string (format YYYYMMDDHHMM embedded in NVR)
+function extractNvrDatetime(nvr) {
+    if (!nvr) return null;
+    const match = nvr.match(/-(\d{12})\./);
+    if (!match) return null;
+    try {
+        const dtStr = match[1];
+        const year = parseInt(dtStr.substring(0, 4));
+        const month = parseInt(dtStr.substring(4, 6)) - 1; // JS months are 0-indexed
+        const day = parseInt(dtStr.substring(6, 8));
+        return new Date(year, month, day);
+    } catch (e) {
+        return null;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Flatpickr
-    flatpickr("#after", {
+    // Check URL parameters to determine date range initialization
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDateRange = urlParams.get('dateRange');
+    const urlNvr = urlParams.get('nvr');
+    
+    let datePickerDefault = null;
+    
+    if (urlDateRange) {
+        // Use explicit dateRange from URL
+        const dates = urlDateRange.split(' to ');
+        if (dates.length >= 2) {
+            datePickerDefault = [dates[0], dates[1]];
+        } else if (dates.length === 1 && dates[0]) {
+            datePickerDefault = [dates[0]];
+        }
+    } else if (urlNvr && extractNvrDatetime(urlNvr)) {
+        // NVR has embedded datetime - leave dateRange empty so backend derives it
+        datePickerDefault = null;
+    } else {
+        // Default: 2 days ago to today
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 2);
+        const endDate = new Date();
+        datePickerDefault = [startDate, endDate];
+    }
+    
+    flatpickr("#dateRange", {
+        mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        defaultDate: datePickerDefault
     });
 
     hideLoading();
 
-    // Set default date cut off
-    const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 7);
-    const formattedDate = currentDate.toISOString().split('T')[0];
-    document.getElementById('after').value = formattedDate;
-
     // Check if we're on a search results page (from server-side render)
     const isSearchPage = document.body.dataset.isSearchPage === 'true';
-    const urlParams = new URLSearchParams(window.location.search);
+
+    const form = document.getElementById("searchForm");
 
     // If we have initial results from server, cache them
     if (isSearchPage && window.initialResults) {
         cachedResults = window.initialResults;
         displayResults(cachedResults);
+        lastSearchParamsKey = buildParamsKey(urlParams);
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
+        updateFilterButtonVisibility();
     }
     // Otherwise, if we have search parameters, perform search
     else if (urlParams.size > 0) {
         // Populate form fields from URL
-        const form = document.getElementById("searchForm");
         urlParams.forEach((value, key) => {
             const input = form.querySelector(`[name="${key}"]`);
             if (input) input.value = value;
         });
 
         performSearch(urlParams);
+        lastSearchParamsKey = buildParamsKey(urlParams);
     }
+    else {
+        lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+        const filterButton = document.getElementById("filterButton");
+        if (filterButton) {
+            filterButton.dataset.visible = 'false';
+        }
+        updateFilterButtonVisibility();
+    }
+
+    form.addEventListener('input', updateFilterButtonVisibility);
+    form.addEventListener('change', updateFilterButtonVisibility);
 
     // Fetch all branches for autocomplete (independent of search)
     const groupInput = document.getElementById("group");
     const groupDropdown = document.getElementById("group-dropdown");
 
-    fetch("/get_versions")
+    fetch("/get_groups")
         .then((response) => response.json())
-        .then((branches) => {
-            allBranches = branches;
+        .then((groups) => {
+            allBranches = groups;
 
             // Set value from URL if present
             if (urlParams.has('group')) {
                 groupInput.value = urlParams.get('group');
             }
         })
-        .catch((error) => console.error("Error fetching branches:", error));
+        .catch((error) => console.error("Error fetching groups:", error));
 
     // Setup autocomplete functionality
     setupAutocomplete(groupInput, groupDropdown);
+
+    // Fetch source repos for autocomplete
+    const sourceRepoInput = document.getElementById("source_repo");
+    const sourceRepoDropdown = document.getElementById("source_repo-dropdown");
+
+    fetch("/get_source_repos")
+        .then((response) => response.json())
+        .then((repos) => {
+            allSourceRepos = repos;
+
+            // Set value from URL if present
+            if (urlParams.has('source_repo')) {
+                sourceRepoInput.value = urlParams.get('source_repo');
+            }
+        })
+        .catch((error) => console.error("Error fetching source repos:", error));
+
+    // Setup source repo autocomplete
+    setupSourceRepoAutocomplete(sourceRepoInput, sourceRepoDropdown);
+
+    // Setup Assembly autocomplete with static options
+    const assemblyInput = document.getElementById("assembly");
+    const assemblyDropdown = document.getElementById("assembly-dropdown");
+    const assemblyOptions = ["stream", "test", "*"];
+    setupStaticAutocomplete(assemblyInput, assemblyDropdown, assemblyOptions);
+
+    normalizeOutcomeCheckboxValues();
+
+    // Setup Outcome multi-select
+    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+
+    // Set outcome checkboxes from URL if present
+    if (urlParams.has('outcome')) {
+        const outcomes = urlParams.getAll('outcome');
+        const checkboxes = getOutcomeCheckboxes();
+        checkboxes.forEach(cb => {
+            cb.checked = outcomes.includes(getOutcomeValue(cb));
+        });
+        updateOutcomeDisplay();
+    }
 });
 
 document.getElementById("searchButton").addEventListener("click", function (event) {
@@ -436,11 +1045,6 @@ document.getElementById("searchButton").addEventListener("click", function (even
     performSearch(formData);
 });
 
-document.getElementById("searchButton").addEventListener("click", function (event) {
-    event.preventDefault();
-    performSearch();
-});
-
 document.getElementById("filterButton").addEventListener("click", function (event) {
     event.preventDefault();
     filterResults();
@@ -449,6 +1053,10 @@ document.getElementById("filterButton").addEventListener("click", function (even
 document.getElementById("downloadButton").addEventListener("click", function (event) {
     event.preventDefault();
     downloadResults();
+});
+
+document.getElementById("warningIndicator").addEventListener("click", function() {
+    redisplayWarnings();
 });
 
 document.getElementById("helpIcon").addEventListener("click", function() {
@@ -479,26 +1087,39 @@ document.getElementById("alertOverlay").addEventListener("click", function() {
     hideCustomAlert();
 });
 
-document.querySelector(".results-container h1").addEventListener("click", function() {
+document.querySelector(".sidebar-title a").addEventListener("click", function(e) {
+    e.preventDefault();
     // Reset form
     const form = document.getElementById("searchForm");
 
     // Reset text inputs
     form.querySelector("#name").value = "";
     form.querySelector("#nvr").value = "";
+    form.querySelector("#record_id").value = "";
     form.querySelector("#assembly").value = "stream";
+    form.querySelector("#source_repo").value = "";
     form.querySelector("#commitish").value = "";
     form.querySelector("#art-job-url").value = "";
 
+    // Reset outcome checkboxes (default: only success checked)
+    const outcomeCheckboxes = getOutcomeCheckboxes();
+    outcomeCheckboxes.forEach(cb => {
+        cb.checked = getOutcomeValue(cb) === 'success';
+    });
+    updateOutcomeDisplay();
+
     // Reset select dropdowns
-    form.querySelector("#outcome").value = "success";
     form.querySelector("#engine").value = "konflux";
     form.querySelector("#group").value = "";
 
     // Reset date picker
-    flatpickr("#after", {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 2);
+    const endDate = new Date();
+    flatpickr("#dateRange", {
+        mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        defaultDate: [startDate, endDate]
     });
 
     // Clear any existing search results
@@ -512,4 +1133,11 @@ document.querySelector(".results-container h1").addEventListener("click", functi
 
     // Clear cached results
     cachedResults = [];
+
+    lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
+    const filterButton = document.getElementById("filterButton");
+    if (filterButton) {
+        filterButton.dataset.visible = 'false';
+    }
+    updateFilterButtonVisibility();
 });

@@ -7,32 +7,447 @@
 {% endblock %}
 
 {% block content %}
-    <div class="results-container">
-        <h2>Build information for <span>{{ nvr }}</span></h2>
-        <div>
+    <div class="results-container build-page" {% if build.start_time %}data-start-time="{{ build.start_time }}"{% endif %}>
+        <div class="build-content">
+            <div class="build-header">
+                <h2>Build Details</h2>
+                <div class="header-actions">
+                    <button id="downloadBtn" class="download-btn" title="Download as JSON">
+                        <i class="fas fa-download"></i> Download JSON
+                    </button>
+                </div>
+            </div>
+
+            {% if error_message %}
+            <div class="no-results">
+                <p>{{ error_message }}</p>
+            </div>
+            {% endif %}
+
             {% if build %}
-                <table id="buildTable">
+            <!-- Build Identity Section -->
+            <section class="build-section">
+                <h3>Build Identity</h3>
+                <div class="info-grid">
+                    {% if build.nvr %}
+                    <div class="info-item full-width">
+                        <label>NVR</label>
+                        <div class="field-with-copy">
+                            <span class="field-value" style="font-weight: bold; font-size: 1.1rem;">{{ build.nvr }}</span>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build.nvr|e }}', this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Name, Version, Release, EL Target row -->
+                <div class="info-row">
+                    {% if build.name %}
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span>{{ build.name }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.version %}
+                    <div class="info-item">
+                        <label>Version</label>
+                        <span>{{ build.version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.release %}
+                    <div class="info-item">
+                        <label>Release</label>
+                        <span>{{ build.release }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.el_target %}
+                    <div class="info-item">
+                        <label>EL Target</label>
+                        <span>{{ build.el_target }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Group, Assembly row -->
+                <div class="info-row">
+                    {% if build.group %}
+                    <div class="info-item">
+                        <label>Group</label>
+                        <span>{{ build.group }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.assembly %}
+                    <div class="info-item">
+                        <label>Assembly</label>
+                        <span>{{ build.assembly }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.component %}
+                    <div class="info-item">
+                        <label>Component</label>
+                        <span>{{ build.component }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Build Type row -->
+                {% if build_type %}
+                <div class="info-row">
+                    <div class="info-item">
+                        <label>Build Type</label>
+                        <span class="badge badge-{{ build_type }}">{{ build_type }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Build Status Section -->
+            <section class="build-section">
+                <h3>Build Status</h3>
+                <div class="info-row">
+                    {% if build.outcome %}
+                    <div class="info-item">
+                        <label>Outcome</label>
+                        <span class="badge badge-{{ build.outcome }}">{{ build.outcome }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.engine %}
+                    <div class="info-item">
+                        <label>Engine</label>
+                        <span>{{ build.engine }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.arches %}
+                    <div class="info-item">
+                        <label>Architectures</label>
+                        <span>{{ build.arches if build.arches is string else build.arches | join(', ') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Time row -->
+                <div class="info-row">
+                    {% if build.start_time %}
+                    <div class="info-item">
+                        <label>Start Time</label>
+                        <span>{{ build.start_time }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.end_time %}
+                    <div class="info-item">
+                        <label>End Time</label>
+                        <span>{{ build.end_time }}</span>
+                    </div>
+                    {% endif %}
+                    {% if build.start_time and build.end_time %}
+                    <div class="info-item">
+                        <label>Duration</label>
+                        <span id="build-duration" data-start-time="{{ build.start_time }}" data-end-time="{{ build.end_time }}">Calculating...</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Image Section -->
+            {% if build.image_pullspec or build.art_images_share_pullspec or build.image_tag %}
+            <section class="build-section">
+                <h3>Image Information</h3>
+                <div class="info-grid">
+                    {% if build.image_pullspec %}
+                    <div class="info-item full-width">
+                        <label>Image Pullspec</label>
+                        <div class="field-with-copy">
+                            <span class="field-value monospace">{{ build.image_pullspec }}</span>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build.image_pullspec|e }}', this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if build.art_images_share_pullspec %}
+                    <div class="info-item full-width">
+                        <label>Shareable Pullspec</label>
+                        <div class="field-with-copy">
+                            <span class="field-value monospace">{{ build.art_images_share_pullspec }}</span>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build.art_images_share_pullspec|e }}', this)" title="Copy">📋</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if build.image_tag %}
+                    <div class="info-item">
+                        <label>Image Tag</label>
+                        <span class="monospace">{{ build.image_tag }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Source Code Section -->
+            {% if build.source_repo or build.commitish or build.rebase_repo_url %}
+            <section class="build-section">
+                <h3>Source Code</h3>
+                <!-- Source repo row -->
+                <div class="info-row">
+                    {% if build.source_repo %}
+                    <div class="info-item">
+                        <label>Source Repository</label>
+                        <a href="{{ build.source_repo }}" target="_blank" rel="noopener">{{ build.source_repo | replace('https://github.com/', '') }}</a>
+                    </div>
+                    {% endif %}
+                    {% if build.commitish and build.source_repo %}
+                    <div class="info-item">
+                        <label>Source Commit</label>
+                        <div class="field-with-copy">
+                            <a href="{{ build.source_repo }}/tree/{{ build.commitish }}" target="_blank" rel="noopener" title="Browse files at this commit">
+                                {{ build.commitish[:12] }}...
+                            </a>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build.commitish|e }}', this)" title="Copy full SHA">📋</button>
+                        </div>
+                    </div>
+                    {% elif build.commitish %}
+                    <div class="info-item">
+                        <label>Commitish</label>
+                        <span class="monospace">{{ build.commitish }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Rebase repo row -->
+                {% if build.rebase_repo_url or build.rebase_commitish %}
+                <div class="info-row">
+                    {% if build.rebase_repo_url %}
+                    <div class="info-item">
+                        <label>Rebase Repository</label>
+                        <a href="{{ build.rebase_repo_url }}" target="_blank" rel="noopener">{{ build.rebase_repo_url | replace('https://github.com/', '') }}</a>
+                    </div>
+                    {% endif %}
+                    {% if build.rebase_commitish and build.rebase_repo_url %}
+                    <div class="info-item">
+                        <label>Rebase Commit</label>
+                        <div class="field-with-copy">
+                            <a href="{{ build.rebase_repo_url }}/tree/{{ build.rebase_commitish }}" target="_blank" rel="noopener" title="Browse files at this commit">
+                                {{ build.rebase_commitish[:12] }}...
+                            </a>
+                            <button class="copy-button" onclick="copyToClipboard('{{ build.rebase_commitish|e }}', this)" title="Copy full SHA">📋</button>
+                        </div>
+                    </div>
+                    {% elif build.rebase_commitish %}
+                    <div class="info-item">
+                        <label>Rebase Commitish</label>
+                        <span class="monospace">{{ build.rebase_commitish }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <!-- Distgit row -->
+                {% if build.dg_commitish %}
+                <div class="info-row">
+                    <div class="info-item">
+                        <label>Distgit Commitish</label>
+                        <span class="monospace">{{ build.dg_commitish }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <!-- Build Links Section -->
+            {% if build.build_pipeline_url or build.art_job_url %}
+            <section class="build-section">
+                <h3>Build Links</h3>
+                <div class="info-grid">
+                    {% if build.build_pipeline_url %}
+                    <div class="info-item">
+                        <label>Pipeline URL</label>
+                        {% set pipeline_display = build.build_pipeline_url.split('://')[-1] %}
+                        {% if '/' in pipeline_display %}
+                            {% set pipeline_display = pipeline_display.split('/', 1)[1] %}
+                        {% endif %}
+                        <a href="{{ build.build_pipeline_url }}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> {{ pipeline_display }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if build.record_id %}
+                    <div class="info-item">
+                        <label>Logs</label>
+                        <a href="/logs?nvr={{ nvr|urlencode }}&record_id={{ build.record_id|urlencode }}{% if group %}&group={{ group|urlencode }}{% endif %}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> View logs
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if build.art_job_url %}
+                    <div class="info-item">
+                        <label>ART Job URL</label>
+                        {% set art_job_display = build.art_job_url.split('://')[-1] %}
+                        {% if '/' in art_job_display %}
+                            {% set art_job_display = art_job_display.split('/', 1)[1] %}
+                        {% endif %}
+                        <a href="{{ build.art_job_url }}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> {{ art_job_display }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Parent Images Section -->
+            {% if build.parent_images %}
+            <section class="build-section">
+                <h3>Parent Images</h3>
+                <ul class="image-list">
+                    {% if build.parent_images is string %}
+                        {% for image in build.parent_images.split('\n') if image.strip() %}
+                        <li class="monospace parent-image-item">
+                            <span>{{ image.strip() }}</span>
+                            {% if '/' in image.strip() %}
+                            <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% else %}
+                            <a href="#" class="parent-search-link" data-nvr="{{ image.strip() }}" title="Search for builds with this NVR">🔍</a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        {% for image in build.parent_images if image %}
+                        <li class="monospace parent-image-item">
+                            <span>{{ image }}</span>
+                            {% if '/' in image %}
+                            <span class="parent-search-link disabled" title="Search is only available for parents known by NVR">🔍</span>
+                            {% else %}
+                            <a href="#" class="parent-search-link" data-nvr="{{ image }}" title="Search for builds with this NVR">🔍</a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </section>
+            {% endif %}
+
+            <!-- Installed Packages Section (Collapsible) -->
+            {% if build.installed_packages %}
+            <section class="build-section collapsible">
+                <h3 class="collapsible-header" onclick="toggleSection(this)">
+                    <span class="collapse-icon">▶</span>
+                    Installed Packages
+                    <span class="item-count" id="packages-count">
+                        {% if build.installed_packages is string %}
+                            ({{ build.installed_packages.split('\n') | length }} packages)
+                        {% else %}
+                            ({{ build.installed_packages | length }} packages)
+                        {% endif %}
+                    </span>
+                </h3>
+                <div class="collapsible-content" style="display: none;">
+                    <div class="filter-container">
+                        <input type="text" id="packages-filter" class="filter-input" placeholder="Type to filter packages..." oninput="filterList('packages-filter', 'packages-list', 'packages-count', 'packages')">
+                    </div>
+                    <ul class="package-list" id="packages-list">
+                        {% if build.installed_packages is string %}
+                            {% for pkg in build.installed_packages.split('\n') if pkg.strip() %}
+                            <li>{{ pkg.strip() }}</li>
+                            {% endfor %}
+                        {% else %}
+                            {% for pkg in build.installed_packages if pkg %}
+                            <li>{{ pkg }}</li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Installed RPMs Section (Collapsible) -->
+            {% if build.installed_rpms %}
+            <section class="build-section collapsible">
+                <h3 class="collapsible-header" onclick="toggleSection(this)">
+                    <span class="collapse-icon">▶</span>
+                    Installed RPMs
+                    <span class="item-count" id="rpms-count">
+                        {% if build.installed_rpms is string %}
+                            ({{ build.installed_rpms.split('\n') | length }} RPMs)
+                        {% else %}
+                            ({{ build.installed_rpms | length }} RPMs)
+                        {% endif %}
+                    </span>
+                </h3>
+                <div class="collapsible-content" style="display: none;">
+                    <div class="filter-container">
+                        <input type="text" id="rpms-filter" class="filter-input" placeholder="Type to filter RPMs..." oninput="filterList('rpms-filter', 'rpms-list', 'rpms-count', 'RPMs')">
+                    </div>
+                    <ul class="package-list" id="rpms-list">
+                        {% if build.installed_rpms is string %}
+                            {% for rpm in build.installed_rpms.split('\n') if rpm.strip() %}
+                            <li>{{ rpm.strip() }}</li>
+                            {% endfor %}
+                        {% else %}
+                            {% for rpm in build.installed_rpms if rpm %}
+                            <li>{{ rpm }}</li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Additional Information Section -->
+            {% set displayed_keys = ['nvr', 'name', 'component', 'version', 'release', 'el_target', 'group', 'assembly',
+                                      'outcome', 'engine', 'arches', 'start_time', 'end_time',
+                                      'image_pullspec', 'art_images_share_pullspec', 'image_tag',
+                                      'source_repo', 'commitish', 'rebase_repo_url', 'rebase_commitish', 'dg_commitish',
+                                      'build_pipeline_url', 'art_job_url', 'parent_images', 'installed_packages', 
+                                      'installed_rpms', 'embargoed'] %}
+            {% set other_fields = [] %}
                     {% for key, value in build.items() %}
-                        {% if key != 'embargoed' %}
-                    <tr>
-                        <td>{{ key }}</td>
-                        <td>
-                            {% if key in ['build_id', 'nvr', 'image_pullspec', 'art_images_share_pullspec', 'record_id'] and value %}
+                {% if key not in displayed_keys and value %}
+                    {% set _ = other_fields.append((key, value)) %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if other_fields or build.build_id or build.record_id %}
+            <section class="build-section collapsible">
+                <h3 class="collapsible-header" onclick="toggleSection(this)">
+                    <span class="collapse-icon">▶</span>
+                    Additional Information
+                    <span class="item-count">({{ (other_fields | length) + (1 if build.build_id else 0) + (1 if build.record_id else 0) }} fields)</span>
+                </h3>
+                <div class="collapsible-content" style="display: none;">
+                    <table class="other-fields-table">
+                        {% if build.build_id %}
+                        <tr>
+                            <td class="field-key">Build ID</td>
+                            <td class="field-val">
                                 <div class="field-with-copy">
-                                    <span class="field-value">{{ value }}</span>
-                                    <button class="copy-button" onclick="copyToClipboard('{{ value|e }}', this)" title="Copy to clipboard">📋</button>
+                                    <span class="field-value">{{ build.build_id }}</span>
+                                    <button class="copy-button" onclick="copyToClipboard('{{ build.build_id|e }}', this)" title="Copy">📋</button>
                                 </div>
-                            {% elif key == 'commitish' and value and build.get('source_repo') %}
-                                <a href="{{ build.source_repo }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
-                            {% elif key == 'rebase_commitish' and value and build.get('rebase_repo_url') %}
-                                <a href="{{ build.rebase_repo_url }}/commit/{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
-                            {% elif value and (
-                                key.endswith('_url') or
-                                key.endswith('_repo') or
-                                key in ['source_repo', 'rebase_repo_url', 'build_pipeline_url', 'art_job_url', 'pipeline URL', 'source'] or
-                                (value|string).startswith('http')
-                            ) %}
-                                <a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if build.record_id %}
+                        <tr>
+                            <td class="field-key">Record ID</td>
+                            <td class="field-val">
+                                <div class="field-with-copy">
+                                    <span class="field-value">{{ build.record_id }}</span>
+                                    <button class="copy-button" onclick="copyToClipboard('{{ build.record_id|e }}', this)" title="Copy">📋</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% for key, value in build.items() %}
+                            {% if key not in displayed_keys and value %}
+                            <tr>
+                                <td class="field-key">{{ key }}</td>
+                                <td class="field-val">
+                                    {% if value is string and value.startswith('http') %}
+                                        <a href="{{ value }}" target="_blank" rel="noopener">{{ value }}</a>
+                                    {% elif value is string and '\n' in value %}
+                                        <ul class="inline-list">
+                                        {% for item in value.split('\n') if item.strip() %}
+                                            <li>{{ item.strip() }}</li>
+                                        {% endfor %}
+                                        </ul>
+                                    {% elif value is iterable and value is not string %}
+                                        <ul class="inline-list">
+                                        {% for item in value if item %}
+                                            <li>{{ item }}</li>
+                                        {% endfor %}
+                                        </ul>
                             {% else %}
                                 {{ value }}
                             {% endif %}
@@ -41,10 +456,17 @@
                         {% endif %}
                     {% endfor %}
                 </table>
-            {% else %}
-                <p class="no-results-message">No information available to display for this build.</p>
+                </div>
+            </section>
             {% endif %}
+
+        {% else %}
+            <div class="no-results">
+                <p>No information available to display for this build.</p>
+                <p class="hint">The build may not exist, may be embargoed, or the NVR may be incorrect.</p>
         </div>
+        {% endif %}
+        </div> <!-- .build-content -->
     </div>
 {% endblock %}
 

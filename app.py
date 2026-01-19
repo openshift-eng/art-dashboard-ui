@@ -1,13 +1,21 @@
 import asyncio
 import json
+from urllib.parse import unquote
 import logging
+import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 
 from artcommonlib import redis, bigquery
-from artcommonlib.constants import TASKRUN_TABLE_ID
-from artcommonlib.konflux.konflux_build_record import KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord
+from google.cloud import bigquery as gcp_bigquery
+from artcommonlib.constants import TASKRUN_TABLE_ID, GOOGLE_CLOUD_PROJECT
+from artcommonlib.konflux.konflux_build_record import (
+    KonfluxBuildRecord,
+    KonfluxBundleBuildRecord,
+    KonfluxFbcBuildRecord,
+    KonfluxBuildOutcome,
+)
 from artcommonlib.konflux.konflux_db import KonfluxDb
 from flask import Flask, render_template, request, jsonify
 from sqlalchemy import Column, DateTime, String
@@ -18,6 +26,8 @@ DELTA_SEARCH = timedelta(days=180)
 CACHE_EXPIRY = 60 * 60 * 24 * 7  # 1 week
 # How many build results can we handle?
 MAX_BUILDS = 1000
+# Dev mode: bypass Redis if unavailable (set ART_DASH_DEV=1)
+DEV_MODE = os.environ.get('ART_DASH_DEV', '').lower() in ('1', 'true', 'yes')
 
 
 class KonfluxBuildHistory(Flask):
@@ -25,10 +35,14 @@ class KonfluxBuildHistory(Flask):
         super().__init__(__name__)
         self._logger = logging.getLogger(__name__)  # logger field is already used by Flask, not overwriting
         self.init_logger()
-        self.add_routes()
 
         self.konflux_db = KonfluxDb()
-        self._logger.info('Konflux DB initialized ')
+        self._logger.info('Konflux DB initialized')
+        self._redis_available = True  # Assume Redis is available until proven otherwise
+        self._memory_cache = {}  # In-memory fallback cache when Redis unavailable
+        if DEV_MODE:
+            self._logger.warning('Dev mode enabled (ART_DASH_DEV=1) - Redis errors will be bypassed')
+        self.add_routes()
 
     def init_logger(self):
         formatter = logging.Formatter('%(asctime)s %(name)s:%(levelname)s %(message)s')
@@ -38,7 +52,60 @@ class KonfluxBuildHistory(Flask):
         self._logger.propagate = False
         self._logger.level = logging.INFO
 
+    async def safe_redis_get(self, key: str):
+        """Get value from Redis, falling back to memory cache if unavailable.
+        
+        In dev mode, silently falls back to in-memory cache.
+        In production, logs warning but still falls back to keep app functional.
+        """
+        if not self._redis_available:
+            return self._memory_cache.get(key)
+        try:
+            return await redis.get_value(key)
+        except Exception as e:
+            if self._redis_available:  # Only log on first failure
+                if DEV_MODE:
+                    self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                else:
+                    self._logger.error('Redis unavailable, falling back to in-memory cache: %s', e)
+                self._redis_available = False
+            return self._memory_cache.get(key)
+
+    async def safe_redis_set(self, key: str, value: str, expiry: int = CACHE_EXPIRY):
+        """Set value in Redis and memory cache, with graceful fallback if Redis unavailable.
+        
+        Always stores in memory cache. Redis failures are logged but don't break the app.
+        """
+        # Always store in memory cache
+        self._memory_cache[key] = value
+        
+        if not self._redis_available:
+            return
+        try:
+            await redis.set_value(key, value, expiry=expiry)
+        except Exception as e:
+            if self._redis_available:  # Only log on first failure
+                if DEV_MODE:
+                    self._logger.warning('Redis unavailable (dev mode), using in-memory cache: %s', e)
+                else:
+                    self._logger.error('Redis unavailable, falling back to in-memory cache: %s', e)
+                self._redis_available = False
+
+    @staticmethod
+    def extract_nvr_start_time(nvr_value: str):
+        """Extract datetime from NVR string (format YYYYMMDDHHMM embedded in NVR)."""
+        if not nvr_value:
+            return None
+        match = re.search(r'-(\d{12})\.', nvr_value)
+        if not match:
+            return None
+        try:
+            return datetime.strptime(match.group(1), '%Y%m%d%H%M')
+        except ValueError:
+            return None
+
     def add_routes(self):
+        extract_nvr_start_time = self.extract_nvr_start_time
         @self.route("/")
         def index():
             return render_template(
@@ -50,7 +117,9 @@ class KonfluxBuildHistory(Flask):
         @self.route("/search", methods=["GET"])
         async def search():
             query_params = request.args.to_dict()
-            search_results = await self.query(query_params)
+            # Handle multi-select outcome values
+            outcomes = request.args.getlist('outcome')
+            search_results = await self.query(query_params, outcomes=outcomes)
 
             # Check if the request is an AJAX request
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -60,41 +129,109 @@ class KonfluxBuildHistory(Flask):
             return render_template(
                 "index.html",
                 query_params=query_params,
-                initial_results=search_results,  # Pass results to template
+                search_results=search_results,  # Pass results to template
                 is_search_page=True  # Add flag to indicate this is a search result page
             )
 
-        @self.route("/get_versions", methods=["GET"])
-        def get_versions():
-            url = "https://github.com/openshift-eng/ocp-build-data"
-            command = ["git", "ls-remote", "--heads", url]
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
+        @self.route("/get_groups", methods=["GET"])
+        async def get_groups():
+            """Fetch distinct group names from BigQuery using efficient DISTINCT query."""
+            cache_key = self.redis_groups_key()
 
-            if result.stdout:
-                lines = result.stdout.splitlines()
-                all_branches = []
+            # Try to get from cache first
+            cached = await self.safe_redis_get(cache_key)
+            if cached:
+                self._logger.info('Returning cached group names')
+                return jsonify(json.loads(cached))
 
-                for line in lines:
-                    _, ref = line.split()
-                    branch_name = ref.replace("refs/heads/", "")
-                    all_branches.append(branch_name)
+            # Query BigQuery for distinct groups from last 180 days using efficient DISTINCT query
+            try:
+                self._logger.info('Fetching distinct group names from BigQuery')
+                start_date = datetime.now() - DELTA_SEARCH
+                start_timestamp = start_date.strftime('%Y-%m-%d')
 
-                # Sort branches openshift-X.Y at the top, then alphabetically the remaining branches
-                def sort_key(branch):
-                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", branch)
+                # Use Google Cloud BigQuery client directly for raw SQL query
+                client = gcp_bigquery.Client(project=GOOGLE_CLOUD_PROJECT)
+                query = f"""
+                    SELECT DISTINCT `group`
+                    FROM `openshift-art.events.builds`
+                    WHERE start_time >= TIMESTAMP('{start_timestamp}')
+                    AND `group` IS NOT NULL
+                """
+                query_job = client.query(query)
+                rows = query_job.result()
+                all_groups = {row['group'] for row in rows if row.group}
+
+                # Sort groups: openshift-X.Y at the top (descending), then alphabetically
+                def sort_key(group):
+                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", group)
                     if openshift_pattern:
                         major, minor = map(int, openshift_pattern.groups())
                         return (0, -major, -minor)  # 0 for priority, negative for reverse order
-                    return (1, branch.lower())  # everything else alphabetically
+                    return (1, group.lower())  # everything else alphabetically
 
-                sorted_branches = sorted(all_branches, key=sort_key)
-                self._logger.info('Found %d branches, first 10: %s', len(sorted_branches), ', '.join(sorted_branches[:10]))
-                return jsonify(sorted_branches)
+                sorted_groups = sorted(all_groups, key=sort_key)
+                self._logger.info('Found %d distinct groups, first 10: %s',
+                                  len(sorted_groups), ', '.join(sorted_groups[:10]))
 
-            else:
-                if result.stderr:
-                    self._logger.error("Error fetching OCP versions: %s", result.stderr.strip())
-                raise RuntimeError('No matches found or an error occurred.')
+                # Cache for 1 hour (groups don't change frequently)
+                await self.safe_redis_set(cache_key, json.dumps(sorted_groups), expiry=60 * 60)
+
+                return jsonify(sorted_groups)
+
+            except Exception as e:
+                self._logger.error('Failed to fetch group names: %s', e)
+                return jsonify([])
+
+        @self.route("/get_source_repos", methods=["GET"])
+        async def get_source_repos():
+            """Fetch distinct source repository URLs from BigQuery using efficient DISTINCT query."""
+            cache_key = self.redis_source_repos_key()
+
+            # Try to get from cache first
+            cached = await self.safe_redis_get(cache_key)
+            if cached:
+                self._logger.info('Returning cached source repos')
+                return jsonify(json.loads(cached))
+
+            # Query BigQuery for distinct source repos from last 180 days
+            try:
+                self._logger.info('Fetching distinct source repos from BigQuery')
+                start_date = datetime.now() - DELTA_SEARCH
+                start_timestamp = start_date.strftime('%Y-%m-%d')
+
+                # Use Google Cloud BigQuery client directly for raw SQL query
+                client = gcp_bigquery.Client(project=GOOGLE_CLOUD_PROJECT)
+                query = f"""
+                    SELECT DISTINCT source_repo
+                    FROM `openshift-art.events.builds`
+                    WHERE start_time >= TIMESTAMP('{start_timestamp}')
+                    AND source_repo IS NOT NULL
+                """
+                query_job = client.query(query)
+                rows = query_job.result()
+
+                # Strip https://github.com/ prefix for cleaner display
+                github_prefix = 'https://github.com/'
+                all_repos = set()
+                for row in rows:
+                    if row.source_repo:
+                        repo = row.source_repo
+                        if repo.startswith(github_prefix):
+                            repo = repo[len(github_prefix):]
+                        all_repos.add(repo)
+                all_repos = sorted(all_repos)
+
+                self._logger.info('Found %d distinct source repos', len(all_repos))
+
+                # Cache for 1 week
+                await self.safe_redis_set(cache_key, json.dumps(all_repos), expiry=CACHE_EXPIRY)
+
+                return jsonify(all_repos)
+
+            except Exception as e:
+                self._logger.error('Failed to fetch source repos: %s', e)
+                return jsonify([])
 
         @self.route("/build")
         async def show_build():
@@ -102,14 +239,24 @@ class KonfluxBuildHistory(Flask):
             nvr = request.args.get('nvr')
             outcome = request.args.get('outcome')
             build_type = request.args.get('type')
-            redis_key = self.redis_build_key(nvr)
+            record_id = request.args.get('record_id')
+            group = request.args.get('group')
+            redis_key = self.redis_build_record_key(record_id) if record_id else self.redis_build_key(nvr)
+            search_outcomes = [outcome] if outcome else ['success', 'failure', 'pending']
 
-            if not nvr:
-                # nvr param was not passed in
-                nvr = '<undefined>'
-                result = default_result
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view build details.'
+                return render_template(
+                    "build.html",
+                    nvr=nvr or '<undefined>',
+                    build_type=build_type,
+                    build=default_result,
+                    logs_after=None,
+                    group=group,
+                    error_message=error_message
+                )
 
-            elif redis_value := await redis.get_value(redis_key):
+            elif redis_value := await self.safe_redis_get(redis_key):
                 # nvr param was passed in, and there is a cached entry for it
                 result = json.loads(redis_value)
 
@@ -117,30 +264,46 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
-                    match build_type:
-                        case 'image':
-                            self.konflux_db.bind(KonfluxBuildRecord)
-                        case 'bundle':
-                            self.konflux_db.bind(KonfluxBundleBuildRecord)
-                        case 'fbc':
-                            self.konflux_db.bind(KonfluxFbcBuildRecord)
-                        case _:
-                            raise ValueError(f"Unknown build type: {build_type}")
+                    async def fetch_build(record_class):
+                        db = KonfluxDb()
+                        db.bind(record_class)
+                        if record_id:
+                            where = {'record_id': record_id, 'outcome': ['success', 'failure', 'pending']}
+                        else:
+                            where = {'nvr': nvr, 'outcome': search_outcomes}
+                        if group:
+                            where['group'] = group
+                        return [build async for build in db.search_builds_by_fields(where=where, limit=1)]
 
-                    builds = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where={'nvr': nvr, 'outcome': outcome},
-                        limit=1
-                    )]
+                    builds = []
+                    if build_type:
+                        match build_type:
+                            case 'image':
+                                builds = await fetch_build(KonfluxBuildRecord)
+                            case 'bundle':
+                                builds = await fetch_build(KonfluxBundleBuildRecord)
+                            case 'fbc':
+                                builds = await fetch_build(KonfluxFbcBuildRecord)
+                            case _:
+                                raise ValueError(f"Unknown build type: {build_type}")
+                    else:
+                        for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                            builds = await fetch_build(record_class)
+                            if builds:
+                                break
 
                     if not builds:
-                        self._logger.warning('No builds found for NVR %s with state %s', nvr, outcome)
+                        self._logger.warning('No builds found for NVR %s record_id %s with state %s', nvr, record_id, outcome)
                         result = default_result
 
                     else:
                         # We expect only one build for a given NVR and outcome
                         self._logger.info('Found %d builds for NVR %s with state %s', len(builds), nvr, outcome)
                         build = builds[0]
-                        if getattr(build, 'embargoed', False):
+                        # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
+                        # (golang builder images are incorrectly flagged as embargoed)
+                        is_embargoed = getattr(build, 'embargoed', False) and 'golang' not in (getattr(build, 'group', '') or '').lower()
+                        if is_embargoed:
                             self._logger.warning('Build %s is embargoed, not displaying details', nvr)
                             result = default_result
 
@@ -148,9 +311,7 @@ class KonfluxBuildHistory(Flask):
                             result = build.to_dict() if build else default_result
 
                             # Update the cache
-                            await redis.set_value(redis_key,
-                                                  json.dumps(result),
-                                                  expiry=CACHE_EXPIRY)
+                            await self.safe_redis_set(redis_key, json.dumps(result))
 
                 except Exception as e:
                     self._logger.error(
@@ -162,72 +323,134 @@ class KonfluxBuildHistory(Flask):
             if result and build_type != 'fbc':
                 result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
 
+            # Support JSON download via Accept header or format query param
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify(result)
+
+            logs_after = extract_nvr_start_time(nvr)
+            logs_after = logs_after.isoformat() if logs_after else None
+
             return render_template("build.html",
                                    nvr=nvr,
-                                   build=result)
+                                   build_type=build_type,
+                                   build=result,
+                                   logs_after=logs_after,
+                                   group=group or (result.get('group') if result else None),
+                                   error_message=None)
 
         @self.route("/logs")
         async def show_logs():
             nvr = request.args.get('nvr')
             record_id = request.args.get('record_id')
-            after = datetime.strptime(request.args.get('after'), "%a, %d %b %Y %H:%M:%S %Z")
-
-            # Fetch task runs
-            bq_client = bigquery.BigQueryClient()
-            bq_client.bind(TASKRUN_TABLE_ID)
-            where_clauses = [
-                    Column('start_time', DateTime) >= after,
-                    Column('record_id', String) == record_id,
-            ]
-            rows = await bq_client.select(where_clauses)
-
-            # Gather container logs
-            containers = [container for row in rows for container in row.get('containers', []) if container.get('log_output')]
-            return render_template("logs.html", nvr=nvr, containers=containers)
-
-        @self.route("/packages")
-        async def show_packages():
-            nvr = request.args.get("nvr")
-            default_result = []
-
-            if not nvr:
-                # nvr param was not passed in
-                nvr = '<undefined>'
-                result = default_result
-
-
-            elif (raw_value := await redis.get_value(self.redis_packages_key(nvr))) and (parsed := json.loads(raw_value)):
-                # nvr param was passed in, and there is a cached entry for it,
-                # and the cached entry is not an empty list
-                result = parsed
-
-            else:
-                # nvr param was passed in, but there is no cached entry for it,
-                # or the cached entry is an empty list
-                # fetch the build record from Konflux DB
+            group = request.args.get('group')
+            after = request.args.get('after')
+            start_after = None
+            nvr_after = extract_nvr_start_time(nvr)
+            if nvr_after:
+                start_after = nvr_after
+            elif after:
                 try:
-                    self.konflux_db.bind(KonfluxBuildRecord)
-                    build = [build async for build in self.konflux_db.search_builds_by_fields(
-                        where={'nvr': nvr, 'outcome': ['success', 'failure']},
-                        limit=1
-                    )]
-                    result = build[0].installed_packages if build else []
+                    start_after = datetime.strptime(after, "%a, %d %b %Y %H:%M:%S %Z")
+                except ValueError:
+                    try:
+                        start_after = datetime.fromisoformat(after)
+                    except ValueError:
+                        self._logger.warning('Failed parsing logs "after" value: %s', after)
 
-                    # Update the cache
-                    await redis.set_value(self.redis_packages_key(nvr),
-                                          json.dumps(result),
-                                          expiry=CACHE_EXPIRY)
+            build_outcome = None
+            build_pipeline_url = None
+            art_job_url = None
+            build_identity = None
+            error_message = None
 
-                except Exception as e:
-                    self._logger.error('Failed fetching installed params for %s: %s', nvr, e)
-                    result = default_result
+            if not nvr or not record_id:
+                error_message = 'Both nvr and record_id are required to view logs.'
+                return render_template(
+                    "logs.html",
+                    nvr=nvr or '<undefined>',
+                    containers=[],
+                    logs_available=False,
+                    build_outcome=None,
+                    build_pipeline_url=None,
+                    art_job_url=None,
+                    build_identity=None,
+                    error_message=error_message
+                )
 
-            return render_template("packages.html",
-                                   nvr=nvr,
-                                   packages=result)
+            if record_id or nvr:
+                for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
+                    try:
+                        db = KonfluxDb()
+                        db.bind(record_class)
+                        where = {'outcome': ['success', 'failure', 'pending']}
+                        if record_id:
+                            where['record_id'] = record_id
+                        else:
+                            where['nvr'] = nvr
+                        if group:
+                            where['group'] = group
+                        builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]
+                        if builds:
+                            build = builds[0]
+                            build_outcome = getattr(build, 'outcome', None)
+                            build_pipeline_url = getattr(build, 'build_pipeline_url', None)
+                            art_job_url = getattr(build, 'art_job_url', None)
+                            build_identity = {
+                                'nvr': getattr(build, 'nvr', None),
+                                'name': getattr(build, 'name', None),
+                                'version': getattr(build, 'version', None),
+                                'release': getattr(build, 'release', None),
+                                'el_target': getattr(build, 'el_target', None),
+                                'group': getattr(build, 'group', None),
+                                'assembly': getattr(build, 'assembly', None),
+                                'component': getattr(build, 'component', None),
+                            }
+                            break
+                    except Exception as e:
+                        self._logger.warning('Failed looking up build details for logs (%s): %s', record_class, e)
 
-    async def query(self, params: dict):
-        self._logger.info("Search Parameters: %s", params)
+            containers = []
+            if record_id and start_after:
+                end_after = start_after + timedelta(days=2)
+                # Fetch task runs
+                bq_client = bigquery.BigQueryClient()
+                bq_client.bind(TASKRUN_TABLE_ID)
+                where_clauses = [
+                        Column('creation_time', DateTime) >= start_after,
+                        Column('creation_time', DateTime) < end_after,
+                        Column('record_id', String) == record_id,
+                ]
+                rows = await bq_client.select(where_clauses)
+
+                # Gather container logs (include containers even when log_output is empty)
+                containers = [container for row in rows for container in (row.get('containers', []) or [])]
+
+            # Support JSON download via Accept header or format query param
+            if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
+                return jsonify({
+                    'nvr': nvr,
+                    'record_id': record_id,
+                    'group': group or (build_identity.get('group') if build_identity else None),
+                    'build_identity': build_identity,
+                    'build_pipeline_url': build_pipeline_url,
+                    'art_job_url': art_job_url,
+                    'containers': containers,
+                })
+
+            return render_template(
+                "logs.html",
+                nvr=nvr,
+                record_id=record_id,
+                group=group or (build_identity.get('group') if build_identity else None),
+                containers=containers,
+                build_pipeline_url=build_pipeline_url,
+                art_job_url=art_job_url,
+                build_identity=build_identity,
+                error_message=error_message,
+            )
+
+    async def query(self, params: dict, outcomes: list = None):
+        self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
 
         where_clauses = {}
 
@@ -235,68 +458,136 @@ class KonfluxBuildHistory(Flask):
         if group:
             where_clauses['group'] = group
 
-        commitish = params.get('commitish', '').strip()
-        if commitish:
-            where_clauses['commitish'] = commitish
-
-        assembly = params.get('assembly', 'stream').strip()
-        if assembly:
+        assembly = params.get('assembly', '').strip()
+        if assembly and assembly != '*':
             where_clauses['assembly'] = assembly
 
-        outcome = params.get('outcome', 'completed')
-        if outcome != 'completed':
-            where_clauses['outcome'] = outcome
+        # Handle multi-select outcomes
+        if outcomes and len(outcomes) > 0:
+            # If all three are selected, don't filter (equivalent to "completed")
+            all_outcomes = {'success', 'failure', 'pending'}
+            if set(outcomes) != all_outcomes:
+                where_clauses['outcome'] = outcomes
 
         engine = params.get('engine', 'both')
         if engine != 'both':
             where_clauses['engine'] = engine
 
         extra_patterns = {}
-
-        # When no group is specified, filter to only openshift-4.x groups (exclude OKD builds)
-        if not group:
-            extra_patterns['group'] = 'openshift-4.'
+        warnings = []
 
         name = params.get('name', '').strip()
+        original_name = name
         if name:
+            # NVRs often have "-container" suffix, but the "name" column in the database does not
+            if name.endswith('-container'):
+                name = name[:-10]  # Remove "-container" suffix
+                warnings.append(f'The "-container" suffix was removed from the name for searching. Using: "{name}"')
             extra_patterns['name'] = name
+
+        source_repo = params.get('source_repo', '').strip()
+        if source_repo:
+            # Use pattern matching since we strip https://github.com/ from displayed options
+            extra_patterns['source_repo'] = source_repo
+
+        commitish = params.get('commitish', '').strip().lower()
+        if commitish:
+            # Use pattern matching with starts-with logic
+            extra_patterns['commitish'] = f'^{commitish}'
 
         nvr = params.get('nvr', '').strip()
         if nvr:
             extra_patterns['nvr'] = nvr
 
+        record_id = params.get('record_id', '').strip()
+        if record_id:
+            where_clauses['record_id'] = record_id
+
+        # image_sha_tag is handled specially as it needs OR logic between image_pullspec and image_tag
+        image_sha_tag = params.get('image_sha_tag', '').strip()
+
         art_job_url = params.get('art-job-url', '').strip()
+        art_job_url_variants = None
         if art_job_url:
-            extra_patterns['art_job_url'] = art_job_url
+            # ART job URLs can be encoded multiple times in records (e.g. %252F).
+            # Build normalized variants and apply filtering in Python to avoid
+            # BigQuery regex mismatches.
+            variants = set()
+            current = art_job_url
+            for _ in range(4):
+                if current in variants:
+                    break
+                variants.add(current)
+                current = unquote(current)
+            art_job_url_variants = {v.lower() for v in variants}
 
-        after = params.get('after', '').strip()
-        if after:
+        # Parse date range "YYYY-MM-DD to YYYY-MM-DD" or just "YYYY-MM-DD"
+        date_range = params.get('dateRange', '').strip()
+        start_search = None
+        end_search = None
+        
+        if date_range:
+            dates = date_range.split(' to ')
             try:
-                start_search = datetime.strptime(after, '%Y-%m-%d')
+                if dates[0]:
+                    start_search = datetime.strptime(dates[0].strip(), '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                if len(dates) > 1 and dates[1]:
+                    # Set end date to end of day (UTC)
+                    end_search = datetime.strptime(dates[1].strip(), '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+                elif start_search:
+                    # Single date provided - treat as one-day range
+                    end_search = start_search.replace(hour=23, minute=59, second=59)
             except Exception as e:
-                self._logger.warning('Failed parsing date string %s: %s', after, e)
-                start_search = None
+                self._logger.warning('Failed parsing date range %s: %s', date_range, e)
+        
+        # Check if NVR has an embedded datetime
+        nvr_datetime = self.extract_nvr_start_time(nvr) if nvr else None
+        if nvr_datetime:
+            nvr_datetime = nvr_datetime.replace(tzinfo=timezone.utc)
+        
+        if not start_search:
+            # If NVR contains a datetime, use it to set a narrow search window
+            if nvr_datetime:
+                start_search = nvr_datetime - timedelta(days=2)
+                end_search = nvr_datetime + timedelta(days=2)
+            else:
+                # Require either a date range or an NVR with a datetime
+                return {
+                    'error': 'A date range or an NVR with an embedded datetime is required for search.',
+                    'builds': []
+                }
+        elif nvr_datetime:
+            # Both explicit date range and NVR datetime provided - check for contradiction
+            nvr_date_str = nvr_datetime.strftime('%Y-%m-%d')
+            if nvr_datetime < start_search or nvr_datetime > end_search:
+                warnings.append(f'The NVR contains datetime {nvr_date_str}, which is outside the specified date range. Results may be empty.')
 
-        else:
-            start_search = datetime.now() - DELTA_SEARCH
+        # Exclude large columns from search results to reduce data transfer and BigQuery costs
+        # These columns are only needed when viewing specific build details
+        # Only the 'builds' table (KonfluxBuildRecord) has these columns
+        IMAGE_BUILD_EXCLUDE_COLUMNS = ['installed_packages', 'installed_rpms']
 
-        async def search_for_build_type(record_class, filter_embargoed=False):
+        async def search_for_build_type(record_class, filter_embargoed=False, exclude_columns=None):
             # Create separate KonfluxDb instance to avoid bind() race condition when running queries in parallel
             db = KonfluxDb()
             db.bind(record_class)
             builds = [build async for build in db.search_builds_by_fields(
                 start_search=start_search,
+                end_search=end_search,
                 where=where_clauses,
                 extra_patterns=extra_patterns,
                 order_by='end_time',
-                limit=MAX_BUILDS
+                limit=MAX_BUILDS,
+                exclude_columns=exclude_columns
             )]
             if filter_embargoed:
-                return [b for b in builds if not b.embargoed]
+                # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
+                # (golang builder images are incorrectly flagged as embargoed)
+                return [b for b in builds if not b.embargoed or 'golang' in (b.group or '').lower()]
             return builds
 
         tasks = [
-            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True),
+            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True, exclude_columns=IMAGE_BUILD_EXCLUDE_COLUMNS),
             search_for_build_type(KonfluxBundleBuildRecord),
             search_for_build_type(KonfluxFbcBuildRecord)
         ]
@@ -304,6 +595,29 @@ class KonfluxBuildHistory(Flask):
 
         # Combine all builds, sort by end time if available (for completed builds), or by start time if not
         all_builds = image_builds + bundle_builds + fbc_builds
+
+        # Filter by ART job URL if specified (match any encoded variant as substring)
+        if art_job_url_variants:
+            def matches_art_job_url(build):
+                value = getattr(build, 'art_job_url', None)
+                if not value:
+                    return False
+                lower_value = value.lower()
+                return any(variant in lower_value for variant in art_job_url_variants)
+
+            all_builds = [b for b in all_builds if matches_art_job_url(b)]
+
+        # Filter by image_sha_tag if specified (OR logic: matches image_pullspec sha256 OR image_tag substring OR nvr substring)
+        if image_sha_tag:
+            sha_pattern = re.compile(f'.*sha256:{re.escape(image_sha_tag)}.*', re.IGNORECASE)
+            tag_pattern = re.compile(f'.*{re.escape(image_sha_tag)}.*', re.IGNORECASE)
+            all_builds = [
+                b for b in all_builds
+                if (hasattr(b, 'image_pullspec') and b.image_pullspec and sha_pattern.match(b.image_pullspec))
+                or (hasattr(b, 'image_tag') and b.image_tag and tag_pattern.match(b.image_tag))
+                or (hasattr(b, 'nvr') and b.nvr and tag_pattern.match(b.nvr))
+            ]
+
         all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)
         all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
 
@@ -326,7 +640,10 @@ class KonfluxBuildHistory(Flask):
                 "commitish": b.commitish,
                 "time": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else b.start_time.strftime("%B %d, %Y, %I:%M:%S %p"),
                 "engine": str(b.engine),
-                "source": f'{b.source_repo}/tree/{b.commitish}',
+                "source": f'{b.source_repo}/tree/{b.commitish}' if b.source_repo else '',
+                "source_repo": b.source_repo or '',
+                "image_pullspec": getattr(b, 'image_pullspec', '') or '',
+                "image_tag": getattr(b, 'image_tag', '') or '',
                 "pipeline URL": b.build_pipeline_url,
                 "art-job-url": b.art_job_url,
                 "type": get_build_type(b),
@@ -335,16 +652,24 @@ class KonfluxBuildHistory(Flask):
             } for b in all_builds
         ]
 
-        # Return the results as JSON
-        return results
-
-    @staticmethod
-    def redis_packages_key(nvr: str):
-        return f'appdata:art-build-history:installed-packages:{nvr}'
+        # Return the results along with any warnings
+        return {'builds': results, 'warnings': warnings}
 
     @staticmethod
     def redis_build_key(nvr: str):
         return f'appdata:art-build-history:build:{nvr}'
+
+    @staticmethod
+    def redis_build_record_key(record_id: str):
+        return f'appdata:art-build-history:build-record:{record_id}'
+
+    @staticmethod
+    def redis_groups_key():
+        return 'appdata:art-build-history:distinct-groups'
+
+    @staticmethod
+    def redis_source_repos_key():
+        return 'appdata:art-build-history:distinct-source-repos'
 
 
 app = KonfluxBuildHistory()

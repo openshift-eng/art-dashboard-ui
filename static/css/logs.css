@@ -58,3 +58,7 @@ div.log-entry p {
     border: none;
     overflow-x: auto;
 }
+
+.build-page .no-results-message {
+    margin: 0 0 10px 0;
+}
