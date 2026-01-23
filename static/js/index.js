@@ -301,7 +301,7 @@ function createRow(result) {
 
     // Create the row
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
-    const sourceLink = result.source && shortCommit ? `<a href="${result.source}" target="_blank" title="Browse source at ${result.commitish}">${shortCommit}</a>` : '';
+    const sourceLink = result.source && shortCommit ? `<a href="${result.source}/commit/${result.commitish}" target="_blank" title="View commit diff">${shortCommit}</a>` : '';
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
