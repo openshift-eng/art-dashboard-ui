@@ -193,7 +193,7 @@
                     <div class="info-item">
                         <label>Source Commit</label>
                         <div class="field-with-copy">
-                            <a href="{{ build.source_repo }}/tree/{{ build.commitish }}" target="_blank" rel="noopener" title="Browse files at this commit">
+                            <a href="{{ build.source_repo }}/commit/{{ build.commitish }}" target="_blank" rel="noopener" title="View commit diff">
                                 {{ build.commitish[:12] }}...
                             </a>
                             <button class="copy-button" onclick="copyToClipboard('{{ build.commitish|e }}', this)" title="Copy full SHA">📋</button>
@@ -219,7 +219,7 @@
                     <div class="info-item">
                         <label>Rebase Commit</label>
                         <div class="field-with-copy">
-                            <a href="{{ build.rebase_repo_url }}/tree/{{ build.rebase_commitish }}" target="_blank" rel="noopener" title="Browse files at this commit">
+                            <a href="{{ build.rebase_repo_url }}/commit/{{ build.rebase_commitish }}" target="_blank" rel="noopener" title="View commit diff">
                                 {{ build.rebase_commitish[:12] }}...
                             </a>
                             <button class="copy-button" onclick="copyToClipboard('{{ build.rebase_commitish|e }}', this)" title="Copy full SHA">📋</button>
