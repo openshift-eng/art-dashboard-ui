@@ -290,6 +290,21 @@
     word-break: break-all;
 }
 
+.parent-nvr-link {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+    color: #4a9eff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s, text-decoration 0.2s;
+}
+
+.parent-nvr-link:hover {
+    color: #6bb3ff;
+    text-decoration: underline;
+}
+
 .parent-search-link {
     flex-shrink: 0;
     text-decoration: none;
