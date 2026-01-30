@@ -148,6 +148,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Set up parent NVR links to open build details page
+    document.querySelectorAll('a.parent-nvr-link').forEach(link => {
+        link.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const nvr = this.dataset.nvr;
+            const linkEl = this;
+
+            // Save original content and show loading state
+            const originalText = linkEl.textContent;
+            linkEl.textContent = 'Loading...';
+            linkEl.style.pointerEvents = 'none';
+
+            try {
+                // Search for the build to get its record_id and group
+                // We need to try different build types (image, bundle, fbc)
+                const buildTypes = ['image', 'bundle', 'fbc'];
+                let buildData = null;
+
+                for (const buildType of buildTypes) {
+                    const searchUrl = new URL('/search', window.location.origin);
+                    searchUrl.searchParams.set('nvr', nvr);
+                    searchUrl.searchParams.set('assembly', '*');
+                    searchUrl.searchParams.set('type', buildType);
+                    searchUrl.searchParams.set('limit', '1');
+
+                    const response = await fetch(searchUrl.toString(), {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.builds && data.builds.length > 0) {
+                            buildData = data.builds[0];
+                            break;
+                        }
+                    }
+                }
+
+                if (buildData && buildData.record_id) {
+                    // Construct build detail URL
+                    const buildUrl = new URL('/build', window.location.origin);
+                    buildUrl.searchParams.set('nvr', nvr);
+                    buildUrl.searchParams.set('record_id', buildData.record_id);
+                    if (buildData.group) {
+                        buildUrl.searchParams.set('group', buildData.group);
+                    }
+
+                    // Open in new tab
+                    window.open(buildUrl.toString(), '_blank');
+                } else {
+                    console.error('Could not find build record for NVR:', nvr);
+                    alert(`Could not find build details for ${nvr}`);
+                }
+            } catch (error) {
+                console.error('Error fetching build details:', error);
+                alert(`Error loading build details: ${error.message}`);
+            } finally {
+                // Restore original state
+                linkEl.textContent = originalText;
+                linkEl.style.pointerEvents = '';
+            }
+        });
+    });
+
     // Set up parent image search links (for NVR entries only)
     document.querySelectorAll('a.parent-search-link').forEach(link => {
         link.addEventListener('click', function(e) {
