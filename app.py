@@ -710,10 +710,8 @@ class KonfluxBuildHistory(Flask):
 
         # Handle multi-select outcomes
         if outcomes and len(outcomes) > 0:
-            # If all three are selected, don't filter (equivalent to "completed")
-            all_outcomes = {'success', 'failure', 'pending'}
-            if set(outcomes) != all_outcomes:
-                where_clauses['outcome'] = outcomes
+            # Always pass outcomes to prevent default filter (success, failure only) from being applied
+            where_clauses['outcome'] = outcomes
 
         engine = params.get('engine', 'both')
         if engine != 'both':
