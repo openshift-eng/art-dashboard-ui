@@ -301,12 +301,14 @@ function createRow(result) {
 
     // Create the row
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
-    const sourceLink = result.source && shortCommit ? `<a href="${result.source}/commit/${result.commitish}" target="_blank" title="View commit diff">${shortCommit}</a>` : '';
+    const sourceLink = result.source && shortCommit ? `<a href="${result.source}/tree/${result.commitish}" target="_blank" title="View source tree">${shortCommit}</a>` : '';
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
+    const outcomeParam = result.outcome ? `&outcome=${encodeURIComponent(result.outcome)}` : '';
+    const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
     row.innerHTML = `
         <td>${result["name"]}</td>
         <td>${outcomeDisplay}</td>
-        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build details">${result.nvr}</a></td>
+        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td>${sourceLink}</td>
         <td>${result["assembly"]}</td>
         <td>${result["group"]}</td>

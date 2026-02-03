@@ -197,6 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (buildData.group) {
                         buildUrl.searchParams.set('group', buildData.group);
                     }
+                    if (buildData.outcome) {
+                        buildUrl.searchParams.set('outcome', buildData.outcome);
+                    }
+                    if (buildData.type) {
+                        buildUrl.searchParams.set('type', buildData.type);
+                    }
 
                     // Open in new tab
                     window.open(buildUrl.toString(), '_blank');

@@ -268,7 +268,7 @@ class KonfluxBuildHistory(Flask):
                         db = KonfluxDb()
                         db.bind(record_class)
                         if record_id:
-                            where = {'record_id': record_id, 'outcome': ['success', 'failure', 'pending']}
+                            where = {'record_id': record_id, 'outcome': search_outcomes}
                         else:
                             where = {'nvr': nvr, 'outcome': search_outcomes}
                         if group:
