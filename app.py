@@ -884,7 +884,7 @@ class KonfluxBuildHistory(Flask):
                 "commitish": b.commitish,
                 "time": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else b.start_time.strftime("%B %d, %Y, %I:%M:%S %p"),
                 "engine": str(b.engine),
-                "source": f'{b.source_repo}/tree/{b.commitish}' if b.source_repo else '',
+                "source": b.source_repo or '',
                 "source_repo": b.source_repo or '',
                 "image_pullspec": getattr(b, 'image_pullspec', '') or '',
                 "image_tag": getattr(b, 'image_tag', '') or '',
