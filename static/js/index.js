@@ -646,11 +646,9 @@ function setupStaticAutocomplete(input, dropdown, options) {
                 e.preventDefault();
                 if (highlightedIdx >= 0 && items[highlightedIdx]) {
                     input.value = items[highlightedIdx].dataset.value;
-                    hideDropdown();
-                } else if (items.length > 0) {
-                    input.value = items[0].dataset.value;
-                    hideDropdown();
                 }
+                // If no item is highlighted, keep the user's custom value
+                hideDropdown();
                 break;
             case 'Escape':
                 hideDropdown();
@@ -750,11 +748,9 @@ function setupSourceRepoAutocomplete(input, dropdown) {
                 e.preventDefault();
                 if (highlightedIdx >= 0 && items[highlightedIdx]) {
                     input.value = items[highlightedIdx].textContent;
-                    hideDropdown();
-                } else if (items.length > 0) {
-                    input.value = items[0].textContent;
-                    hideDropdown();
                 }
+                // If no item is highlighted, keep the user's custom value
+                hideDropdown();
                 break;
             case 'Escape':
                 hideDropdown();
@@ -863,12 +859,9 @@ function setupAutocomplete(input, dropdown) {
                 if (highlightedIndex >= 0 && items[highlightedIndex]) {
                     // Select the highlighted item
                     input.value = items[highlightedIndex].textContent;
-                    hideDropdown();
-                } else if (items.length > 0) {
-                    // Auto-select the first filtered result if no item is highlighted
-                    input.value = items[0].textContent;
-                    hideDropdown();
                 }
+                // If no item is highlighted, keep the user's custom value
+                hideDropdown();
                 break;
             case 'Escape':
                 hideDropdown();
