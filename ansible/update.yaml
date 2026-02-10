@@ -1,0 +1,52 @@
+---
+- name: Update app image (fast rebuild)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    namespace: "{{ lookup('env', 'OPENSHIFT_NAMESPACE') }}"
+
+  tasks:
+    - name: Validate OPENSHIFT_NAMESPACE is set
+      ansible.builtin.fail:
+        msg: |
+          OPENSHIFT_NAMESPACE environment variable is not set
+
+          Please set:
+            export OPENSHIFT_NAMESPACE=your-namespace-name
+      when: namespace == ""
+
+    - name: Start app image build
+      ansible.builtin.shell: oc start-build art-build-history -n {{ namespace }} -o name
+      register: app_build_result
+      changed_when: true
+
+    - name: Extract app build name
+      ansible.builtin.set_fact:
+        app_build_name: "{{ app_build_result.stdout | regex_replace('^build.build.openshift.io/', '') }}"
+
+    - name: Display build info
+      ansible.builtin.debug:
+        msg: "Building app image: {{ app_build_name }} (this should be fast ~10-20 seconds)"
+
+    - name: Wait for app build to complete
+      ansible.builtin.shell: oc get build {{ app_build_name }} -n {{ namespace }} -o jsonpath='{.status.phase}'
+      register: app_build_status
+      until: app_build_status.stdout in ['Complete', 'Failed', 'Error', 'Cancelled']
+      retries: 60
+      delay: 10
+      changed_when: false
+
+    - name: Check app build succeeded
+      ansible.builtin.fail:
+        msg: "App build failed with status: {{ app_build_status.stdout }}"
+      when: app_build_status.stdout != 'Complete'
+
+    - name: App build complete
+      ansible.builtin.debug:
+        msg: |
+          App image build complete!
+
+          Image: art-build-history:latest
+
+          The deployment will automatically update with the new image.

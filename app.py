@@ -1,23 +1,21 @@
 import asyncio
 import json
-from urllib.parse import unquote
 import logging
 import os
-import subprocess
-from datetime import datetime, timedelta, timezone
 import re
+from datetime import datetime, timedelta, timezone
+from urllib.parse import unquote
 
-from artcommonlib import redis, bigquery
-from google.cloud import bigquery as gcp_bigquery
-from artcommonlib.constants import TASKRUN_TABLE_ID, GOOGLE_CLOUD_PROJECT
+from artcommonlib import bigquery, redis
+from artcommonlib.constants import GOOGLE_CLOUD_PROJECT, TASKRUN_TABLE_ID
 from artcommonlib.konflux.konflux_build_record import (
     KonfluxBuildRecord,
     KonfluxBundleBuildRecord,
     KonfluxFbcBuildRecord,
-    KonfluxBuildOutcome,
 )
 from artcommonlib.konflux.konflux_db import KonfluxDb
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, jsonify, render_template, request
+from google.cloud import bigquery as gcp_bigquery
 from sqlalchemy import Column, DateTime, String
 
 # How far back should we search for builds?
@@ -54,7 +52,7 @@ class KonfluxBuildHistory(Flask):
 
     async def safe_redis_get(self, key: str):
         """Get value from Redis, falling back to memory cache if unavailable.
-        
+
         In dev mode, silently falls back to in-memory cache.
         In production, logs warning but still falls back to keep app functional.
         """
@@ -73,12 +71,12 @@ class KonfluxBuildHistory(Flask):
 
     async def safe_redis_set(self, key: str, value: str, expiry: int = CACHE_EXPIRY):
         """Set value in Redis and memory cache, with graceful fallback if Redis unavailable.
-        
+
         Always stores in memory cache. Redis failures are logged but don't break the app.
         """
         # Always store in memory cache
         self._memory_cache[key] = value
-        
+
         if not self._redis_available:
             return
         try:
@@ -106,15 +104,12 @@ class KonfluxBuildHistory(Flask):
 
     def add_routes(self):
         extract_nvr_start_time = self.extract_nvr_start_time
-        @self.route("/")
-        def index():
-            return render_template(
-                "index.html",
-                query_params={},
-                search_results=[]
-            )
 
-        @self.route("/search", methods=["GET"])
+        @self.route('/')
+        def index():
+            return render_template('index.html', query_params={}, search_results=[])
+
+        @self.route('/search', methods=['GET'])
         async def search():
             query_params = request.args.to_dict()
             # Handle multi-select outcome values
@@ -122,18 +117,18 @@ class KonfluxBuildHistory(Flask):
             search_results = await self.query(query_params, outcomes=outcomes)
 
             # Check if the request is an AJAX request
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(search_results)  # Respond with JSON for AJAX requests
 
             # For direct URL access, render template with results
             return render_template(
-                "index.html",
+                'index.html',
                 query_params=query_params,
                 search_results=search_results,  # Pass results to template
-                is_search_page=True  # Add flag to indicate this is a search result page
+                is_search_page=True,  # Add flag to indicate this is a search result page
             )
 
-        @self.route("/get_groups", methods=["GET"])
+        @self.route('/get_groups', methods=['GET'])
         async def get_groups():
             """Fetch distinct group names from BigQuery using efficient DISTINCT query."""
             cache_key = self.redis_groups_key()
@@ -164,15 +159,16 @@ class KonfluxBuildHistory(Flask):
 
                 # Sort groups: openshift-X.Y at the top (descending), then alphabetically
                 def sort_key(group):
-                    openshift_pattern = re.match(r"openshift-(\d+)\.(\d+)$", group)
+                    openshift_pattern = re.match(r'openshift-(\d+)\.(\d+)$', group)
                     if openshift_pattern:
                         major, minor = map(int, openshift_pattern.groups())
                         return (0, -major, -minor)  # 0 for priority, negative for reverse order
                     return (1, group.lower())  # everything else alphabetically
 
                 sorted_groups = sorted(all_groups, key=sort_key)
-                self._logger.info('Found %d distinct groups, first 10: %s',
-                                  len(sorted_groups), ', '.join(sorted_groups[:10]))
+                self._logger.info(
+                    'Found %d distinct groups, first 10: %s', len(sorted_groups), ', '.join(sorted_groups[:10])
+                )
 
                 # Cache for 1 hour (groups don't change frequently)
                 await self.safe_redis_set(cache_key, json.dumps(sorted_groups), expiry=60 * 60)
@@ -183,7 +179,7 @@ class KonfluxBuildHistory(Flask):
                 self._logger.error('Failed to fetch group names: %s', e)
                 return jsonify([])
 
-        @self.route("/get_source_repos", methods=["GET"])
+        @self.route('/get_source_repos', methods=['GET'])
         async def get_source_repos():
             """Fetch distinct source repository URLs from BigQuery using efficient DISTINCT query."""
             cache_key = self.redis_source_repos_key()
@@ -218,7 +214,7 @@ class KonfluxBuildHistory(Flask):
                     if row.source_repo:
                         repo = row.source_repo
                         if repo.startswith(github_prefix):
-                            repo = repo[len(github_prefix):]
+                            repo = repo[len(github_prefix) :]
                         all_repos.add(repo)
                 all_repos = sorted(all_repos)
 
@@ -233,7 +229,7 @@ class KonfluxBuildHistory(Flask):
                 self._logger.error('Failed to fetch source repos: %s', e)
                 return jsonify([])
 
-        @self.route("/build")
+        @self.route('/build')
         async def show_build():
             default_result = {}
             nvr = request.args.get('nvr')
@@ -247,13 +243,13 @@ class KonfluxBuildHistory(Flask):
             if not nvr or not record_id:
                 error_message = 'Both nvr and record_id are required to view build details.'
                 return render_template(
-                    "build.html",
+                    'build.html',
                     nvr=nvr or '<undefined>',
                     build_type=build_type,
                     build=default_result,
                     logs_after=None,
                     group=group,
-                    error_message=error_message
+                    error_message=error_message,
                 )
 
             elif redis_value := await self.safe_redis_get(redis_key):
@@ -264,6 +260,7 @@ class KonfluxBuildHistory(Flask):
                 # nvr param was passed in, but there is no cached entry for it
                 # fetch the build record from Konflux DB
                 try:
+
                     async def fetch_build(record_class):
                         db = KonfluxDb()
                         db.bind(record_class)
@@ -285,7 +282,7 @@ class KonfluxBuildHistory(Flask):
                             case 'fbc':
                                 builds = await fetch_build(KonfluxFbcBuildRecord)
                             case _:
-                                raise ValueError(f"Unknown build type: {build_type}")
+                                raise ValueError(f'Unknown build type: {build_type}')
                     else:
                         for record_class in (KonfluxBuildRecord, KonfluxBundleBuildRecord, KonfluxFbcBuildRecord):
                             builds = await fetch_build(record_class)
@@ -293,7 +290,9 @@ class KonfluxBuildHistory(Flask):
                                 break
 
                     if not builds:
-                        self._logger.warning('No builds found for NVR %s record_id %s with state %s', nvr, record_id, outcome)
+                        self._logger.warning(
+                            'No builds found for NVR %s record_id %s with state %s', nvr, record_id, outcome
+                        )
                         result = default_result
 
                     else:
@@ -302,7 +301,10 @@ class KonfluxBuildHistory(Flask):
                         build = builds[0]
                         # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
                         # (golang builder images are incorrectly flagged as embargoed)
-                        is_embargoed = getattr(build, 'embargoed', False) and 'golang' not in (getattr(build, 'group', '') or '').lower()
+                        is_embargoed = (
+                            getattr(build, 'embargoed', False)
+                            and 'golang' not in (getattr(build, 'group', '') or '').lower()
+                        )
                         if is_embargoed:
                             self._logger.warning('Build %s is embargoed, not displaying details', nvr)
                             result = default_result
@@ -314,14 +316,13 @@ class KonfluxBuildHistory(Flask):
                             await self.safe_redis_set(redis_key, json.dumps(result))
 
                 except Exception as e:
-                    self._logger.error(
-                        'Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
+                    self._logger.error('Failed fetching information for build %s with state %s: %s', nvr, outcome, e)
                     result = default_result
 
             # FBCs are tagged to quay.io/redhat-user-workloads/ocp-art-tenant/art-fbc which is already public,
             # so no need for art-images-share pullspec
             if result and build_type != 'fbc':
-                result["art_images_share_pullspec"] = result["image_pullspec"].replace("art-images", "art-images-share")
+                result['art_images_share_pullspec'] = result['image_pullspec'].replace('art-images', 'art-images-share')
 
             # Support JSON download via Accept header or format query param
             if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
@@ -330,15 +331,17 @@ class KonfluxBuildHistory(Flask):
             logs_after = extract_nvr_start_time(nvr)
             logs_after = logs_after.isoformat() if logs_after else None
 
-            return render_template("build.html",
-                                   nvr=nvr,
-                                   build_type=build_type,
-                                   build=result,
-                                   logs_after=logs_after,
-                                   group=group or (result.get('group') if result else None),
-                                   error_message=None)
+            return render_template(
+                'build.html',
+                nvr=nvr,
+                build_type=build_type,
+                build=result,
+                logs_after=logs_after,
+                group=group or (result.get('group') if result else None),
+                error_message=None,
+            )
 
-        @self.route("/logs")
+        @self.route('/logs')
         async def show_logs():
             nvr = request.args.get('nvr')
             record_id = request.args.get('record_id')
@@ -350,14 +353,13 @@ class KonfluxBuildHistory(Flask):
                 start_after = nvr_after
             elif after:
                 try:
-                    start_after = datetime.strptime(after, "%a, %d %b %Y %H:%M:%S %Z")
+                    start_after = datetime.strptime(after, '%a, %d %b %Y %H:%M:%S %Z')
                 except ValueError:
                     try:
                         start_after = datetime.fromisoformat(after)
                     except ValueError:
                         self._logger.warning('Failed parsing logs "after" value: %s', after)
 
-            build_outcome = None
             build_pipeline_url = None
             art_job_url = None
             build_identity = None
@@ -366,7 +368,7 @@ class KonfluxBuildHistory(Flask):
             if not nvr or not record_id:
                 error_message = 'Both nvr and record_id are required to view logs.'
                 return render_template(
-                    "logs.html",
+                    'logs.html',
                     nvr=nvr or '<undefined>',
                     containers=[],
                     logs_available=False,
@@ -374,7 +376,7 @@ class KonfluxBuildHistory(Flask):
                     build_pipeline_url=None,
                     art_job_url=None,
                     build_identity=None,
-                    error_message=error_message
+                    error_message=error_message,
                 )
 
             if record_id or nvr:
@@ -392,7 +394,7 @@ class KonfluxBuildHistory(Flask):
                         builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]
                         if builds:
                             build = builds[0]
-                            build_outcome = getattr(build, 'outcome', None)
+                            getattr(build, 'outcome', None)
                             build_pipeline_url = getattr(build, 'build_pipeline_url', None)
                             art_job_url = getattr(build, 'art_job_url', None)
                             build_identity = {
@@ -416,9 +418,9 @@ class KonfluxBuildHistory(Flask):
                 bq_client = bigquery.BigQueryClient()
                 bq_client.bind(TASKRUN_TABLE_ID)
                 where_clauses = [
-                        Column('creation_time', DateTime) >= start_after,
-                        Column('creation_time', DateTime) < end_after,
-                        Column('record_id', String) == record_id,
+                    Column('creation_time', DateTime) >= start_after,
+                    Column('creation_time', DateTime) < end_after,
+                    Column('record_id', String) == record_id,
                 ]
                 rows = await bq_client.select(where_clauses)
 
@@ -427,18 +429,20 @@ class KonfluxBuildHistory(Flask):
 
             # Support JSON download via Accept header or format query param
             if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
-                return jsonify({
-                    'nvr': nvr,
-                    'record_id': record_id,
-                    'group': group or (build_identity.get('group') if build_identity else None),
-                    'build_identity': build_identity,
-                    'build_pipeline_url': build_pipeline_url,
-                    'art_job_url': art_job_url,
-                    'containers': containers,
-                })
+                return jsonify(
+                    {
+                        'nvr': nvr,
+                        'record_id': record_id,
+                        'group': group or (build_identity.get('group') if build_identity else None),
+                        'build_identity': build_identity,
+                        'build_pipeline_url': build_pipeline_url,
+                        'art_job_url': art_job_url,
+                        'containers': containers,
+                    }
+                )
 
             return render_template(
-                "logs.html",
+                'logs.html',
                 nvr=nvr,
                 record_id=record_id,
                 group=group or (build_identity.get('group') if build_identity else None),
@@ -449,14 +453,14 @@ class KonfluxBuildHistory(Flask):
                 error_message=error_message,
             )
 
-        @self.route("/diff")
+        @self.route('/diff')
         async def show_diff():
             """Show package differences between a build and a comparison build."""
             nvr = request.args.get('nvr')
             record_id = request.args.get('record_id')
             group = request.args.get('group')
             compare_nvr = request.args.get('compare')
-            
+
             error_message = None
             build_identity = None
             compare_identity = None
@@ -468,7 +472,7 @@ class KonfluxBuildHistory(Flask):
             if not nvr or not record_id:
                 error_message = 'Both nvr and record_id are required to view package diff.'
                 return render_template(
-                    "diff.html",
+                    'diff.html',
                     nvr=nvr or '<undefined>',
                     compare_nvr=compare_nvr,
                     group=group,
@@ -476,13 +480,13 @@ class KonfluxBuildHistory(Flask):
                     compare_identity=None,
                     replaced_packages=[],
                     shared_packages=[],
-                    error_message=error_message
+                    error_message=error_message,
                 )
-            
+
             if not compare_nvr:
                 error_message = 'A compare NVR is required to view package diff.'
                 return render_template(
-                    "diff.html",
+                    'diff.html',
                     nvr=nvr,
                     compare_nvr=None,
                     group=group,
@@ -490,7 +494,7 @@ class KonfluxBuildHistory(Flask):
                     compare_identity=None,
                     replaced_packages=[],
                     shared_packages=[],
-                    error_message=error_message
+                    error_message=error_message,
                 )
 
             # Fetch the main build by record_id
@@ -512,7 +516,7 @@ class KonfluxBuildHistory(Flask):
             if not main_build:
                 error_message = f'Unable to find build with record_id: {record_id}'
                 return render_template(
-                    "diff.html",
+                    'diff.html',
                     nvr=nvr,
                     compare_nvr=compare_nvr,
                     group=group,
@@ -520,7 +524,7 @@ class KonfluxBuildHistory(Flask):
                     compare_identity=None,
                     replaced_packages=[],
                     shared_packages=[],
-                    error_message=error_message
+                    error_message=error_message,
                 )
 
             build_identity = {
@@ -584,14 +588,17 @@ class KonfluxBuildHistory(Flask):
                     extra_patterns = {'nvr': compare_nvr}
                     if compare_name:
                         extra_patterns['name'] = compare_name
-                    builds = [build async for build in db.search_builds_by_fields(
-                        start_search=compare_start_search,
-                        end_search=compare_end_search,
-                        where=where,
-                        extra_patterns=extra_patterns,
-                        order_by='end_time',
-                        limit=1
-                    )]
+                    builds = [
+                        build
+                        async for build in db.search_builds_by_fields(
+                            start_search=compare_start_search,
+                            end_search=compare_end_search,
+                            where=where,
+                            extra_patterns=extra_patterns,
+                            order_by='end_time',
+                            limit=1,
+                        )
+                    ]
                     if builds:
                         compare_build = builds[0]
                         break
@@ -599,12 +606,12 @@ class KonfluxBuildHistory(Flask):
                     self._logger.warning('Failed fetching comparison build for diff (%s): %s', record_class, e)
 
             # Build search URL for error message
-            compare_search_url = f"/?name={compare_name}&nvr={compare_nvr}&outcome=success"
+            compare_search_url = f'/?name={compare_name}&nvr={compare_nvr}&outcome=success'
 
             if not compare_build:
                 error_message = f'Unable to find successful build for comparison NVR: {compare_nvr}'
                 return render_template(
-                    "diff.html",
+                    'diff.html',
                     nvr=nvr,
                     compare_nvr=compare_nvr,
                     group=group,
@@ -613,7 +620,7 @@ class KonfluxBuildHistory(Flask):
                     replaced_packages=[],
                     shared_packages=[],
                     error_message=error_message,
-                    compare_search_url=compare_search_url
+                    compare_search_url=compare_search_url,
                 )
 
             compare_identity = {
@@ -645,46 +652,38 @@ class KonfluxBuildHistory(Flask):
             for pkg_name in sorted(all_pkg_names):
                 build_pkg = build_packages_map.get(pkg_name)
                 compare_pkg = compare_packages_map.get(pkg_name)
-                
+
                 if build_pkg and compare_pkg:
                     if build_pkg != compare_pkg:
                         # Package exists in both but version differs
-                        replaced_packages.append({
-                            'name': pkg_name,
-                            'build_version': build_pkg,
-                            'compare_version': compare_pkg
-                        })
+                        replaced_packages.append(
+                            {'name': pkg_name, 'build_version': build_pkg, 'compare_version': compare_pkg}
+                        )
                     else:
                         # Package is identical
                         shared_packages.append(build_pkg)
                 elif build_pkg:
                     # Package only in build (new package)
-                    replaced_packages.append({
-                        'name': pkg_name,
-                        'build_version': build_pkg,
-                        'compare_version': None
-                    })
+                    replaced_packages.append({'name': pkg_name, 'build_version': build_pkg, 'compare_version': None})
                 else:
                     # Package only in comparison (removed package)
-                    replaced_packages.append({
-                        'name': pkg_name,
-                        'build_version': None,
-                        'compare_version': compare_pkg
-                    })
+                    replaced_packages.append({'name': pkg_name, 'build_version': None, 'compare_version': compare_pkg})
 
             # Support JSON download
             if request.args.get('format') == 'json' or request.accept_mimetypes.best == 'application/json':
-                return jsonify({
-                    'nvr': nvr,
-                    'compare_nvr': compare_nvr,
-                    'build_identity': build_identity,
-                    'compare_identity': compare_identity,
-                    'replaced_packages': replaced_packages,
-                    'shared_packages': shared_packages,
-                })
+                return jsonify(
+                    {
+                        'nvr': nvr,
+                        'compare_nvr': compare_nvr,
+                        'build_identity': build_identity,
+                        'compare_identity': compare_identity,
+                        'replaced_packages': replaced_packages,
+                        'shared_packages': shared_packages,
+                    }
+                )
 
             return render_template(
-                "diff.html",
+                'diff.html',
                 nvr=nvr,
                 compare_nvr=compare_nvr,
                 group=group,
@@ -692,11 +691,11 @@ class KonfluxBuildHistory(Flask):
                 compare_identity=compare_identity,
                 replaced_packages=replaced_packages,
                 shared_packages=shared_packages,
-                error_message=error_message
+                error_message=error_message,
             )
 
     async def query(self, params: dict, outcomes: list = None):
-        self._logger.info("Search Parameters: %s, Outcomes: %s", params, outcomes)
+        self._logger.info('Search Parameters: %s, Outcomes: %s', params, outcomes)
 
         where_clauses = {}
 
@@ -721,7 +720,6 @@ class KonfluxBuildHistory(Flask):
         warnings = []
 
         name = params.get('name', '').strip()
-        original_name = name
         if name:
             # NVRs often have "-container" suffix, but the "name" column in the database does not
             if name.endswith('-container'):
@@ -769,7 +767,7 @@ class KonfluxBuildHistory(Flask):
         date_range = params.get('dateRange', '').strip()
         start_search = None
         end_search = None
-        
+
         if date_range:
             dates = date_range.split(' to ')
             try:
@@ -777,18 +775,20 @@ class KonfluxBuildHistory(Flask):
                     start_search = datetime.strptime(dates[0].strip(), '%Y-%m-%d').replace(tzinfo=timezone.utc)
                 if len(dates) > 1 and dates[1]:
                     # Set end date to end of day (UTC)
-                    end_search = datetime.strptime(dates[1].strip(), '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+                    end_search = datetime.strptime(dates[1].strip(), '%Y-%m-%d').replace(
+                        hour=23, minute=59, second=59, tzinfo=timezone.utc
+                    )
                 elif start_search:
                     # Single date provided - treat as one-day range
                     end_search = start_search.replace(hour=23, minute=59, second=59)
             except Exception as e:
                 self._logger.warning('Failed parsing date range %s: %s', date_range, e)
-        
+
         # Check if NVR has an embedded datetime
         nvr_datetime = self.extract_nvr_start_time(nvr) if nvr else None
         if nvr_datetime:
             nvr_datetime = nvr_datetime.replace(tzinfo=timezone.utc)
-        
+
         if not start_search:
             # If NVR contains a datetime, use it to set a narrow search window
             if nvr_datetime:
@@ -798,13 +798,15 @@ class KonfluxBuildHistory(Flask):
                 # Require either a date range or an NVR with a datetime
                 return {
                     'error': 'A date range or an NVR with an embedded datetime is required for search.',
-                    'builds': []
+                    'builds': [],
                 }
         elif nvr_datetime:
             # Both explicit date range and NVR datetime provided - check for contradiction
             nvr_date_str = nvr_datetime.strftime('%Y-%m-%d')
             if nvr_datetime < start_search or nvr_datetime > end_search:
-                warnings.append(f'The NVR contains datetime {nvr_date_str}, which is outside the specified date range. Results may be empty.')
+                warnings.append(
+                    f'The NVR contains datetime {nvr_date_str}, which is outside the specified date range. Results may be empty.'
+                )
 
         # Exclude large columns from search results to reduce data transfer and BigQuery costs
         # These columns are only needed when viewing specific build details
@@ -815,15 +817,18 @@ class KonfluxBuildHistory(Flask):
             # Create separate KonfluxDb instance to avoid bind() race condition when running queries in parallel
             db = KonfluxDb()
             db.bind(record_class)
-            builds = [build async for build in db.search_builds_by_fields(
-                start_search=start_search,
-                end_search=end_search,
-                where=where_clauses,
-                extra_patterns=extra_patterns,
-                order_by='end_time',
-                limit=MAX_BUILDS,
-                exclude_columns=exclude_columns
-            )]
+            builds = [
+                build
+                async for build in db.search_builds_by_fields(
+                    start_search=start_search,
+                    end_search=end_search,
+                    where=where_clauses,
+                    extra_patterns=extra_patterns,
+                    order_by='end_time',
+                    limit=MAX_BUILDS,
+                    exclude_columns=exclude_columns,
+                )
+            ]
             if filter_embargoed:
                 # Consider build embargoed only if embargoed flag is True AND group doesn't contain "golang"
                 # (golang builder images are incorrectly flagged as embargoed)
@@ -831,9 +836,11 @@ class KonfluxBuildHistory(Flask):
             return builds
 
         tasks = [
-            search_for_build_type(KonfluxBuildRecord, filter_embargoed=True, exclude_columns=IMAGE_BUILD_EXCLUDE_COLUMNS),
+            search_for_build_type(
+                KonfluxBuildRecord, filter_embargoed=True, exclude_columns=IMAGE_BUILD_EXCLUDE_COLUMNS
+            ),
             search_for_build_type(KonfluxBundleBuildRecord),
-            search_for_build_type(KonfluxFbcBuildRecord)
+            search_for_build_type(KonfluxFbcBuildRecord),
         ]
         image_builds, bundle_builds, fbc_builds = await asyncio.gather(*tasks)
 
@@ -842,6 +849,7 @@ class KonfluxBuildHistory(Flask):
 
         # Filter by ART job URL if specified (match any encoded variant as substring)
         if art_job_url_variants:
+
             def matches_art_job_url(build):
                 value = getattr(build, 'art_job_url', None)
                 if not value:
@@ -856,44 +864,50 @@ class KonfluxBuildHistory(Flask):
             sha_pattern = re.compile(f'.*sha256:{re.escape(image_sha_tag)}.*', re.IGNORECASE)
             tag_pattern = re.compile(f'.*{re.escape(image_sha_tag)}.*', re.IGNORECASE)
             all_builds = [
-                b for b in all_builds
+                b
+                for b in all_builds
                 if (hasattr(b, 'image_pullspec') and b.image_pullspec and sha_pattern.match(b.image_pullspec))
                 or (hasattr(b, 'image_tag') and b.image_tag and tag_pattern.match(b.image_tag))
                 or (hasattr(b, 'nvr') and b.nvr and tag_pattern.match(b.nvr))
             ]
 
-        all_builds = sorted(all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True)
+        all_builds = sorted(
+            all_builds, key=lambda record: record.end_time if record.end_time else record.start_time, reverse=True
+        )
         all_builds = all_builds[:MAX_BUILDS]  # Limit to MAX_BUILDS
 
         def get_build_type(build):
             if isinstance(build, KonfluxFbcBuildRecord):
-                return "fbc"
+                return 'fbc'
             elif isinstance(build, KonfluxBundleBuildRecord):
-                return "bundle"
+                return 'bundle'
             elif isinstance(build, KonfluxBuildRecord):
-                return "image"
-            raise ValueError(f"Unknown build type: {type(build)}")
+                return 'image'
+            raise ValueError(f'Unknown build type: {type(build)}')
 
         results = [
             {
-                "name": b.name,
-                "nvr": b.nvr,
-                "outcome": str(b.outcome),
-                "assembly": b.assembly,
-                "group": b.group,
-                "commitish": b.commitish,
-                "time": b.end_time.strftime("%B %d, %Y, %I:%M:%S %p") if b.end_time else b.start_time.strftime("%B %d, %Y, %I:%M:%S %p"),
-                "engine": str(b.engine),
-                "source": b.source_repo or '',
-                "source_repo": b.source_repo or '',
-                "image_pullspec": getattr(b, 'image_pullspec', '') or '',
-                "image_tag": getattr(b, 'image_tag', '') or '',
-                "pipeline URL": b.build_pipeline_url,
-                "art-job-url": b.art_job_url,
-                "type": get_build_type(b),
-                "record_id": b.record_id,
-                "start_time": b.start_time,
-            } for b in all_builds
+                'name': b.name,
+                'nvr': b.nvr,
+                'outcome': str(b.outcome),
+                'assembly': b.assembly,
+                'group': b.group,
+                'commitish': b.commitish,
+                'time': b.end_time.strftime('%B %d, %Y, %I:%M:%S %p')
+                if b.end_time
+                else b.start_time.strftime('%B %d, %Y, %I:%M:%S %p'),
+                'engine': str(b.engine),
+                'source': b.source_repo or '',
+                'source_repo': b.source_repo or '',
+                'image_pullspec': getattr(b, 'image_pullspec', '') or '',
+                'image_tag': getattr(b, 'image_tag', '') or '',
+                'pipeline URL': b.build_pipeline_url,
+                'art-job-url': b.art_job_url,
+                'type': get_build_type(b),
+                'record_id': b.record_id,
+                'start_time': b.start_time,
+            }
+            for b in all_builds
         ]
 
         # Return the results along with any warnings
@@ -919,5 +933,5 @@ class KonfluxBuildHistory(Flask):
 app = KonfluxBuildHistory()
 
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8000)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8000)

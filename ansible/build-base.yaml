@@ -1,0 +1,53 @@
+---
+- name: Build base image with dependencies
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    namespace: "{{ lookup('env', 'OPENSHIFT_NAMESPACE') }}"
+
+  tasks:
+    - name: Validate OPENSHIFT_NAMESPACE is set
+      ansible.builtin.fail:
+        msg: |
+          OPENSHIFT_NAMESPACE environment variable is not set
+
+          Please set:
+            export OPENSHIFT_NAMESPACE=your-namespace-name
+      when: namespace == ""
+
+    - name: Start base image build
+      ansible.builtin.shell: oc start-build art-build-history-base -n {{ namespace }} -o name
+      register: base_build_result
+      changed_when: true
+
+    - name: Extract base build name
+      ansible.builtin.set_fact:
+        base_build_name: "{{ base_build_result.stdout | regex_replace('^build.build.openshift.io/', '') }}"
+
+    - name: Display build info
+      ansible.builtin.debug:
+        msg: "Building base image: {{ base_build_name }} (this may take 2-3 minutes)"
+
+    - name: Wait for base build to complete
+      ansible.builtin.shell: oc get build {{ base_build_name }} -n {{ namespace }} -o jsonpath='{.status.phase}'
+      register: base_build_status
+      until: base_build_status.stdout in ['Complete', 'Failed', 'Error', 'Cancelled']
+      retries: 60
+      delay: 10
+      changed_when: false
+
+    - name: Check base build succeeded
+      ansible.builtin.fail:
+        msg: "Base build failed with status: {{ base_build_status.stdout }}"
+      when: base_build_status.stdout != 'Complete'
+
+    - name: Base build complete
+      ansible.builtin.debug:
+        msg: |
+          Base image build complete!
+
+          Image: art-build-history:base
+
+          Next step:
+            Build app image: ansible-playbook ansible/update.yaml

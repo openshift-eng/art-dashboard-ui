@@ -1,8 +1,0 @@
-aiohttp
-flask
-Flask[async]
-redis
-rh-art-tools @ git+https://github.com/openshift-eng/art-tools.git@main
-ruamel.yaml
-semver
-tenacity
