@@ -1,0 +1,16 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  labels:
+    build: art-build-history
+  name: art-build-history
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - name: base
+    annotations:
+      description: Base image with all dependencies
+  - name: latest
+    annotations:
+      description: Application image with code

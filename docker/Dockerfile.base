@@ -1,0 +1,20 @@
+FROM registry.redhat.io/ubi8/python-311
+
+USER root
+WORKDIR /app
+
+# Install git (needed for rh-art-tools dependency)
+RUN dnf update -y && dnf install -y git && dnf clean all
+
+# Install uv
+RUN wget -qO- https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin/:$PATH"
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies only (not the package itself)
+RUN uv sync --no-dev --frozen --no-install-project
+
+# Switch to non-root user
+USER 1001

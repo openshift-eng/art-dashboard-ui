@@ -19,12 +19,16 @@ spec:
     type: Git
   strategy:
     dockerStrategy:
+      dockerfilePath: docker/Dockerfile
       from:
-        kind: DockerImage
-        name: registry.redhat.io/ubi8/python-311:1-86
+        kind: ImageStreamTag
+        name: art-build-history:base
     type: Docker
   successfulBuildsHistoryLimit: 5
   triggers:
   - type: ConfigChange
-  - imageChange: {}
+  - imageChange:
+      from:
+        kind: ImageStreamTag
+        name: art-build-history:base
     type: ImageChange

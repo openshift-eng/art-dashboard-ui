@@ -1,0 +1,124 @@
+---
+- name: Setup ART Build History resources in OpenShift
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    namespace: "{{ lookup('env', 'OPENSHIFT_NAMESPACE') }}"
+    redis_password: "{{ lookup('env', 'REDIS_PASSWORD') }}"
+    gcp_credentials_path: "{{ lookup('env', 'GOOGLE_APPLICATION_CREDENTIALS') }}"
+    gcp_credentials_content: "{{ lookup('file', gcp_credentials_path) | b64encode }}"
+
+  tasks:
+    # Validation
+    - name: Validate OPENSHIFT_NAMESPACE is set
+      ansible.builtin.fail:
+        msg: |
+          OPENSHIFT_NAMESPACE environment variable is not set
+
+          Please create or select a namespace first, then set:
+            export OPENSHIFT_NAMESPACE=your-namespace-name
+      when: namespace == ""
+
+    - name: Validate REDIS_PASSWORD is set
+      ansible.builtin.fail:
+        msg: "REDIS_PASSWORD environment variable is not set"
+      when: redis_password == ""
+
+    - name: Validate GOOGLE_APPLICATION_CREDENTIALS is set
+      ansible.builtin.fail:
+        msg: "GOOGLE_APPLICATION_CREDENTIALS environment variable is not set"
+      when: gcp_credentials_path == ""
+
+    - name: Validate GCP credentials file exists
+      ansible.builtin.stat:
+        path: "{{ gcp_credentials_path }}"
+      register: gcp_file
+      failed_when: not gcp_file.stat.exists
+
+    # Secrets
+    - name: Create redis-server-password secret
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: redis-server-password
+          type: Opaque
+          stringData:
+            password: "{{ redis_password }}"
+
+    - name: Create gcp-credentials secret
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: gcp-credentials
+          type: Opaque
+          data:
+            gcp-credentials.json: "{{ gcp_credentials_content }}"
+
+    # ImageStream
+    - name: Create ImageStream
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/is.yaml"
+
+    # BuildConfigs
+    - name: Create base BuildConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/buildconfig-base.yaml"
+
+    - name: Create app BuildConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/buildconfig-app.yaml"
+
+    # Service
+    - name: Create Service
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/service.yaml"
+
+    # Route
+    - name: Create Route
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/route.yaml"
+
+    # DeploymentConfig
+    - name: Create DeploymentConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/deploymentconfig.yaml"
+
+    - name: Setup complete
+      ansible.builtin.debug:
+        msg: |
+          Setup complete!
+
+          Resources created in namespace: {{ namespace }}
+          - Secrets: redis-server-password, gcp-credentials
+          - ImageStream: art-build-history (tags: base, latest)
+          - BuildConfigs: art-build-history-base, art-build-history
+          - Service: art-build-history
+          - Route: art-build-history
+          - DeploymentConfig: art-build-history
+
+          Next steps:
+            1. Build base image: ansible-playbook ansible/build-base.yaml
+            2. Build app image: ansible-playbook ansible/update.yaml
+
+          Or run both: ansible-playbook ansible/build-all.yaml

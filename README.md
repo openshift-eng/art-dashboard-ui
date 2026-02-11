@@ -1,31 +1,73 @@
-# ART build history
+# ART Build History
+
 Search for build records in BigQuery, and display the results in a table view.
 
-- set the search filters as needed
-- click "Search" to look up build records in BigQuery; results are cached client-side
-- tune the filters to limit the displayed results; click "Filter" to affect the rendered HTML; cached results are not cleared
-- you can share a search by copying the full URL containing the query string
+## Features
 
-# Deployment
+- Set search filters as needed
+- Click "Search" to look up build records in BigQuery; results are cached client-side
+- Tune the filters to limit the displayed results; click "Filter" to affect the rendered HTML; cached results are not cleared
+- Share a search by copying the full URL containing the query string
 
-The application depends on GCP credentials to access BigQuery API. You should have a .json file with the appplication
-credentials. Create a secret with the contenst of this file:
+## Deployment
+
+For complete deployment instructions, including two-stage Docker builds, secrets management, and troubleshooting, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+
+Quick start:
+
 ```bash
-oc -n <your-project> create secret generic gcp-credentials --from-file=gcp-credentials.json=/path/to/creds.json
+# Create or select namespace
+oc new-project my-namespace  # or: oc project existing-namespace
+
+# Set environment variables (REQUIRED)
+export OPENSHIFT_NAMESPACE=$(oc project -q)
+export REDIS_PASSWORD="your-redis-password"
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/gcp-credentials.json"
+
+# Deploy everything (secrets, builds, deployment)
+ansible-playbook ansible/deploy.yaml
 ```
 
-Then, simply create all needed resources using the `resources` folder contents:
+## Local Development
+
 ```bash
-oc -n <your-project> create -f resources/is.yaml
-oc -n <your-project> create -f resources/buildconfig.yaml
-oc -n <your-project> create -f resources/deploymentconfig.yaml
-oc -n <your-project> create -f resources/service.yaml
-oc -n <your-project> create -f resources/route.yaml
+# Setup virtual environment
+make venv
+
+# Run linter
+make lint
+
+# Auto-fix code issues
+make fix
+
+# Build Docker images
+make docker-base    # Build base image with dependencies (slow)
+make docker-build   # Build app image (fast)
+
+# Run locally
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/gcp-credentials.json"
+make docker-run
 ```
 
-You can also expose the service using oc rather than creating the route from the yaml definition, but in this case
-you'll need to patch its definition to terminate SSL/TLS encryption at the OpenShift router:
-```bash
-oc expose svc/art-build-history --name=art-build-history --port=8000
-oc patch route/art-build-history -p '{"spec":{"tls":{"termination":"edge"}}}'
-```
+Access the app at http://localhost:8000
+
+## Project Structure
+
+- `app.py` - Main Flask application
+- `static/` - Static assets (CSS, JS)
+- `templates/` - HTML templates
+- `docker/` - Dockerfiles for local development and OpenShift builds
+  - `Dockerfile` - App image (uses base image)
+  - `Dockerfile.base` - Base image with dependencies
+- `ansible/` - Ansible playbooks for deployment automation
+  - `deploy.yaml` - Full deployment (setup + build all)
+  - `setup.yaml` - Create all resources (run once)
+  - `build-base.yaml` - Build base image with dependencies
+  - `update.yaml` - Fast app rebuild
+  - `build-all.yaml` - Build base + app images
+- `openshift/` - OpenShift manifests
+  - BuildConfigs, DeploymentConfig, Service, Route, ImageStream
+- `pyproject.toml` - Python dependencies and project metadata
+- `uv.lock` - Locked dependency versions
+- `Makefile` - Development commands
+- `DEPLOYMENT.md` - Complete deployment guide
