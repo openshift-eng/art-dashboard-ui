@@ -53,6 +53,12 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+.pytest_cache/
+coverage/
+
+# Node modules
+node_modules/
+package-lock.json
 
 # Translations
 *.mo

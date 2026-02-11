@@ -1,4 +1,4 @@
-.PHONY: venv lint fix docker-base docker-build docker-run
+.PHONY: venv lint fix test test-python test-js docker-base docker-build docker-run
 
 venv:
 	uv venv --python 3.11 --clear
@@ -13,6 +13,16 @@ fix:
 	uv run ruff check --select I --fix
 	uv run ruff format
 	uv run ruff check --fix --unsafe-fixes
+
+test: test-python test-js
+
+test-python:
+	uv sync --group test
+	uv run pytest tests/ -v
+
+test-js:
+	npm install
+	npm test
 
 docker-base:
 	podman build -f docker/Dockerfile.base -t build-history-base:latest .

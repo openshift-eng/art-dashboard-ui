@@ -19,6 +19,11 @@ dev = [
     "pylint>=4.0.4",
     "ruff>=0.14.9",
 ]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+]
 
 [tool.ruff]
 line-length = 120
