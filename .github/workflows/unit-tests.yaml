@@ -36,5 +36,19 @@ jobs:
       - name: Create venv and install dependencies
         run: make venv
 
-      - name: Run tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node.js dependencies
+        run: npm install
+
+      - name: Run linting
         run: make lint
+
+      - name: Run Python tests
+        run: make test-python
+
+      - name: Run JavaScript tests
+        run: make test-js
