@@ -1,4 +1,4 @@
-.PHONY: venv lint fix test test-python test-js docker-base docker-build docker-run
+.PHONY: venv lint fix test test-python test-js docker-base docker-build docker-run deploy deploy-setup deploy-base deploy-all check-namespace check-secrets
 
 venv:
 	uv venv --python 3.11 --clear
@@ -53,3 +53,36 @@ docker-run:
 		-e GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/gcp/$$CREDS_FILE \
 		-v "$$CREDS_DIR:/etc/secrets/gcp:ro,Z" \
 		build-history:latest
+
+# OpenShift deployment checks
+check-namespace:
+	@if [ -z "$$OPENSHIFT_NAMESPACE" ]; then \
+		echo "Error: OPENSHIFT_NAMESPACE environment variable is not set"; \
+		echo ""; \
+		echo "Please set it explicitly:"; \
+		echo "  export OPENSHIFT_NAMESPACE=art-build-history"; \
+		exit 1; \
+	fi
+
+check-secrets:
+	@if [ -z "$$REDIS_PASSWORD" ]; then \
+		echo "Error: REDIS_PASSWORD environment variable is not set"; \
+		exit 1; \
+	fi; \
+	if [ -z "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
+		echo "Error: GOOGLE_APPLICATION_CREDENTIALS environment variable is not set"; \
+		exit 1; \
+	fi
+
+# OpenShift deployment targets
+deploy: check-namespace
+	ansible-playbook ansible/update.yaml
+
+deploy-setup: check-namespace check-secrets
+	ansible-playbook ansible/setup.yaml
+
+deploy-base: check-namespace
+	ansible-playbook ansible/build-base.yaml
+
+deploy-all: check-namespace check-secrets
+	ansible-playbook ansible/deploy.yaml
