@@ -303,8 +303,10 @@ function createRow(result) {
         const lastPart = urlParts[urlParts.length - 1];
         // Extract the suffix after the last dash (e.g., "tr79m" from "ose-4-13-ose-baremetal-installer-tr79m")
         const dashIndex = lastPart.lastIndexOf('-');
-        const pipelineRunSuffix = dashIndex !== -1 ? lastPart.substring(dashIndex + 1) : lastPart;
-        pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run">${pipelineRunSuffix}</a>`;
+        let pipelineRunSuffix = dashIndex !== -1 ? lastPart.substring(dashIndex + 1) : lastPart;
+        // Take only last 6 characters to keep it compact
+        pipelineRunSuffix = pipelineRunSuffix.slice(-6);
+        pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run: ${lastPart}">${pipelineRunSuffix}</a>`;
     }
 
     // Create the row
