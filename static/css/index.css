@@ -158,7 +158,13 @@ td.nvr-td {
 }
 
 th.links-th {
-    min-width: 150px;
+    min-width: 100px;
+}
+
+th[data-column="plr"],
+td[data-column="plr"] {
+    width: 80px;
+    max-width: 80px;
 }
 
 td a {
@@ -301,10 +307,14 @@ select option {
 #helpIcon {
     font-size: 18px;
     background-color: #555;
-    padding: 5px;
+    padding: 7px;
     border-radius: 50%;
     margin-left: 10px;
     cursor: pointer;
+}
+
+#helpIcon:hover {
+    background-color: #4caf50;
 }
 
 /* Autocomplete styles */
@@ -533,4 +543,97 @@ select option {
         transform: translateX(100%);
         opacity: 0;
     }
+}
+
+/* Column visibility dropdown */
+#columnToggleIcon {
+    font-size: 18px;
+    background-color: #555;
+    padding: 5px;
+    border-radius: 50%;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+#columnToggleIcon:hover {
+    background-color: #4caf50;
+}
+
+.column-visibility-dropdown {
+    position: fixed;
+    bottom: 40px;
+    right: 60px;
+    background-color: #2b2b2b;
+    border: 1px solid #444;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    min-width: 180px;
+}
+
+.column-visibility-header {
+    padding: 12px;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+    background-color: #333;
+    border-radius: 6px 6px 0 0;
+    text-align: center;
+}
+
+.column-visibility-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #f0f0f0;
+    border-bottom: 1px solid #444;
+    transition: background-color 0.2s;
+}
+
+.column-visibility-option:last-child {
+    border-bottom: none;
+    border-radius: 0 0 6px 6px;
+}
+
+.column-visibility-option:hover {
+    background-color: #444;
+}
+
+.column-visibility-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+    accent-color: #4caf50;
+    cursor: pointer;
+}
+
+.column-visibility-option span {
+    font-size: 14px;
+}
+
+/* Hide columns based on data-column attribute */
+th[data-column].hidden,
+td[data-column].hidden {
+    display: none;
+}
+
+/* Checkbox label styling */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: #f0f0f0;
+    font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    accent-color: #4caf50;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    font-size: 14px;
 }
