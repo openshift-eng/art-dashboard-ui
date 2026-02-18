@@ -285,38 +285,43 @@ function createRow(result) {
         "pending": "⏳",
     }[outcome] || outcome;
 
-    // Engine icons
-    const engine = result.engine?.toLowerCase() || "";
-    const engineIcons = {
-        "konflux": '<img src="static/images/konflux.png" alt="Konflux" title="Konflux" style="height: 25px;">',
-        "brew": '<img src="static/images/brew.png" alt="Brew" title="Brew" style="height: 25px;">',
-    };
-    const engineDisplay = engineIcons[engine] || engine;
-
     // Build time + relative time
     const buildTime = result["time"];
     const localBuildTime = new Date(buildTime + " UTC").toLocaleString();
     const completedBuildTime = timeAgo(buildTime);
     const buildTimeDisplay = `${localBuildTime}<br><em style="color: #777;">(${completedBuildTime})</em>`;
 
-    // Create the row
+    // Source commit link
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}/tree/${result.commitish}" target="_blank" title="View source tree">${shortCommit}</a>` : '';
+
+    // Extract pipeline run suffix from pipeline URL
+    const pipelineUrl = result["pipeline URL"] || "";
+    let pipelineRunLink = "";
+    if (pipelineUrl) {
+        const urlParts = pipelineUrl.split('/');
+        const lastPart = urlParts[urlParts.length - 1];
+        // Extract the suffix after the last dash (e.g., "tr79m" from "ose-4-13-ose-baremetal-installer-tr79m")
+        const dashIndex = lastPart.lastIndexOf('-');
+        const pipelineRunSuffix = dashIndex !== -1 ? lastPart.substring(dashIndex + 1) : lastPart;
+        pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run">${pipelineRunSuffix}</a>`;
+    }
+
+    // Create the row
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     const outcomeParam = result.outcome ? `&outcome=${encodeURIComponent(result.outcome)}` : '';
     const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
     row.innerHTML = `
-        <td>${result["name"]}</td>
-        <td>${outcomeDisplay}</td>
-        <td class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
-        <td>${sourceLink}</td>
-        <td>${result["assembly"]}</td>
-        <td>${result["group"]}</td>
-        <td>${buildTimeDisplay}</td>
-        <td>${engineDisplay}</td>
-        <td>
+        <td data-column="name">${result["name"]}</td>
+        <td data-column="outcome">${outcomeDisplay}</td>
+        <td data-column="nvr" class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
+        <td data-column="source">${sourceLink}</td>
+        <td data-column="assembly">${result["assembly"]}</td>
+        <td data-column="group">${result["group"]}</td>
+        <td data-column="time">${buildTimeDisplay}</td>
+        <td data-column="plr">${pipelineRunLink}</td>
+        <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
-            <a href="${result["pipeline URL"]}" target="_blank" title="Build pipeline URL">🛠️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
         </td>
     `;
@@ -340,17 +345,64 @@ function displayResults(results) {
     const tableBody = document.querySelector("#resultsTable tbody");
     tableBody.innerHTML = "";
 
-    if (results.length === 0) {
+    // Always filter out pending builds that have completed versions
+    const filteredResults = filterDuplicatePending(results);
+
+    if (filteredResults.length === 0) {
         document.getElementById("noResultsMessage").style.display = "block";
     } else {
         document.getElementById("noResultsMessage").style.display = "none";
-        results.forEach(result => {
+        filteredResults.forEach(result => {
             const row = createRow(result);
             tableBody.appendChild(row);
         });
+
+        // Reapply column visibility to newly created rows
+        const visibility = loadColumnVisibility();
+        applyColumnVisibility(visibility);
     }
 
-    updateStatusBar(cachedResults.length, results.length);
+    updateStatusBar(cachedResults.length, filteredResults.length);
+}
+
+function filterDuplicatePending(results) {
+    // Group results by NVR
+    const nvrGroups = {};
+
+    results.forEach(result => {
+        const nvr = result.nvr;
+        if (!nvrGroups[nvr]) {
+            nvrGroups[nvr] = [];
+        }
+        nvrGroups[nvr].push(result);
+    });
+
+    // Filter out pending builds that have a completed version
+    const filteredResults = [];
+
+    Object.values(nvrGroups).forEach(group => {
+        // Check if there's both a pending and a completed build
+        const hasPending = group.some(r => r.outcome?.toLowerCase() === 'pending');
+        const hasCompleted = group.some(r => {
+            const outcome = r.outcome?.toLowerCase();
+            return outcome === 'success' || outcome === 'failure';
+        });
+
+        if (hasPending && hasCompleted) {
+            // Only include the completed builds
+            group.forEach(result => {
+                const outcome = result.outcome?.toLowerCase();
+                if (outcome === 'success' || outcome === 'failure') {
+                    filteredResults.push(result);
+                }
+            });
+        } else {
+            // Include all builds for this NVR
+            filteredResults.push(...group);
+        }
+    });
+
+    return filteredResults;
 }
 
 function performSearch(queryParams = null) {
@@ -893,12 +945,109 @@ function extractNvrDatetime(nvr) {
     }
 }
 
+// Column visibility management
+const COLUMN_VISIBILITY_KEY = 'columnVisibility';
+
+function loadColumnVisibility() {
+    const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error('Error parsing column visibility from localStorage:', e);
+        }
+    }
+    // Default: all columns visible
+    return {
+        name: true,
+        outcome: true,
+        nvr: true,
+        source: true,
+        assembly: true,
+        group: true,
+        time: true,
+        plr: true,
+        links: true
+    };
+}
+
+function saveColumnVisibility(visibility) {
+    localStorage.setItem(COLUMN_VISIBILITY_KEY, JSON.stringify(visibility));
+}
+
+function applyColumnVisibility(visibility) {
+    // Apply to table headers
+    document.querySelectorAll('th[data-column]').forEach(th => {
+        const column = th.dataset.column;
+        if (visibility[column] === false) {
+            th.classList.add('hidden');
+        } else {
+            th.classList.remove('hidden');
+        }
+    });
+
+    // Apply to table cells
+    document.querySelectorAll('td[data-column]').forEach(td => {
+        const column = td.dataset.column;
+        if (visibility[column] === false) {
+            td.classList.add('hidden');
+        } else {
+            td.classList.remove('hidden');
+        }
+    });
+}
+
+function setupColumnVisibilityToggle() {
+    const toggleIcon = document.getElementById('columnToggleIcon');
+    const dropdown = document.getElementById('columnVisibilityDropdown');
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+
+    // Load saved visibility state
+    const visibility = loadColumnVisibility();
+
+    // Set checkbox states from saved visibility
+    checkboxes.forEach(cb => {
+        const column = cb.dataset.column;
+        cb.checked = visibility[column] !== false;
+    });
+
+    // Apply initial visibility
+    applyColumnVisibility(visibility);
+
+    // Toggle dropdown on icon click
+    toggleIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Handle checkbox changes
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const column = cb.dataset.column;
+            visibility[column] = cb.checked;
+            saveColumnVisibility(visibility);
+            applyColumnVisibility(visibility);
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!toggleIcon.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    // Setup column visibility toggle
+    setupColumnVisibilityToggle();
+
     // Check URL parameters to determine date range initialization
     const urlParams = new URLSearchParams(window.location.search);
     const urlDateRange = urlParams.get('dateRange');
     const urlNvr = urlParams.get('nvr');
-    
+
     let datePickerDefault = null;
     
     if (urlDateRange) {

@@ -113,15 +113,15 @@
         <table id="resultsTable">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Outcome</th>
-                    <th>NVR</th>
-                    <th>Source</th>
-                    <th>Assembly</th>
-                    <th>Group</th>
-                    <th>Time</th>
-                    <th>Engine</th>
-                    <th class="links-th">Links</th>
+                    <th data-column="name">Name</th>
+                    <th data-column="outcome">Outcome</th>
+                    <th data-column="nvr">NVR</th>
+                    <th data-column="source">Source</th>
+                    <th data-column="assembly">Assembly</th>
+                    <th data-column="group">Group</th>
+                    <th data-column="time">Time</th>
+                    <th data-column="plr">PLR</th>
+                    <th data-column="links" class="links-th">Links</th>
                 </tr>
             </thead>
             <tbody>
@@ -164,7 +164,49 @@
             Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
         </span>
         <span id="warningIndicator" class="warning-indicator" style="display: none;" title="Click to show warnings">⚠️</span>
+        <span id="columnToggleIcon" title="Toggle column visibility">⚙️</span>
         <span id="helpIcon" style="cursor: pointer;">?</span>
+    </div>
+
+    <!-- Column visibility dropdown -->
+    <div id="columnVisibilityDropdown" class="column-visibility-dropdown" style="display: none;">
+        <div class="column-visibility-header">Show/Hide Columns</div>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="name" checked>
+            <span>Name</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="outcome" checked>
+            <span>Outcome</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="nvr" checked>
+            <span>NVR</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="source" checked>
+            <span>Source</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="assembly" checked>
+            <span>Assembly</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="group" checked>
+            <span>Group</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="time" checked>
+            <span>Time</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="plr" checked>
+            <span>PLR</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="links" checked>
+            <span>Links</span>
+        </label>
     </div>
 {% endblock %}
 
