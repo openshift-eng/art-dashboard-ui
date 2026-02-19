@@ -4,6 +4,11 @@ let allSourceRepos = [];
 let highlightedIndex = -1;
 let lastSearchParamsKey = '';
 
+// Sorting state
+let currentSortColumn = null;
+let currentSortDirection = null; // 'asc' or 'desc'
+const SORT_STATE_KEY = 'tableSortState';
+
 function buildParamsKey(params) {
     const entries = Array.from(params.entries()).sort(([aKey, aVal], [bKey, bVal]) => {
         if (aKey === bKey) return aVal.localeCompare(bVal);
@@ -35,6 +40,148 @@ function updateFilterButtonVisibility() {
     } else {
         filterButton.style.display = "none";
     }
+}
+
+/**
+ * Loads sort state from localStorage.
+ */
+function loadSortState() {
+    const saved = localStorage.getItem(SORT_STATE_KEY);
+    if (saved) {
+        try {
+            const state = JSON.parse(saved);
+            currentSortColumn = state.column;
+            currentSortDirection = state.direction;
+        } catch (e) {
+            console.error('Error loading sort state:', e);
+        }
+    }
+}
+
+/**
+ * Saves sort state to localStorage.
+ */
+function saveSortState() {
+    if (currentSortColumn && currentSortDirection) {
+        localStorage.setItem(SORT_STATE_KEY, JSON.stringify({
+            column: currentSortColumn,
+            direction: currentSortDirection
+        }));
+    }
+}
+
+/**
+ * Updates the visual indicators on table headers to show current sort state.
+ */
+function updateSortIndicators() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        const column = th.dataset.column;
+        if (column === currentSortColumn) {
+            th.classList.add(`sort-${currentSortDirection}`);
+        }
+    });
+}
+
+/**
+ * Sorts results based on the specified column.
+ */
+function sortResults(results, column, direction) {
+    const sorted = [...results]; // Create a copy to avoid mutating original
+
+    sorted.sort((a, b) => {
+        let aVal, bVal;
+
+        // Get values based on column
+        switch (column) {
+            case 'name':
+                aVal = a.name || '';
+                bVal = b.name || '';
+                break;
+            case 'outcome':
+                // Sort order: failure, pending, success
+                const outcomeOrder = { 'failure': 0, 'pending': 1, 'success': 2 };
+                aVal = outcomeOrder[a.outcome] ?? 3;
+                bVal = outcomeOrder[b.outcome] ?? 3;
+                break;
+            case 'nvr':
+                aVal = a.nvr || '';
+                bVal = b.nvr || '';
+                break;
+            case 'source':
+                aVal = a.source || '';
+                bVal = b.source || '';
+                break;
+            case 'assembly':
+                aVal = a.assembly || '';
+                bVal = b.assembly || '';
+                break;
+            case 'group':
+                aVal = a.group || '';
+                bVal = b.group || '';
+                break;
+            case 'time':
+                // Use start_time for sorting (already in Date format from backend)
+                aVal = a.start_time ? new Date(a.start_time).getTime() : 0;
+                bVal = b.start_time ? new Date(b.start_time).getTime() : 0;
+                break;
+            case 'plr':
+                aVal = a['pipeline URL'] || '';
+                bVal = b['pipeline URL'] || '';
+                break;
+            default:
+                return 0;
+        }
+
+        // Compare values
+        let comparison = 0;
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            comparison = aVal - bVal;
+        } else {
+            const aStr = String(aVal).toLowerCase();
+            const bStr = String(bVal).toLowerCase();
+            comparison = aStr.localeCompare(bStr);
+        }
+
+        // Apply direction
+        return direction === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+}
+
+/**
+ * Handles clicking on a sortable column header.
+ */
+function handleColumnSort(column) {
+    // Toggle direction if clicking the same column, otherwise default to ascending
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+
+    saveSortState();
+    updateSortIndicators();
+
+    // Re-display results with new sort
+    const form = document.getElementById("searchForm");
+    const formData = new FormData(form);
+    const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+    displayResults(filteredResults);
+}
+
+/**
+ * Sets up click handlers for sortable column headers.
+ */
+function setupColumnSorting() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+            const column = th.dataset.column;
+            handleColumnSort(column);
+        });
+    });
 }
 
 document.getElementById("toggleButton").addEventListener("click", function() {
@@ -348,7 +495,12 @@ function displayResults(results) {
     tableBody.innerHTML = "";
 
     // Always filter out pending builds that have completed versions
-    const filteredResults = filterDuplicatePending(results);
+    let filteredResults = filterDuplicatePending(results);
+
+    // Apply sorting if a column is selected
+    if (currentSortColumn && currentSortDirection) {
+        filteredResults = sortResults(filteredResults, currentSortColumn, currentSortDirection);
+    }
 
     if (filteredResults.length === 0) {
         document.getElementById("noResultsMessage").style.display = "block";
@@ -1044,6 +1196,11 @@ function setupColumnVisibilityToggle() {
 document.addEventListener("DOMContentLoaded", () => {
     // Setup column visibility toggle
     setupColumnVisibilityToggle();
+
+    // Setup column sorting
+    loadSortState();
+    setupColumnSorting();
+    updateSortIndicators();
 
     // Check URL parameters to determine date range initialization
     const urlParams = new URLSearchParams(window.location.search);

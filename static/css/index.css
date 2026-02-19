@@ -637,3 +637,41 @@ td[data-column].hidden {
 .checkbox-label span {
     font-size: 14px;
 }
+
+/* Column sorting styles */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+th.sortable:hover {
+    background-color: #444;
+}
+
+th.sortable .sort-indicator {
+    display: inline-block;
+    margin-left: 5px;
+    opacity: 0.3;
+    font-size: 0.8em;
+}
+
+th.sortable .sort-indicator::after {
+    content: '⇅';
+}
+
+th.sortable.sort-asc .sort-indicator {
+    opacity: 1;
+}
+
+th.sortable.sort-asc .sort-indicator::after {
+    content: '▲';
+}
+
+th.sortable.sort-desc .sort-indicator {
+    opacity: 1;
+}
+
+th.sortable.sort-desc .sort-indicator::after {
+    content: '▼';
+}
