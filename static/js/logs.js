@@ -20,6 +20,13 @@ function toggleContainer(headerElement) {
 // Download logs as plain text
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('downloadLogsBtn')?.addEventListener('click', function() {
+        const button = this;
+        const originalContent = button.innerHTML;
+
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+
         const url = new URL(window.location.href);
         url.searchParams.set('format', 'json');
 
@@ -94,10 +101,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(downloadUrl);
+
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalContent;
             })
             .catch(error => {
                 console.error('Download failed:', error);
                 alert('Failed to download logs');
+
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalContent;
             });
     });
 });
