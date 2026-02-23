@@ -1,4 +1,5 @@
 let cachedResults = [];
+let lastDisplayedResults = []; // Track what was actually displayed from the last search
 let allBranches = [];
 let allSourceRepos = [];
 let highlightedIndex = -1;
@@ -174,7 +175,13 @@ function handleColumnSort(column) {
     // Re-display results with new sort
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
-    const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+
+    // Clear lastDisplayedResults so status bar shows counts relative to deduplicated cache
+    lastDisplayedResults = [];
+
+    // Deduplicate raw cached results first, then apply filters
+    const deduplicated = filterDuplicatePending(cachedResults);
+    const filteredResults = deduplicated.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
 }
 
@@ -562,17 +569,13 @@ const MAX_RESULTS = 1000;
 
 function updateStatusBar(cachedCount, displayedCount) {
     const statusMessage = document.getElementById("statusMessage");
-    const hiddenCount = cachedCount - displayedCount;
 
     if (cachedCount === 0) {
         statusMessage.textContent = "No results loaded";
         return;
     }
 
-    let message = `Showing ${displayedCount} of ${cachedCount} results`;
-    if (hiddenCount > 0) {
-        message = `Showing ${displayedCount} of ${cachedCount} results (${hiddenCount} filtered out)`;
-    }
+    let message = `Showing ${displayedCount} results`;
     if (cachedCount >= MAX_RESULTS) {
         message += ` — May be truncated (limit: ${MAX_RESULTS})`;
     }
@@ -595,8 +598,9 @@ function updateFilterPreview() {
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
-    let preFilteredResults = cachedResults.filter(result => matchesFilters(result, formData));
-    preFilteredResults = filterDuplicatePending(preFilteredResults);
+    // Deduplicate raw cached results first, then apply filters
+    const deduplicated = filterDuplicatePending(cachedResults);
+    const preFilteredResults = deduplicated.filter(result => matchesFilters(result, formData));
     const previewCount = preFilteredResults.length;
     const currentDisplayedCount = document.querySelectorAll("#resultsTable tbody tr:not(.virtual-padding-top):not(.virtual-padding-bottom)").length;
 
@@ -623,8 +627,8 @@ function displayResults(results) {
     const tableBody = document.querySelector("#resultsTable tbody");
     tableBody.innerHTML = "";
 
-    // Always filter out pending builds that have completed versions
-    let filteredResults = filterDuplicatePending(results);
+    // Results are already deduplicated (either from performSearch or from cachedResults)
+    let filteredResults = results;
 
     // Apply sorting if a column is selected
     if (currentSortColumn && currentSortDirection) {
@@ -645,7 +649,10 @@ function displayResults(results) {
         applyColumnVisibility(visibility);
     }
 
-    updateStatusBar(cachedResults.length, filteredResults.length);
+    // For status bar: use lastDisplayedResults if showing search results,
+    // otherwise use deduplicated cached results (for frontend filters)
+    const totalCount = lastDisplayedResults.length > 0 ? lastDisplayedResults.length : filterDuplicatePending(cachedResults).length;
+    updateStatusBar(totalCount, filteredResults.length);
 
     // Hide filter preview when results are displayed
     const filterPreview = document.getElementById("filterPreview");
@@ -703,7 +710,21 @@ function performSearch(queryParams = null) {
     const formData = queryParams || new FormData(form);
     const paramsKey = buildParamsKey(new URLSearchParams(formData));
 
-    const queryString = new URLSearchParams(formData).toString();
+    // Store user's selected outcomes for frontend filtering
+    const selectedOutcomes = formData.getAll('outcome');
+
+    // Always fetch all outcomes from backend so that filterDuplicatePending() can properly
+    // detect which pending builds have completed versions. We'll filter by outcome on the frontend.
+    const backendFormData = new FormData();
+    for (const [key, value] of formData.entries()) {
+        if (key === 'outcome') {
+            // Skip outcome filter - we'll apply it on frontend after deduplication
+            continue;
+        }
+        backendFormData.append(key, value);
+    }
+
+    const queryString = new URLSearchParams(backendFormData).toString();
     const url = `/search?${queryString}`;
 
     fetch(url, {
@@ -728,6 +749,7 @@ function performSearch(queryParams = null) {
         // Check if the response contains an error
         if (data && data.error) {
             cachedResults = [];
+            lastDisplayedResults = [];
             displayResults([]);
             hideLoading();
             scrollContainer.style.overflow = 'auto';
@@ -738,9 +760,25 @@ function performSearch(queryParams = null) {
         // Handle new response format with builds and warnings
         const builds = data.builds || data;  // Support both old and new format
         const warnings = data.warnings || [];
-        
+
+        // Cache the raw results from backend (all outcomes)
         cachedResults = builds;
-        displayResults(builds);
+
+        // Deduplicate and filter for display
+        const deduplicated = filterDuplicatePending(builds);
+
+        // Filter to selected outcomes if user specified any
+        let resultsToDisplay = deduplicated;
+        if (selectedOutcomes.length > 0) {
+            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
+            resultsToDisplay = deduplicated.filter(result => {
+                return selectedLower.includes(result.outcome?.toLowerCase());
+            });
+        }
+
+        // Track what we're displaying from this search
+        lastDisplayedResults = resultsToDisplay;
+        displayResults(resultsToDisplay);
         hideLoading();
         scrollContainer.style.overflow = 'auto';
         
@@ -759,6 +797,7 @@ function performSearch(queryParams = null) {
         hideLoading();
         scrollContainer.style.overflow = 'auto';
         cachedResults = [];
+        lastDisplayedResults = [];
         displayResults([]);
         showCustomAlert(`Search failed: ${error.message}`, "❌");
         const filterButton = document.getElementById("filterButton");
@@ -773,7 +812,12 @@ function filterResults() {
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
 
-    const filteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+    // Clear lastDisplayedResults so status bar shows counts relative to deduplicated cache
+    lastDisplayedResults = [];
+
+    // Deduplicate raw cached results first, then apply filters
+    const deduplicated = filterDuplicatePending(cachedResults);
+    const filteredResults = deduplicated.filter(result => matchesFilters(result, formData));
     displayResults(filteredResults);
     const filterButton = document.getElementById("filterButton");
     if (filterButton) {
@@ -1396,10 +1440,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const form = document.getElementById("searchForm");
 
-    // If we have initial results from server, cache them
+    // If we have initial results from server, cache raw results and deduplicate for display
     if (isSearchPage && window.initialResults) {
+        // Cache raw results from server (all outcomes)
         cachedResults = window.initialResults;
-        displayResults(cachedResults);
+
+        // Deduplicate for display
+        const deduplicated = filterDuplicatePending(window.initialResults);
+
+        // Apply outcome filter from URL params if specified
+        const selectedOutcomes = urlParams.getAll('outcome');
+        let resultsToDisplay = deduplicated;
+        if (selectedOutcomes.length > 0) {
+            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
+            resultsToDisplay = deduplicated.filter(result => {
+                return selectedLower.includes(result.outcome?.toLowerCase());
+            });
+        }
+
+        // Track what we're displaying from this search
+        lastDisplayedResults = resultsToDisplay;
+        displayResults(resultsToDisplay);
         lastSearchParamsKey = buildParamsKey(urlParams);
         const filterButton = document.getElementById("filterButton");
         if (filterButton) {
@@ -1587,6 +1648,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
 
     // Clear any existing search results
     cachedResults = [];
+    lastDisplayedResults = [];
     document.querySelector("#resultsTable tbody").innerHTML = "";
     document.getElementById("noResultsMessage").style.display = "none";
     updateStatusBar(0, 0);
@@ -1596,6 +1658,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
 
     // Clear cached results
     cachedResults = [];
+    lastDisplayedResults = [];
 
     lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
     const filterButton = document.getElementById("filterButton");

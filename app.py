@@ -114,7 +114,10 @@ class KonfluxBuildHistory(Flask):
             query_params = request.args.to_dict()
             # Handle multi-select outcome values
             outcomes = request.args.getlist('outcome')
-            search_results = await self.query(query_params, outcomes=outcomes)
+
+            # Always fetch all outcomes (success, failure, pending)
+            # Frontend will handle deduplication and outcome filtering
+            search_results = await self.query(query_params, outcomes=['success', 'failure', 'pending'])
 
             # Check if the request is an AJAX request
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -124,7 +127,7 @@ class KonfluxBuildHistory(Flask):
             return render_template(
                 'index.html',
                 query_params=query_params,
-                search_results=search_results,  # Pass results to template
+                search_results=search_results,  # Pass results to template (all outcomes)
                 is_search_page=True,  # Add flag to indicate this is a search result page
             )
 
