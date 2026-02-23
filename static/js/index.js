@@ -9,6 +9,12 @@ let currentSortColumn = null;
 let currentSortDirection = null; // 'asc' or 'desc'
 const SORT_STATE_KEY = 'tableSortState';
 
+// Date picker instance
+let datePickerInstance = null;
+
+// Filter preview debounce timer
+let filterPreviewTimer = null;
+
 function buildParamsKey(params) {
     const entries = Array.from(params.entries()).sort(([aKey, aVal], [bKey, bVal]) => {
         if (aKey === bKey) return aVal.localeCompare(bVal);
@@ -182,6 +188,80 @@ function setupColumnSorting() {
             handleColumnSort(column);
         });
     });
+}
+
+/**
+ * Calculates date range based on preset.
+ */
+function getDateRangeForPreset(preset) {
+    const endDate = new Date();
+    const startDate = new Date();
+
+    switch (preset) {
+        case '24h':
+            startDate.setDate(endDate.getDate() - 1);
+            break;
+        case '7d':
+            startDate.setDate(endDate.getDate() - 7);
+            break;
+        case '30d':
+            startDate.setDate(endDate.getDate() - 30);
+            break;
+        case 'custom':
+            return null; // Let user choose
+        default:
+            return null;
+    }
+
+    return [startDate, endDate];
+}
+
+/**
+ * Updates the active state of date preset buttons.
+ */
+function updateDatePresetButtons(activePreset) {
+    document.querySelectorAll('.date-preset-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.preset === activePreset) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+/**
+ * Handles clicking on a date preset button.
+ */
+function handleDatePreset(preset) {
+    updateDatePresetButtons(preset);
+
+    if (preset === 'custom') {
+        // Just mark as custom, let user interact with date picker
+        return;
+    }
+
+    const dateRange = getDateRangeForPreset(preset);
+    if (dateRange && datePickerInstance) {
+        datePickerInstance.setDate(dateRange);
+    }
+}
+
+/**
+ * Sets up date preset button handlers.
+ */
+function setupDatePresets() {
+    document.querySelectorAll('.date-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const preset = btn.dataset.preset;
+            handleDatePreset(preset);
+        });
+    });
+
+    // When user manually opens date picker, mark as "Custom"
+    if (datePickerInstance) {
+        datePickerInstance.config.onOpen.push(() => {
+            updateDatePresetButtons('custom');
+        });
+    }
 }
 
 document.getElementById("toggleButton").addEventListener("click", function() {
@@ -481,13 +561,62 @@ function createRow(result) {
 const MAX_RESULTS = 1000;
 
 function updateStatusBar(cachedCount, displayedCount) {
-    const statusTextBar = document.getElementById("statusText");
+    const statusMessage = document.getElementById("statusMessage");
     const hiddenCount = cachedCount - displayedCount;
-    let message = `Results: ${displayedCount} (${hiddenCount} filtered)`;
-    if (cachedCount >= MAX_RESULTS) {
-        message += ` — Results may be truncated (limit: ${MAX_RESULTS})`;
+
+    if (cachedCount === 0) {
+        statusMessage.textContent = "No results loaded";
+        return;
     }
-    statusTextBar.textContent = message;
+
+    let message = `Showing ${displayedCount} of ${cachedCount} results`;
+    if (hiddenCount > 0) {
+        message = `Showing ${displayedCount} of ${cachedCount} results (${hiddenCount} filtered out)`;
+    }
+    if (cachedCount >= MAX_RESULTS) {
+        message += ` — May be truncated (limit: ${MAX_RESULTS})`;
+    }
+    statusMessage.textContent = message;
+}
+
+/**
+ * Shows a real-time preview of how many results would match current filter criteria.
+ */
+function updateFilterPreview() {
+    const filterPreview = document.getElementById("filterPreview");
+
+    // Only show preview if we have cached results
+    if (!cachedResults || cachedResults.length === 0) {
+        filterPreview.style.display = "none";
+        return;
+    }
+
+    // Calculate how many results would match current filters
+    const form = document.getElementById("searchForm");
+    const formData = new FormData(form);
+
+    let preFilteredResults = cachedResults.filter(result => matchesFilters(result, formData));
+    preFilteredResults = filterDuplicatePending(preFilteredResults);
+    const previewCount = preFilteredResults.length;
+    const currentDisplayedCount = document.querySelectorAll("#resultsTable tbody tr:not(.virtual-padding-top):not(.virtual-padding-bottom)").length;
+
+    // Only show preview if filter criteria would change the results
+    if (previewCount !== currentDisplayedCount) {
+        filterPreview.textContent = `⚡ Preview: ${previewCount} results with current filters`;
+        filterPreview.style.display = "inline";
+    } else {
+        filterPreview.style.display = "none";
+    }
+}
+
+/**
+ * Debounced version of updateFilterPreview for real-time updates.
+ */
+function debouncedFilterPreview() {
+    clearTimeout(filterPreviewTimer);
+    filterPreviewTimer = setTimeout(() => {
+        updateFilterPreview();
+    }, 300); // 300ms debounce
 }
 
 function displayResults(results) {
@@ -517,6 +646,12 @@ function displayResults(results) {
     }
 
     updateStatusBar(cachedResults.length, filteredResults.length);
+
+    // Hide filter preview when results are displayed
+    const filterPreview = document.getElementById("filterPreview");
+    if (filterPreview) {
+        filterPreview.style.display = "none";
+    }
 }
 
 function filterDuplicatePending(results) {
@@ -644,6 +779,12 @@ function filterResults() {
     if (filterButton) {
         filterButton.dataset.visible = 'true';
         filterButton.style.display = "inline-block";
+    }
+
+    // Hide filter preview after applying filters
+    const filterPreview = document.getElementById("filterPreview");
+    if (filterPreview) {
+        filterPreview.style.display = "none";
     }
 }
 
@@ -1227,12 +1368,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const endDate = new Date();
         datePickerDefault = [startDate, endDate];
     }
-    
-    flatpickr("#dateRange", {
+
+    // Initialize flatpickr and store instance
+    datePickerInstance = flatpickr("#dateRange", {
         mode: "range",
         dateFormat: "Y-m-d",
-        defaultDate: datePickerDefault
+        defaultDate: datePickerDefault,
+        onOpen: []
     });
+
+    // Setup date preset buttons
+    setupDatePresets();
+
+    // Determine initial active preset based on default date range
+    if (!urlDateRange && !urlNvr) {
+        // Default is 2 days, mark "Custom" as active
+        updateDatePresetButtons('custom');
+    } else if (urlDateRange) {
+        // User has explicit date range, mark as Custom
+        updateDatePresetButtons('custom');
+    }
 
     hideLoading();
 
@@ -1272,8 +1427,14 @@ document.addEventListener("DOMContentLoaded", () => {
         updateFilterButtonVisibility();
     }
 
-    form.addEventListener('input', updateFilterButtonVisibility);
-    form.addEventListener('change', updateFilterButtonVisibility);
+    form.addEventListener('input', () => {
+        updateFilterButtonVisibility();
+        debouncedFilterPreview();
+    });
+    form.addEventListener('change', () => {
+        updateFilterButtonVisibility();
+        debouncedFilterPreview();
+    });
 
     // Fetch all branches for autocomplete (independent of search)
     const groupInput = document.getElementById("group");
@@ -1415,15 +1576,14 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     form.querySelector("#engine").value = "konflux";
     form.querySelector("#group").value = "";
 
-    // Reset date picker
+    // Reset date picker to default (2 days ago)
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 2);
     const endDate = new Date();
-    flatpickr("#dateRange", {
-        mode: "range",
-        dateFormat: "Y-m-d",
-        defaultDate: [startDate, endDate]
-    });
+    if (datePickerInstance) {
+        datePickerInstance.setDate([startDate, endDate]);
+    }
+    updateDatePresetButtons('custom');
 
     // Clear any existing search results
     cachedResults = [];

@@ -67,6 +67,11 @@
                 </div>
                 <div class="input-container">
                     <label for="dateRange">Completed between (UTC)</label>
+                    <div class="date-preset-buttons">
+                        <button type="button" class="date-preset-btn" data-preset="24h">Last 24h</button>
+                        <button type="button" class="date-preset-btn" data-preset="7d">Last 7 days</button>
+                        <button type="button" class="date-preset-btn active" data-preset="custom">Custom</button>
+                    </div>
                     <input type="text" id="dateRange" name="dateRange" placeholder="YYYY-MM-DD to YYYY-MM-DD">
                 </div>
                 <div class="input-container">
@@ -161,7 +166,8 @@
 
     <div id="statusBar" class="status-bar">
         <span id="statusText">
-            Results: <span id="cachedResultsCount">0</span> cached, <span id="filteredResultsCount">0</span> filtered
+            <span id="statusMessage">No results loaded</span>
+            <span id="filterPreview" style="display: none;"></span>
         </span>
         <span id="warningIndicator" class="warning-indicator" style="display: none;" title="Click to show warnings">⚠️</span>
         <span id="columnToggleIcon" title="Toggle column visibility">⚙️</span>

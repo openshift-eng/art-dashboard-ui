@@ -1,6 +1,6 @@
 .sidebar {
     width: 30%;
-    max-width: 280px;
+    max-width: 320px;
     min-width: 30px;
     background-color: #2b2b2b;
     padding: 20px;
@@ -287,21 +287,39 @@ select option {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #333;
+    background-color: #2b2b2b;
     color: white;
     text-align: center;
-    padding: 5px;
-    font-size: 14px;
-    z-index: 5; /* Lower z-index to be behind the sidebar */
-    border-top: 1px solid #444; /* Slightly lighter border for contrast */
+    padding: 10px 15px;
+    font-size: 15px;
+    z-index: 5;
+    border-top: 2px solid #4caf50;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
 }
 
 #statusText {
     text-align: center;
-    flex-grow: 1;  /* Take up available space */
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+#statusMessage {
+    color: #f0f0f0;
+}
+
+#filterPreview {
+    margin-left: 15px;
+    color: #ffc107;
+    font-weight: 600;
+    animation: pulse-preview 2s ease-in-out infinite;
+}
+
+@keyframes pulse-preview {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 #helpIcon {
@@ -674,4 +692,41 @@ th.sortable.sort-desc .sort-indicator {
 
 th.sortable.sort-desc .sort-indicator::after {
     content: '▼';
+}
+
+/* Date range preset buttons */
+.date-preset-buttons {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.date-preset-btn {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 12px;
+    background-color: #444;
+    color: #f0f0f0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+.date-preset-btn:hover {
+    background-color: #555;
+    border-color: #666;
+}
+
+.date-preset-btn.active {
+    background-color: #4caf50;
+    border-color: #4caf50;
+    color: white;
+}
+
+.date-preset-btn.active:hover {
+    background-color: #45a049;
+    border-color: #45a049;
 }
