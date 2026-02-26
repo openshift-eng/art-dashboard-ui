@@ -409,7 +409,7 @@
                                       'installed_rpms', 'embargoed'] %}
             {% set other_fields = [] %}
                     {% for key, value in build.items() %}
-                {% if key not in displayed_keys and value %}
+                {% if key not in displayed_keys and value is not none %}
                     {% set _ = other_fields.append((key, value)) %}
                 {% endif %}
             {% endfor %}
@@ -446,7 +446,7 @@
                         </tr>
                         {% endif %}
                         {% for key, value in build.items() %}
-                            {% if key not in displayed_keys and value %}
+                            {% if key not in displayed_keys and value is not none %}
                             <tr>
                                 <td class="field-key">{{ key }}</td>
                                 <td class="field-val">
