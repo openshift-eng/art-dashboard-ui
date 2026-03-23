@@ -113,7 +113,7 @@ class KonfluxBuildHistory(Flask):
         async def search():
             query_params = request.args.to_dict()
             # Handle multi-select outcome values
-            outcomes = request.args.getlist('outcome')
+            request.args.getlist('outcome')
 
             # Always fetch all outcomes (success, failure, pending)
             # Frontend will handle deduplication and outcome filtering
@@ -755,8 +755,10 @@ class KonfluxBuildHistory(Flask):
         art_job_url_variants = None
         if art_job_url:
             # ART job URLs can be encoded multiple times in records (e.g. %252F).
-            # Build normalized variants and apply filtering in Python to avoid
-            # BigQuery regex mismatches.
+            # Add the URL to extra_patterns for BigQuery filtering to limit results,
+            # and also build normalized variants for Python filtering to handle all encodings.
+            extra_patterns['art_job_url'] = art_job_url
+
             variants = set()
             current = art_job_url
             for _ in range(4):
