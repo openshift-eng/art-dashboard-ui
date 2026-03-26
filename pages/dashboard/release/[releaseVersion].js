@@ -5,7 +5,7 @@ import OPENSHIFT_VERSION_SELECT from "../../../components/release/openshift_vers
 import RELEASE_BRANCH_DETAIL from "../../../components/release/release_branch_detail"
 import { useRouter } from 'next/router'
 import Head from "next/head";
-import { RocketOutlined, ReloadOutlined, FileImageOutlined, ExperimentOutlined } from "@ant-design/icons";
+import { RocketOutlined, ReloadOutlined } from "@ant-design/icons";
 import { gaVersion } from "../../../components/api_calls/release_calls";
 
 const { Title } = Typography;
@@ -71,17 +71,7 @@ function ReleaseHomePage() {
         {
             key: "buildHistory",
             icon: <ReloadOutlined />,
-            label: <a href={"/dashboard/build/history"}><p style={{ fontSize: "medium" }}>Build History</p></a>
-        },
-        {
-            key: "buildHistoryBeta",
-            icon: <ExperimentOutlined />,
-            label: <a href={`${process.env.NEXT_PUBLIC_BETA_BUILD_HISTORY_LINK}`} target={"_blank"}><p style={{ fontSize: "medium" }}>Build History: Beta</p></a>
-        },
-        {
-            key: "rpmImages",
-            icon: <FileImageOutlined />,
-            label: <a href={"/dashboard/rpm_images"}><p style={{ fontSize: "medium" }}>RPMs & Images</p></a>
+            label: <a href={`${process.env.NEXT_PUBLIC_BUILD_HISTORY_LINK}`} target={"_blank"}><p style={{ fontSize: "medium" }}>Build History</p></a>
         },
     ]
 
