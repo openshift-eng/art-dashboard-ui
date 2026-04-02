@@ -246,7 +246,7 @@ owners:
       </Typography>
       <ul>
         <li>If the above looks good, click the Submit Request button and a Jira and PR will be created</li>
-        <li>Inform <strong>@release-artists</strong> on <strong>#forum-ocp-art</strong> on Slack about the Jira and PR</li>
+        <li>Inform <strong>@automated-tooling-triage</strong> on <strong>#forum-ocp-art</strong> on Slack about the Jira and PR</li>
       </ul>
     </Box>
     <Box sx={{ py: 2 }}>
