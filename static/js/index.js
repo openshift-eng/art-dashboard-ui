@@ -548,13 +548,17 @@ function createRow(result) {
         pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run: ${lastPart}">${pipelineRunSuffix}</a>`;
     }
 
-    // EC status (ITS) display
+    // EC status (ITS) display — text with hyperlink for Pass/Fail
     const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
-    const ecDisplay = {
-        "passed": "\u2705",
-        "failed": "\u274c",
-        "n/a": "\u2796",
-    }[ecStatus] || ecStatus;
+    const ecPipelineUrl = result["ec_pipeline_url"] || "";
+    let ecDisplay;
+    if (ecStatus === "passed" && ecPipelineUrl) {
+        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification passed">Pass</a>`;
+    } else if (ecStatus === "failed" && ecPipelineUrl) {
+        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification failed">Fail</a>`;
+    } else {
+        ecDisplay = "N/A";
+    }
 
     // Create the row
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
