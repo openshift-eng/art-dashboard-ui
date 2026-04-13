@@ -136,6 +136,11 @@ function sortResults(results, column, direction) {
                 aVal = a['pipeline URL'] || '';
                 bVal = b['pipeline URL'] || '';
                 break;
+            case 'its':
+                const itsOrder = { 'failed': 0, 'n/a': 1, 'passed': 2 };
+                aVal = itsOrder[a['ec_status']] ?? 1;
+                bVal = itsOrder[b['ec_status']] ?? 1;
+                break;
             default:
                 return 0;
         }
@@ -543,6 +548,18 @@ function createRow(result) {
         pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run: ${lastPart}">${pipelineRunSuffix}</a>`;
     }
 
+    // EC status (ITS) display — text with hyperlink for Pass/Fail
+    const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
+    const ecPipelineUrl = result["ec_pipeline_url"] || "";
+    let ecDisplay;
+    if (ecStatus === "passed" && ecPipelineUrl) {
+        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification passed">Pass</a>`;
+    } else if (ecStatus === "failed" && ecPipelineUrl) {
+        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification failed">Fail</a>`;
+    } else {
+        ecDisplay = "N/A";
+    }
+
     // Create the row
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     const outcomeParam = result.outcome ? `&outcome=${encodeURIComponent(result.outcome)}` : '';
@@ -556,6 +573,7 @@ function createRow(result) {
         <td data-column="group">${result["group"]}</td>
         <td data-column="time">${buildTimeDisplay}</td>
         <td data-column="plr">${pipelineRunLink}</td>
+        <td data-column="its" title="EC verification: ${ecStatus}">${ecDisplay}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
@@ -1306,6 +1324,7 @@ function loadColumnVisibility() {
         group: true,
         time: true,
         plr: true,
+        its: true,
         links: true
     };
 }
