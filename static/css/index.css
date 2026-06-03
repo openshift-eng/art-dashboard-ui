@@ -161,14 +161,14 @@ th.links-th {
     min-width: 100px;
 }
 
-th[data-column="plrs"],
-td[data-column="plrs"] {
+th[data-column="outcome"],
+td[data-column="outcome"] {
     width: 120px;
     max-width: 120px;
     min-width: 120px;
 }
 
-.plrs-td {
+.outcome-td {
     white-space: nowrap;
 }
 
