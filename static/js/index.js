@@ -568,9 +568,6 @@ function createRow(result) {
 
     let buildStatus, itsStatus, releaseStatus;
 
-    // Normalize outcome to handle both snake_case and PascalCase
-    const normalizedOutcome = outcome.toLowerCase().replace(/_/g, '');
-
     if (outcome === "BuildError" || normalizedOutcome === "builderror") {
         // Build failed, ITS and Release not triggered
         buildStatus = 'failed';
