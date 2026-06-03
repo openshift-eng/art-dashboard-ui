@@ -163,20 +163,25 @@ th.links-th {
 
 th[data-column="outcome"],
 td[data-column="outcome"] {
-    width: 120px;
-    max-width: 120px;
-    min-width: 120px;
+    width: 140px;
+    max-width: 140px;
+    min-width: 140px;
+    text-align: center;
 }
 
 .outcome-td {
     white-space: nowrap;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    padding: 8px 4px;
 }
 
 .plr-icon {
     font-size: 1.2em;
     text-decoration: none;
-    margin: 0 2px;
     display: inline-block;
+    flex: 0 0 auto;
 }
 
 .plr-icon:hover {
