@@ -584,9 +584,11 @@ function createRow(result) {
         itsStatus = 'failed';
         releaseStatus = 'not-run';
     } else if (outcome === "ReleaseError" || normalizedOutcome === "releaseerror") {
-        // Build and ITS succeeded, Release failed
+        // Release failed - build succeeded, ITS may or may not have run
         buildStatus = 'success';
-        itsStatus = 'success';
+        // ITS status depends on whether we have URL info
+        itsStatus = ecPipelineUrl ? 'success' : 'not-run';
+        // Release failed (outcome tells us this)
         releaseStatus = 'failed';
     } else if (outcome === "Success" || outcome === "success") {
         // All stages that were triggered succeeded
@@ -622,71 +624,94 @@ function createRow(result) {
         releaseStatus = releasePipelineUrl ? 'unknown' : 'not-run';
     }
 
-    // Build pipeline icon
-    if (buildPipelineUrl) {
-        let buildIcon, buildTitle;
-        if (buildStatus === 'failed') {
-            buildIcon = '🔴';
-            buildTitle = 'Build failed';
-        } else if (buildStatus === 'success') {
-            buildIcon = '🟢';
-            buildTitle = 'Build succeeded';
-        } else if (buildStatus === 'pending') {
-            buildIcon = '⏳';
-            buildTitle = 'Build pending';
-        } else {
-            buildIcon = '❓';
-            buildTitle = 'Build status unknown';
-        }
-        plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon">${buildIcon}</a> `;
+    // Build pipeline icon - show status based on outcome
+    let buildIcon, buildTitle, buildClass;
+    if (buildStatus === 'not-run') {
+        buildIcon = '⚪';
+        buildTitle = 'Build not run';
+        buildClass = 'plr-not-run';
+    } else if (buildStatus === 'failed') {
+        buildIcon = '🔴';
+        buildTitle = 'Build failed';
+        buildClass = '';
+    } else if (buildStatus === 'success') {
+        buildIcon = '🟢';
+        buildTitle = 'Build succeeded';
+        buildClass = '';
+    } else if (buildStatus === 'pending') {
+        buildIcon = '⏳';
+        buildTitle = 'Build pending';
+        buildClass = '';
     } else {
-        plrsContent += `<span class="plr-icon plr-not-run" title="Build not run">⚪</span> `;
+        buildIcon = '❓';
+        buildTitle = 'Build status unknown';
+        buildClass = '';
     }
 
-    // ITS pipeline icon
+    if (buildPipelineUrl && buildStatus !== 'not-run') {
+        plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon ${buildClass}">${buildIcon}</a> `;
+    } else {
+        plrsContent += `<span class="plr-icon ${buildClass}" title="${buildTitle}">${buildIcon}</span> `;
+    }
+
+    // ITS pipeline icon - show status based on outcome
+    let itsIcon, itsTitle, itsClass;
     if (itsStatus === 'not-run') {
-        plrsContent += `<span class="plr-icon plr-not-run" title="ITS not run">⚪</span> `;
-    } else if (ecPipelineUrl) {
-        let itsIcon, itsTitle;
-        if (itsStatus === 'failed') {
-            itsIcon = '🟠';
-            itsTitle = 'ITS checks failed';
-        } else if (itsStatus === 'success') {
-            itsIcon = '🟢';
-            itsTitle = 'ITS checks passed';
-        } else if (itsStatus === 'pending') {
-            itsIcon = '⏳';
-            itsTitle = 'ITS pending';
-        } else {
-            itsIcon = '❓';
-            itsTitle = 'ITS status unknown';
-        }
-        plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon">${itsIcon}</a> `;
+        itsIcon = '⚪';
+        itsTitle = 'ITS not run';
+        itsClass = 'plr-not-run';
+    } else if (itsStatus === 'failed') {
+        itsIcon = '🟠';
+        itsTitle = 'ITS checks failed';
+        itsClass = '';
+    } else if (itsStatus === 'success') {
+        itsIcon = '🟢';
+        itsTitle = 'ITS checks passed';
+        itsClass = '';
+    } else if (itsStatus === 'pending') {
+        itsIcon = '⏳';
+        itsTitle = 'ITS pending';
+        itsClass = '';
     } else {
-        plrsContent += `<span class="plr-icon plr-not-run" title="ITS not run">⚪</span> `;
+        itsIcon = '❓';
+        itsTitle = 'ITS status unknown';
+        itsClass = '';
     }
 
-    // Release pipeline icon
-    if (releaseStatus === 'not-run') {
-        plrsContent += `<span class="plr-icon plr-not-run" title="Release not run">⚪</span>`;
-    } else if (releasePipelineUrl) {
-        let releaseIcon, releaseTitle;
-        if (releaseStatus === 'failed') {
-            releaseIcon = '🟡';
-            releaseTitle = 'Release failed';
-        } else if (releaseStatus === 'success') {
-            releaseIcon = '🟢';
-            releaseTitle = 'Release succeeded';
-        } else if (releaseStatus === 'pending') {
-            releaseIcon = '⏳';
-            releaseTitle = 'Release pending';
-        } else {
-            releaseIcon = '❓';
-            releaseTitle = 'Release status unknown';
-        }
-        plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon">${releaseIcon}</a>`;
+    if (ecPipelineUrl && itsStatus !== 'not-run') {
+        plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon ${itsClass}">${itsIcon}</a> `;
     } else {
-        plrsContent += `<span class="plr-icon plr-not-run" title="Release not run">⚪</span>`;
+        plrsContent += `<span class="plr-icon ${itsClass}" title="${itsTitle}">${itsIcon}</span> `;
+    }
+
+    // Release pipeline icon - show status based on outcome (even if no URL)
+    let releaseIcon, releaseTitle, releaseClass;
+    if (releaseStatus === 'not-run') {
+        releaseIcon = '⚪';
+        releaseTitle = 'Release not run';
+        releaseClass = 'plr-not-run';
+    } else if (releaseStatus === 'failed') {
+        releaseIcon = '🟡';
+        releaseTitle = 'Release failed';
+        releaseClass = '';
+    } else if (releaseStatus === 'success') {
+        releaseIcon = '🟢';
+        releaseTitle = 'Release succeeded';
+        releaseClass = '';
+    } else if (releaseStatus === 'pending') {
+        releaseIcon = '⏳';
+        releaseTitle = 'Release pending';
+        releaseClass = '';
+    } else {
+        releaseIcon = '❓';
+        releaseTitle = 'Release status unknown';
+        releaseClass = '';
+    }
+
+    if (releasePipelineUrl && releaseStatus !== 'not-run') {
+        plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon ${releaseClass}">${releaseIcon}</a>`;
+    } else {
+        plrsContent += `<span class="plr-icon ${releaseClass}" title="${releaseTitle}">${releaseIcon}</span>`;
     }
 
     // Create the row
