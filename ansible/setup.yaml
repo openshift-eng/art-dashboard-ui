@@ -1,0 +1,98 @@
+---
+- name: Setup ART Build Failures resources in OpenShift
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    namespace: "{{ lookup('env', 'OPENSHIFT_NAMESPACE') }}"
+    redis_password: "{{ lookup('env', 'REDIS_PASSWORD') }}"
+
+  tasks:
+    # Validation
+    - name: Validate OPENSHIFT_NAMESPACE is set
+      ansible.builtin.fail:
+        msg: |
+          OPENSHIFT_NAMESPACE environment variable is not set
+
+          Please create or select a namespace first, then set:
+            export OPENSHIFT_NAMESPACE=your-namespace-name
+      when: namespace == ""
+
+    - name: Validate REDIS_PASSWORD is set
+      ansible.builtin.fail:
+        msg: "REDIS_PASSWORD environment variable is not set"
+      when: redis_password == ""
+
+    # Secrets
+    - name: Create redis-server-password secret
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: redis-server-password
+          type: Opaque
+          stringData:
+            password: "{{ redis_password }}"
+
+    # ImageStream
+    - name: Create ImageStream
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/is.yaml"
+
+    # BuildConfigs
+    - name: Create base BuildConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/buildconfig-base.yaml"
+
+    - name: Create app BuildConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/buildconfig-app.yaml"
+
+    # Service
+    - name: Create Service
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/service.yaml"
+
+    # Route
+    - name: Create Route
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/route.yaml"
+
+    # DeploymentConfig
+    - name: Create DeploymentConfig
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/deploymentconfig.yaml"
+
+    - name: Setup complete
+      ansible.builtin.debug:
+        msg: |
+          Setup complete!
+
+          Resources created in namespace: {{ namespace }}
+          - Secret: redis-server-password
+          - ImageStream: art-build-failures (tags: base, latest)
+          - BuildConfigs: art-build-failures-base, art-build-failures
+          - Service: art-build-failures
+          - Route: art-build-failures
+          - DeploymentConfig: art-build-failures
+
+          Next steps:
+            1. Build base image: ansible-playbook ansible/build-base.yaml
+            2. Build app image: ansible-playbook ansible/update.yaml
+
+          Or run both: ansible-playbook ansible/build-all.yaml

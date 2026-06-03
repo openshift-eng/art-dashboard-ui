@@ -1,0 +1,36 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: art-build-failures
+spec:
+  replicas: 1
+  selector:
+    app: art-build-failures
+  template:
+    metadata:
+      labels:
+        app: art-build-failures
+    spec:
+      containers:
+        - name: art-build-failures
+          image: art-build-failures:latest
+          imagePullPolicy: Always
+          env:
+            - name: REDIS_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-server-password
+                  key: password
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - art-build-failures
+        from:
+          kind: ImageStreamTag
+          name: art-build-failures:latest

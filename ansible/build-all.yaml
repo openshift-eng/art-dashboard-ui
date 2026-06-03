@@ -1,0 +1,4 @@
+---
+# Build all images (base + app)
+- import_playbook: build-base.yaml
+- import_playbook: update.yaml

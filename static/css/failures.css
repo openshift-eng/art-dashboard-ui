@@ -1,0 +1,322 @@
+/* Failures Dashboard Styles */
+
+.failures-sidebar {
+    width: 280px;
+    min-width: 280px;
+    background-color: #252525;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    height: 100vh;
+    border-right: 1px solid #444;
+}
+
+.failures-sidebar .sidebar-title {
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.failures-sidebar .sidebar-title a {
+    color: #4caf50;
+    text-decoration: none;
+    font-size: 1.2em;
+}
+
+.failures-sidebar .sidebar-title a:hover {
+    color: #81e886;
+}
+
+/* Filter section */
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.input-container label {
+    font-size: 0.85em;
+    color: #aaa;
+    font-weight: bold;
+}
+
+.input-container select,
+.input-container input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: #f0f0f0;
+    font-size: 0.9em;
+}
+
+.input-container select:focus,
+.input-container input[type="text"]:focus {
+    outline: none;
+    border-color: #4caf50;
+}
+
+/* Refresh button */
+.refresh-btn {
+    background-color: #555;
+    margin-top: 5px;
+}
+
+.refresh-btn:hover {
+    background-color: #666;
+}
+
+/* View toggle */
+.view-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.view-toggle label {
+    font-size: 0.85em;
+    color: #aaa;
+    font-weight: bold;
+}
+
+.toggle-buttons {
+    display: flex;
+    gap: 0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.view-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 0;
+    border-radius: 0;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.view-btn:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.view-btn:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.view-btn:hover {
+    background-color: #3a3a3a;
+}
+
+.view-btn.active {
+    background-color: #4caf50;
+    color: #fff;
+    border-color: #4caf50;
+}
+
+/* Stats section */
+.stats-section {
+    border-top: 1px solid #444;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+}
+
+.stat-label {
+    color: #aaa;
+}
+
+.stat-value {
+    color: #f0f0f0;
+    font-weight: bold;
+}
+
+/* Loading Overlay */
+#loadingOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+#loadingOverlay img {
+    width: 100px;
+}
+
+/* Table view */
+#failures-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+#failures-table col.col-name       { width: 22%; }
+#failures-table col.col-group      { width: 18%; }
+#failures-table col.col-type       { width: 16%; }
+#failures-table col.col-count      { width: 12%; }
+#failures-table col.col-pipeline   { width: 32%; }
+
+#failures-table th {
+    background-color: #333;
+    padding: 14px 10px;
+    text-align: center;
+    font-size: 1em;
+    border-bottom: 2px solid #4caf50;
+    user-select: none;
+    vertical-align: middle;
+}
+
+#failures-table th.sortable {
+    cursor: pointer;
+}
+
+#failures-table th.sortable:hover {
+    background-color: #3a3a3a;
+}
+
+.sort-arrow {
+    font-size: 0.75em;
+    margin-left: 4px;
+    color: #666;
+}
+
+th.sort-active .sort-arrow {
+    color: #4caf50;
+}
+
+#failures-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #333;
+    font-size: 0.88em;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#failures-table tr:hover td {
+    background-color: #333;
+}
+
+/* Failure count cell coloring */
+.failure-count-cell {
+    font-weight: bold;
+    text-align: center !important;
+    border-radius: 3px;
+}
+
+/* Failure type badges */
+.failure-type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.82em;
+    font-weight: bold;
+}
+
+.failure-type-badge.build-failure {
+    background-color: rgba(244, 67, 54, 0.25);
+    color: #ef5350;
+}
+
+.failure-type-badge.ec-failure {
+    background-color: rgba(255, 152, 0, 0.25);
+    color: #ffa726;
+}
+
+.failure-type-badge.release-failure {
+    background-color: rgba(156, 39, 176, 0.25);
+    color: #ce93d8;
+}
+
+.failure-type-badge.rebase-failure {
+    background-color: rgba(33, 150, 243, 0.25);
+    color: #64b5f6;
+}
+
+.pipeline-link {
+    color: #4caf50 !important;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.pipeline-link:hover {
+    color: #81e886 !important;
+    text-decoration: underline;
+}
+
+/* Bubble view */
+#bubble-chart {
+    width: 100%;
+    height: calc(100vh - 40px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#bubble-chart svg {
+    width: 100%;
+    height: 100%;
+}
+
+.bubble-tooltip {
+    position: fixed;
+    padding: 10px 14px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-size: 0.85em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    max-width: 300px;
+    line-height: 1.5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.bubble-tooltip .tooltip-name {
+    font-weight: bold;
+    font-size: 1em;
+    margin-bottom: 4px;
+}
+
+.bubble-tooltip .tooltip-detail {
+    color: #aaa;
+}
+
+.bubble-tooltip .tooltip-count {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+/* No results */
+.no-results-message {
+    text-align: center;
+    color: #888;
+    padding: 40px;
+    font-size: 1.1em;
+}

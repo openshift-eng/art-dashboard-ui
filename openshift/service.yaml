@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: art-build-failures
+    app.kubernetes.io/component: art-build-failures
+    app.kubernetes.io/instance: art-build-failures
+  name: art-build-failures
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: 8080-tcp
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    deploymentconfig: art-build-failures
+  sessionAffinity: None
+  type: ClusterIP

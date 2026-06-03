@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/failures.css') }}">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="failures-sidebar" id="sidebar">
+        <h3 class="sidebar-title"><a href="/" title="Reset filters">Build Failures</a></h3>
+
+        <div class="filter-section">
+            <div class="input-container">
+                <label for="group-filter">Group</label>
+                <select id="group-filter">
+                    <option value="">All groups</option>
+                </select>
+            </div>
+
+            <div class="input-container">
+                <label for="type-filter">Failure Type</label>
+                <select id="type-filter">
+                    <option value="">All types</option>
+                </select>
+            </div>
+
+            <div class="input-container">
+                <label for="name-filter">Component Name</label>
+                <input type="text" id="name-filter" placeholder="Filter by name...">
+            </div>
+
+            <button id="apply-filters" type="button">Apply Filters</button>
+            <button id="refresh-data" type="button" class="refresh-btn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+        </div>
+
+        <div class="view-toggle">
+            <label>View</label>
+            <div class="toggle-buttons">
+                <button id="view-table" class="view-btn active" type="button">Table</button>
+                <button id="view-bubbles" class="view-btn" type="button">Bubbles</button>
+            </div>
+        </div>
+
+        <div class="stats-section" id="stats">
+            <div class="stat-item">
+                <span class="stat-label">Total failures</span>
+                <span class="stat-value" id="stat-total">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Components</span>
+                <span class="stat-value" id="stat-components">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-container">
+        <div id="loadingOverlay">
+            <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading...">
+        </div>
+
+        <div id="table-view" class="view-content">
+            <table id="failures-table">
+                <colgroup>
+                    <col class="col-name">
+                    <col class="col-group">
+                    <col class="col-type">
+                    <col class="col-count">
+                    <col class="col-pipeline">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th data-sort="name" class="sortable">Name <span class="sort-arrow"></span></th>
+                        <th data-sort="group" class="sortable">Group <span class="sort-arrow"></span></th>
+                        <th data-sort="failure_type" class="sortable">Failure Type <span class="sort-arrow"></span></th>
+                        <th data-sort="failure_count" class="sortable sort-active sort-desc">
+                            # Failures <span class="sort-arrow">&#9660;</span>
+                        </th>
+                        <th>Pipeline URL</th>
+                    </tr>
+                </thead>
+                <tbody id="failures-tbody">
+                </tbody>
+            </table>
+            <p id="no-results" class="no-results-message" style="display: none;">No failures found.</p>
+        </div>
+
+        <div id="bubbles-view" class="view-content" style="display: none;">
+            <div id="bubble-chart"></div>
+            <div id="bubble-tooltip" class="bubble-tooltip"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/failures.js') }}"></script>
+{% endblock %}
