@@ -161,24 +161,31 @@ th.links-th {
     min-width: 100px;
 }
 
-th[data-column="outcome"],
-td[data-column="outcome"] {
+th[data-column="outcome"] {
+    width: 60px;
+    max-width: 60px;
+    min-width: 60px;
+    text-align: center;
+}
+
+th[data-column="plrs"],
+td[data-column="plrs"] {
     width: 140px;
     max-width: 140px;
     min-width: 140px;
     text-align: center;
-}
-
-td[data-column="outcome"] {
     padding: 0;
+    background-color: #2b2b2b;
 }
 
-.outcome-td {
+.plrs-td {
     white-space: nowrap;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
     padding: 10px;
+    background-color: #2b2b2b;
+    height: 100%;
 }
 
 .plr-icon {

@@ -529,23 +529,21 @@ function createRow(result) {
         return 'just now';
     }
 
-    // Determine the Outcome display value
+    // Simple outcome display - just success/failure/pending
     const outcome = result.outcome || "";
-    const outcomeDisplay = {
-        "Success": "🟢",
-        "BuildError": "🔴",
-        "ItsError": "🟠",
-        "ReleaseError": "🟡",
-        "Pending": "⏳",
-        // snake_case variants (from new art-tools schema)
-        "success": "🟢",
-        "build_error": "🔴",
-        "its_error": "🟠",
-        "release_error": "🟡",
-        "pending": "⏳",
-        // Legacy
-        "failure": "🔴"
-    }[outcome] || outcome;
+    const normalizedOutcome = outcome.toLowerCase().replace(/_/g, '');
+
+    let simpleOutcome;
+    if (outcome === "Success" || outcome === "success") {
+        simpleOutcome = "✅";
+    } else if (outcome === "Pending" || outcome === "pending") {
+        simpleOutcome = "⏳";
+    } else if (normalizedOutcome === "builderror" || normalizedOutcome === "itserror" ||
+               normalizedOutcome === "releaseerror" || outcome === "failure") {
+        simpleOutcome = "❌";
+    } else {
+        simpleOutcome = outcome;
+    }
 
     // Build time + relative time
     const buildTime = result["time"];
@@ -725,7 +723,8 @@ function createRow(result) {
         <td data-column="assembly">${result["assembly"]}</td>
         <td data-column="group">${result["group"]}</td>
         <td data-column="time">${buildTimeDisplay}</td>
-        <td data-column="outcome" class="outcome-td">${plrsContent}</td>
+        <td data-column="outcome">${simpleOutcome}</td>
+        <td data-column="plrs" class="plrs-td">${plrsContent}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
