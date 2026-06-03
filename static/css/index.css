@@ -163,8 +163,9 @@ th.links-th {
 
 th[data-column="plrs"],
 td[data-column="plrs"] {
-    width: 100px;
-    max-width: 100px;
+    width: 120px;
+    max-width: 120px;
+    min-width: 120px;
 }
 
 .plrs-td {
