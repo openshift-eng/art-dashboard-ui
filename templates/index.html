@@ -145,6 +145,19 @@
                 <p>2. Hit "Fetch from DB" to query the Konflux DB; results are cached in the browser</p>
                 <p>3. Adjust the filters to limit the results being displayed</p>
                 <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
+
+                <h3 style="margin-top: 20px;">Outcome Column Icons</h3>
+                <p style="margin-bottom: 5px;">The Outcome column shows three pipeline stages: Build | ITS | Release</p>
+                <div style="margin-left: 20px;">
+                    <p><span style="font-size: 1.2em;">🟢</span> <strong>Green:</strong> Pipeline stage succeeded</p>
+                    <p><span style="font-size: 1.2em;">🔴</span> <strong>Red:</strong> Pipeline stage failed</p>
+                    <p><span style="font-size: 1.2em; opacity: 0.3;">⚪</span> <strong>Gray:</strong> Pipeline stage not run or no info available</p>
+                    <p><span style="font-size: 1.2em;">⏳</span> <strong>Hourglass:</strong> Pipeline stage pending</p>
+                </div>
+                <p style="margin-top: 10px; font-style: italic; font-size: 0.9em;">
+                    Note: Icons are clickable only when a pipeline URL is available. Non-clickable icons show default cursor on hover.
+                </p>
+
                 <button id="closeDialogButton">Close</button>
             </div>
         </div>

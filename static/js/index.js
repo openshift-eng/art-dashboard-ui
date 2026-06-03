@@ -651,7 +651,7 @@ function createRow(result) {
     if (buildPipelineUrl && buildStatus !== 'not-run') {
         plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon ${buildClass}">${buildIcon}</a> `;
     } else {
-        plrsContent += `<span class="plr-icon ${buildClass}" title="${buildTitle}">${buildIcon}</span> `;
+        plrsContent += `<span class="plr-icon plr-no-link ${buildClass}" title="${buildTitle}">${buildIcon}</span> `;
     }
 
     // ITS pipeline icon - show status based on outcome
@@ -661,7 +661,7 @@ function createRow(result) {
         itsTitle = 'ITS not run';
         itsClass = 'plr-not-run';
     } else if (itsStatus === 'failed') {
-        itsIcon = '🟠';
+        itsIcon = '🔴';
         itsTitle = 'ITS checks failed';
         itsClass = '';
     } else if (itsStatus === 'success') {
@@ -681,7 +681,7 @@ function createRow(result) {
     if (ecPipelineUrl && itsStatus !== 'not-run') {
         plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon ${itsClass}">${itsIcon}</a> `;
     } else {
-        plrsContent += `<span class="plr-icon ${itsClass}" title="${itsTitle}">${itsIcon}</span> `;
+        plrsContent += `<span class="plr-icon plr-no-link ${itsClass}" title="${itsTitle}">${itsIcon}</span> `;
     }
 
     // Release pipeline icon - show status based on outcome (even if no URL)
@@ -691,7 +691,7 @@ function createRow(result) {
         releaseTitle = 'Release not run';
         releaseClass = 'plr-not-run';
     } else if (releaseStatus === 'failed') {
-        releaseIcon = '🟡';
+        releaseIcon = '🔴';
         releaseTitle = 'Release failed';
         releaseClass = '';
     } else if (releaseStatus === 'success') {
@@ -711,7 +711,7 @@ function createRow(result) {
     if (releasePipelineUrl && releaseStatus !== 'not-run') {
         plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon ${releaseClass}">${releaseIcon}</a>`;
     } else {
-        plrsContent += `<span class="plr-icon ${releaseClass}" title="${releaseTitle}">${releaseIcon}</span>`;
+        plrsContent += `<span class="plr-icon plr-no-link ${releaseClass}" title="${releaseTitle}">${releaseIcon}</span>`;
     }
 
     // Create the row

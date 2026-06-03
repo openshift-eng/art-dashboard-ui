@@ -191,7 +191,14 @@ td[data-column="outcome"] {
 
 .plr-not-run {
     opacity: 0.3;
+}
+
+.plr-no-link {
     cursor: default;
+}
+
+.plr-no-link:hover {
+    transform: none;
 }
 
 td a {
