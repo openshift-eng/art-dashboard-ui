@@ -119,8 +119,14 @@ class KonfluxBuildHistory(Flask):
             # Frontend will handle deduplication and outcome filtering
             search_results = await self.query(
                 query_params,
-                outcomes=['Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                         'success', 'failure', 'pending']  # Include legacy values for backward compat
+                outcomes=[
+                    # PascalCase (old format)
+                    'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                    # snake_case (new art-tools format)
+                    'success', 'build_error', 'its_error', 'release_error', 'pending',
+                    # Legacy
+                    'failure'
+                ]
             )
 
             # Check if the request is an AJAX request
@@ -246,8 +252,10 @@ class KonfluxBuildHistory(Flask):
             group = request.args.get('group')
             redis_key = self.redis_build_record_key(record_id) if record_id else self.redis_build_key(nvr)
             search_outcomes = [outcome] if outcome else [
+                # PascalCase, snake_case, and legacy
                 'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                'success', 'failure', 'pending'
+                'success', 'build_error', 'its_error', 'release_error', 'pending',
+                'failure'
             ]
 
             if not nvr or not record_id:
@@ -396,7 +404,8 @@ class KonfluxBuildHistory(Flask):
                         db.bind(record_class)
                         where = {'outcome': [
                             'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                            'success', 'failure', 'pending'
+                            'success', 'build_error', 'its_error', 'release_error', 'pending',
+                            'failure'
                         ]}
                         if record_id:
                             where['record_id'] = record_id
@@ -518,7 +527,8 @@ class KonfluxBuildHistory(Flask):
                     db.bind(record_class)
                     where = {'record_id': record_id, 'outcome': [
                         'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                        'success', 'failure', 'pending'
+                        'success', 'build_error', 'its_error', 'release_error', 'pending',
+                        'failure'
                     ]}
                     if group:
                         where['group'] = group

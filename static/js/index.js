@@ -537,10 +537,14 @@ function createRow(result) {
         "ItsError": "🟠",
         "ReleaseError": "🟡",
         "Pending": "⏳",
-        // Backward compatibility
+        // snake_case variants (from new art-tools schema)
         "success": "🟢",
-        "failure": "🔴",
-        "pending": "⏳"
+        "build_error": "🔴",
+        "its_error": "🟠",
+        "release_error": "🟡",
+        "pending": "⏳",
+        // Legacy
+        "failure": "🔴"
     }[outcome] || outcome;
 
     // Build time + relative time
@@ -556,7 +560,7 @@ function createRow(result) {
     // PLRs column: Build, ITS, and Release pipeline icons with status colors
     const buildPipelineUrl = result["pipeline URL"] || "";
     const ecPipelineUrl = result["ec_pipeline_url"] || "";
-    const releasePipelineUrl = result["release_pipeline_url"] || "";
+    const releasePipelineUrl = result["release_pipeline_url"] || result["release_pipeline"] || "";
 
     let plrsContent = '';
 
@@ -566,17 +570,20 @@ function createRow(result) {
 
     let buildStatus, itsStatus, releaseStatus;
 
-    if (outcome === "BuildError") {
+    // Normalize outcome to handle both snake_case and PascalCase
+    const normalizedOutcome = outcome.toLowerCase().replace(/_/g, '');
+
+    if (outcome === "BuildError" || normalizedOutcome === "builderror") {
         // Build failed, ITS and Release not triggered
         buildStatus = 'failed';
         itsStatus = 'not-run';
         releaseStatus = 'not-run';
-    } else if (outcome === "ItsError") {
+    } else if (outcome === "ItsError" || normalizedOutcome === "itserror") {
         // Build succeeded, ITS failed, Release not triggered
         buildStatus = 'success';
         itsStatus = 'failed';
         releaseStatus = 'not-run';
-    } else if (outcome === "ReleaseError") {
+    } else if (outcome === "ReleaseError" || normalizedOutcome === "releaseerror") {
         // Build and ITS succeeded, Release failed
         buildStatus = 'success';
         itsStatus = 'success';
@@ -822,10 +829,12 @@ function filterDuplicatePending(results) {
         });
         const hasCompleted = group.some(r => {
             const outcome = r.outcome;
-            // Completed outcomes: Success, BuildError, ItsError, ReleaseError, or old success/failure
+            // Completed outcomes: Success, BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy failure
             return outcome === 'Success' || outcome === 'BuildError' ||
                    outcome === 'ItsError' || outcome === 'ReleaseError' ||
-                   outcome === 'success' || outcome === 'failure';
+                   outcome === 'success' || outcome === 'build_error' ||
+                   outcome === 'its_error' || outcome === 'release_error' ||
+                   outcome === 'failure';
         });
 
         if (hasPending && hasCompleted) {
@@ -834,7 +843,9 @@ function filterDuplicatePending(results) {
                 const outcome = result.outcome;
                 if (outcome === 'Success' || outcome === 'BuildError' ||
                     outcome === 'ItsError' || outcome === 'ReleaseError' ||
-                    outcome === 'success' || outcome === 'failure') {
+                    outcome === 'success' || outcome === 'build_error' ||
+                    outcome === 'its_error' || outcome === 'release_error' ||
+                    outcome === 'failure') {
                     filteredResults.push(result);
                 }
             });
@@ -1018,20 +1029,22 @@ function matchesFilters(result, filterParams) {
 
         for (const selectedOutcome of selectedOutcomes) {
             if (selectedOutcome === 'Success') {
-                // Match Success or legacy 'success'
+                // Match Success or snake_case 'success'
                 if (resultOutcome === 'Success' || resultOutcome === 'success') {
                     outcomeMatches = true;
                     break;
                 }
             } else if (selectedOutcome === 'Failure') {
-                // Match all failure types: BuildError, ItsError, ReleaseError, or legacy 'failure'
+                // Match all failure types: BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
                 if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
-                    resultOutcome === 'ReleaseError' || resultOutcome === 'failure') {
+                    resultOutcome === 'ReleaseError' || resultOutcome === 'build_error' ||
+                    resultOutcome === 'its_error' || resultOutcome === 'release_error' ||
+                    resultOutcome === 'failure') {
                     outcomeMatches = true;
                     break;
                 }
             } else if (selectedOutcome === 'Pending') {
-                // Match Pending or legacy 'pending'
+                // Match Pending or snake_case 'pending'
                 if (resultOutcome === 'Pending' || resultOutcome === 'pending') {
                     outcomeMatches = true;
                     break;

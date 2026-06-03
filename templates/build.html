@@ -105,7 +105,8 @@
                     {% if build.outcome %}
                     <div class="info-item">
                         <label>Outcome</label>
-                        <span class="badge badge-{{ build.outcome }}">{{ build.outcome }}</span>
+                        {% set outcome_display = build.outcome.replace('_', ' ').title() if '_' in build.outcome else build.outcome %}
+                        <span class="badge badge-{{ build.outcome }}">{{ outcome_display }}</span>
                     </div>
                     {% endif %}
                     {% if build.engine %}
