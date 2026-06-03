@@ -5,16 +5,17 @@ venv:
 	uv sync --active
 
 run:
-	@echo "Starting ART Build History Dashboard on http://localhost:8000"
-	@echo "Press Ctrl+C to stop"
-	@echo ""
-	@if [ -z "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
+	@PORT=$${PORT:-8000}; \
+	echo "Starting ART Build History Dashboard on http://localhost:$$PORT"; \
+	echo "Press Ctrl+C to stop"; \
+	echo ""; \
+	if [ -z "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
 		echo "Warning: GOOGLE_APPLICATION_CREDENTIALS not set. BigQuery queries will fail."; \
 		echo "To enable BigQuery, set your GCP credentials:"; \
 		echo "  export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json"; \
 		echo ""; \
-	fi
-	uv run python app.py
+	fi; \
+	PORT=$$PORT uv run python app.py
 
 lint:
 	uv run ruff check --select I --output-format concise
