@@ -167,6 +167,9 @@ td[data-column="outcome"] {
     max-width: 140px;
     min-width: 140px;
     text-align: center;
+}
+
+td[data-column="outcome"] {
     padding: 0;
 }
 
@@ -175,9 +178,7 @@ td[data-column="outcome"] {
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    padding: 8px 4px;
-    height: 100%;
-    min-height: 100%;
+    padding: 10px;
 }
 
 .plr-icon {
