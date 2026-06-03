@@ -557,32 +557,126 @@ function createRow(result) {
     const buildPipelineUrl = result["pipeline URL"] || "";
     const ecPipelineUrl = result["ec_pipeline_url"] || "";
     const releasePipelineUrl = result["release_pipeline_url"] || "";
-    const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
 
     let plrsContent = '';
 
+    // Determine pipeline statuses based on outcome and pipeline URL presence
+    // Sequence is always: Build -> ITS -> Release
+    // If a stage fails, subsequent stages are not triggered (no URL)
+
+    let buildStatus, itsStatus, releaseStatus;
+
+    if (outcome === "BuildError") {
+        // Build failed, ITS and Release not triggered
+        buildStatus = 'failed';
+        itsStatus = 'not-run';
+        releaseStatus = 'not-run';
+    } else if (outcome === "ItsError") {
+        // Build succeeded, ITS failed, Release not triggered
+        buildStatus = 'success';
+        itsStatus = 'failed';
+        releaseStatus = 'not-run';
+    } else if (outcome === "ReleaseError") {
+        // Build and ITS succeeded, Release failed
+        buildStatus = 'success';
+        itsStatus = 'success';
+        releaseStatus = 'failed';
+    } else if (outcome === "Success" || outcome === "success") {
+        // All stages that were triggered succeeded
+        buildStatus = 'success';
+        itsStatus = ecPipelineUrl ? 'success' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'success' : 'not-run';
+    } else if (outcome === "failure") {
+        // Legacy failure state: determine what failed based on pipeline URL presence
+        buildStatus = 'success'; // Build must have succeeded to have an NVR
+        if (!ecPipelineUrl) {
+            // ITS not triggered, so build failed
+            buildStatus = 'failed';
+            itsStatus = 'not-run';
+            releaseStatus = 'not-run';
+        } else if (!releasePipelineUrl) {
+            // ITS was triggered but Release wasn't, so ITS failed
+            itsStatus = 'failed';
+            releaseStatus = 'not-run';
+        } else {
+            // Both ITS and Release were triggered, so Release failed
+            itsStatus = 'success';
+            releaseStatus = 'failed';
+        }
+    } else if (outcome === "Pending" || outcome === "pending") {
+        // Pending state: show what we know so far
+        buildStatus = buildPipelineUrl ? 'pending' : 'not-run';
+        itsStatus = ecPipelineUrl ? 'pending' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'pending' : 'not-run';
+    } else {
+        // Unknown outcome, show based on URL presence
+        buildStatus = buildPipelineUrl ? 'unknown' : 'not-run';
+        itsStatus = ecPipelineUrl ? 'unknown' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'unknown' : 'not-run';
+    }
+
     // Build pipeline icon
     if (buildPipelineUrl) {
-        const buildIcon = outcome === "BuildError" || outcome === "failure" ? '🔴' : '🟢';
-        const buildTitle = outcome === "BuildError" || outcome === "failure" ? 'Build failed' : 'Build succeeded';
+        let buildIcon, buildTitle;
+        if (buildStatus === 'failed') {
+            buildIcon = '🔴';
+            buildTitle = 'Build failed';
+        } else if (buildStatus === 'success') {
+            buildIcon = '🟢';
+            buildTitle = 'Build succeeded';
+        } else if (buildStatus === 'pending') {
+            buildIcon = '⏳';
+            buildTitle = 'Build pending';
+        } else {
+            buildIcon = '❓';
+            buildTitle = 'Build status unknown';
+        }
         plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon">${buildIcon}</a> `;
     } else {
         plrsContent += `<span class="plr-icon plr-not-run" title="Build not run">⚪</span> `;
     }
 
     // ITS pipeline icon
-    if (ecPipelineUrl) {
-        const itsIcon = ecStatus === "failed" ? '🟠' : '🟢';
-        const itsTitle = ecStatus === "failed" ? 'ITS checks failed' : 'ITS checks passed';
+    if (itsStatus === 'not-run') {
+        plrsContent += `<span class="plr-icon plr-not-run" title="ITS not run">⚪</span> `;
+    } else if (ecPipelineUrl) {
+        let itsIcon, itsTitle;
+        if (itsStatus === 'failed') {
+            itsIcon = '🟠';
+            itsTitle = 'ITS checks failed';
+        } else if (itsStatus === 'success') {
+            itsIcon = '🟢';
+            itsTitle = 'ITS checks passed';
+        } else if (itsStatus === 'pending') {
+            itsIcon = '⏳';
+            itsTitle = 'ITS pending';
+        } else {
+            itsIcon = '❓';
+            itsTitle = 'ITS status unknown';
+        }
         plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon">${itsIcon}</a> `;
     } else {
         plrsContent += `<span class="plr-icon plr-not-run" title="ITS not run">⚪</span> `;
     }
 
     // Release pipeline icon
-    if (releasePipelineUrl) {
-        const releaseIcon = outcome === "ReleaseError" ? '🟡' : '🟢';
-        const releaseTitle = outcome === "ReleaseError" ? 'Release failed' : 'Release succeeded';
+    if (releaseStatus === 'not-run') {
+        plrsContent += `<span class="plr-icon plr-not-run" title="Release not run">⚪</span>`;
+    } else if (releasePipelineUrl) {
+        let releaseIcon, releaseTitle;
+        if (releaseStatus === 'failed') {
+            releaseIcon = '🟡';
+            releaseTitle = 'Release failed';
+        } else if (releaseStatus === 'success') {
+            releaseIcon = '🟢';
+            releaseTitle = 'Release succeeded';
+        } else if (releaseStatus === 'pending') {
+            releaseIcon = '⏳';
+            releaseTitle = 'Release pending';
+        } else {
+            releaseIcon = '❓';
+            releaseTitle = 'Release status unknown';
+        }
         plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon">${releaseIcon}</a>`;
     } else {
         plrsContent += `<span class="plr-icon plr-not-run" title="Release not run">⚪</span>`;
