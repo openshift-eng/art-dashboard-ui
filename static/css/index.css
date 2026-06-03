@@ -335,6 +335,26 @@ select option {
     background-color: #4caf50;
 }
 
+.status-bar-icon {
+    font-size: 18px;
+    background-color: #555;
+    padding: 7px;
+    border-radius: 50%;
+    margin-left: 10px;
+    cursor: pointer;
+    color: white;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.status-bar-icon:hover {
+    background-color: #4caf50;
+}
+
 /* Autocomplete styles */
 .autocomplete-container {
     position: relative;
