@@ -300,14 +300,8 @@ const multiSelectState = {};
 
 const outcomeLabels = {
     'Success': '🟢 Success',
-    'BuildError': '🔴 BuildError',
-    'ItsError': '🟠 ItsError',
-    'ReleaseError': '🟡 ReleaseError',
-    'Pending': '⏳ Pending',
-    // Backward compatibility
-    'success': '🟢 Success',
-    'failure': '🔴 Failure',
-    'pending': '⏳ Pending'
+    'Failure': '🔴 Failure (all types)',
+    'Pending': '⏳ Pending'
 };
 
 function getOutcomeValue(checkbox) {
@@ -318,24 +312,18 @@ function getOutcomeValue(checkbox) {
 function getOutcomeCheckboxes() {
     return [
         document.getElementById('outcome-success'),
-        document.getElementById('outcome-builderror'),
-        document.getElementById('outcome-itserror'),
-        document.getElementById('outcome-releaseerror'),
+        document.getElementById('outcome-failure'),
         document.getElementById('outcome-pending')
     ].filter(cb => cb !== null);
 }
 
 function normalizeOutcomeCheckboxValues() {
     const success = document.getElementById('outcome-success');
-    const builderror = document.getElementById('outcome-builderror');
-    const itserror = document.getElementById('outcome-itserror');
-    const releaseerror = document.getElementById('outcome-releaseerror');
+    const failure = document.getElementById('outcome-failure');
     const pending = document.getElementById('outcome-pending');
 
     if (success) success.value = success.dataset.value || 'Success';
-    if (builderror) builderror.value = builderror.dataset.value || 'BuildError';
-    if (itserror) itserror.value = itserror.dataset.value || 'ItsError';
-    if (releaseerror) releaseerror.value = releaseerror.dataset.value || 'ReleaseError';
+    if (failure) failure.value = failure.dataset.value || 'Failure';
     if (pending) pending.value = pending.dataset.value || 'Pending';
 }
 
@@ -932,7 +920,33 @@ function matchesFilters(result, filterParams) {
 
     // Check outcome filter (must match at least one selected outcome)
     if (selectedOutcomes.length > 0) {
-        if (!selectedOutcomes.includes(result['outcome'])) {
+        const resultOutcome = result['outcome'];
+        let outcomeMatches = false;
+
+        for (const selectedOutcome of selectedOutcomes) {
+            if (selectedOutcome === 'Success') {
+                // Match Success or legacy 'success'
+                if (resultOutcome === 'Success' || resultOutcome === 'success') {
+                    outcomeMatches = true;
+                    break;
+                }
+            } else if (selectedOutcome === 'Failure') {
+                // Match all failure types: BuildError, ItsError, ReleaseError, or legacy 'failure'
+                if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
+                    resultOutcome === 'ReleaseError' || resultOutcome === 'failure') {
+                    outcomeMatches = true;
+                    break;
+                }
+            } else if (selectedOutcome === 'Pending') {
+                // Match Pending or legacy 'pending'
+                if (resultOutcome === 'Pending' || resultOutcome === 'pending') {
+                    outcomeMatches = true;
+                    break;
+                }
+            }
+        }
+
+        if (!outcomeMatches) {
             return false;
         }
     }
@@ -1695,7 +1709,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     // Reset outcome checkboxes (default: only success checked)
     const outcomeCheckboxes = getOutcomeCheckboxes();
     outcomeCheckboxes.forEach(cb => {
-        cb.checked = getOutcomeValue(cb) === 'success';
+        cb.checked = getOutcomeValue(cb) === 'Success';
     });
     updateOutcomeDisplay();
 
