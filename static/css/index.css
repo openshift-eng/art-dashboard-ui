@@ -161,10 +161,31 @@ th.links-th {
     min-width: 100px;
 }
 
-th[data-column="plr"],
-td[data-column="plr"] {
-    width: 80px;
-    max-width: 80px;
+th[data-column="plrs"],
+td[data-column="plrs"] {
+    width: 100px;
+    max-width: 100px;
+}
+
+.plrs-td {
+    white-space: nowrap;
+}
+
+.plr-icon {
+    font-size: 1.2em;
+    text-decoration: none;
+    margin: 0 2px;
+    display: inline-block;
+}
+
+.plr-icon:hover {
+    transform: scale(1.2);
+    transition: transform 0.1s;
+}
+
+.plr-not-run {
+    opacity: 0.3;
+    cursor: default;
 }
 
 td a {

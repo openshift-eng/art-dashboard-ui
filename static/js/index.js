@@ -106,10 +106,20 @@ function sortResults(results, column, direction) {
                 bVal = b.name || '';
                 break;
             case 'outcome':
-                // Sort order: failure, pending, success
-                const outcomeOrder = { 'failure': 0, 'pending': 1, 'success': 2 };
-                aVal = outcomeOrder[a.outcome] ?? 3;
-                bVal = outcomeOrder[b.outcome] ?? 3;
+                // Sort order: BuildError, ItsError, ReleaseError, Pending, Success
+                const outcomeOrder = {
+                    'BuildError': 0,
+                    'ItsError': 1,
+                    'ReleaseError': 2,
+                    'Pending': 3,
+                    'Success': 4,
+                    // Backward compatibility with old values
+                    'failure': 0,
+                    'pending': 3,
+                    'success': 4
+                };
+                aVal = outcomeOrder[a.outcome] ?? 5;
+                bVal = outcomeOrder[b.outcome] ?? 5;
                 break;
             case 'nvr':
                 aVal = a.nvr || '';
@@ -132,14 +142,17 @@ function sortResults(results, column, direction) {
                 aVal = a.start_time ? new Date(a.start_time).getTime() : 0;
                 bVal = b.start_time ? new Date(b.start_time).getTime() : 0;
                 break;
-            case 'plr':
-                aVal = a['pipeline URL'] || '';
-                bVal = b['pipeline URL'] || '';
-                break;
-            case 'its':
-                const itsOrder = { 'failed': 0, 'n/a': 1, 'passed': 2 };
-                aVal = itsOrder[a['ec_status']] ?? 1;
-                bVal = itsOrder[b['ec_status']] ?? 1;
+            case 'plrs':
+                // Sort by presence of pipeline URLs (more URLs = higher priority)
+                const countPipelines = (r) => {
+                    let count = 0;
+                    if (r['pipeline URL']) count++;
+                    if (r['ec_pipeline_url']) count++;
+                    if (r['release_pipeline_url']) count++;
+                    return count;
+                };
+                aVal = countPipelines(a);
+                bVal = countPipelines(b);
                 break;
             default:
                 return 0;
@@ -286,8 +299,14 @@ document.getElementById("toggleButton").addEventListener("click", function() {
 const multiSelectState = {};
 
 const outcomeLabels = {
-    'success': '✅ Success',
-    'failure': '❌ Failure',
+    'Success': '🟢 Success',
+    'BuildError': '🔴 BuildError',
+    'ItsError': '🟠 ItsError',
+    'ReleaseError': '🟡 ReleaseError',
+    'Pending': '⏳ Pending',
+    // Backward compatibility
+    'success': '🟢 Success',
+    'failure': '🔴 Failure',
     'pending': '⏳ Pending'
 };
 
@@ -299,19 +318,25 @@ function getOutcomeValue(checkbox) {
 function getOutcomeCheckboxes() {
     return [
         document.getElementById('outcome-success'),
-        document.getElementById('outcome-failure'),
+        document.getElementById('outcome-builderror'),
+        document.getElementById('outcome-itserror'),
+        document.getElementById('outcome-releaseerror'),
         document.getElementById('outcome-pending')
     ].filter(cb => cb !== null);
 }
 
 function normalizeOutcomeCheckboxValues() {
     const success = document.getElementById('outcome-success');
-    const failure = document.getElementById('outcome-failure');
+    const builderror = document.getElementById('outcome-builderror');
+    const itserror = document.getElementById('outcome-itserror');
+    const releaseerror = document.getElementById('outcome-releaseerror');
     const pending = document.getElementById('outcome-pending');
 
-    if (success) success.value = success.dataset.value || 'success';
-    if (failure) failure.value = failure.dataset.value || 'failure';
-    if (pending) pending.value = pending.dataset.value || 'pending';
+    if (success) success.value = success.dataset.value || 'Success';
+    if (builderror) builderror.value = builderror.dataset.value || 'BuildError';
+    if (itserror) itserror.value = itserror.dataset.value || 'ItsError';
+    if (releaseerror) releaseerror.value = releaseerror.dataset.value || 'ReleaseError';
+    if (pending) pending.value = pending.dataset.value || 'Pending';
 }
 
 // Standalone function to update outcome display text based on current checkbox state
@@ -517,11 +542,17 @@ function createRow(result) {
     }
 
     // Determine the Outcome display value
-    const outcome = result.outcome?.toLowerCase() || "";
+    const outcome = result.outcome || "";
     const outcomeDisplay = {
-        "success": "✅",
-        "failure": "❌",
-        "pending": "⏳",
+        "Success": "🟢",
+        "BuildError": "🔴",
+        "ItsError": "🟠",
+        "ReleaseError": "🟡",
+        "Pending": "⏳",
+        // Backward compatibility
+        "success": "🟢",
+        "failure": "🔴",
+        "pending": "⏳"
     }[outcome] || outcome;
 
     // Build time + relative time
@@ -534,30 +565,39 @@ function createRow(result) {
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}/tree/${result.commitish}" target="_blank" title="View source tree">${shortCommit}</a>` : '';
 
-    // Extract pipeline run suffix from pipeline URL
-    const pipelineUrl = result["pipeline URL"] || "";
-    let pipelineRunLink = "";
-    if (pipelineUrl) {
-        const urlParts = pipelineUrl.split('/');
-        const lastPart = urlParts[urlParts.length - 1];
-        // Extract the suffix after the last dash (e.g., "tr79m" from "ose-4-13-ose-baremetal-installer-tr79m")
-        const dashIndex = lastPart.lastIndexOf('-');
-        let pipelineRunSuffix = dashIndex !== -1 ? lastPart.substring(dashIndex + 1) : lastPart;
-        // Take only last 6 characters to keep it compact
-        pipelineRunSuffix = pipelineRunSuffix.slice(-6);
-        pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run: ${lastPart}">${pipelineRunSuffix}</a>`;
+    // PLRs column: Build, ITS, and Release pipeline icons with status colors
+    const buildPipelineUrl = result["pipeline URL"] || "";
+    const ecPipelineUrl = result["ec_pipeline_url"] || "";
+    const releasePipelineUrl = result["release_pipeline_url"] || "";
+    const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
+
+    let plrsContent = '';
+
+    // Build pipeline icon
+    if (buildPipelineUrl) {
+        const buildIcon = outcome === "BuildError" || outcome === "failure" ? '🔴' : '🟢';
+        const buildTitle = outcome === "BuildError" || outcome === "failure" ? 'Build failed' : 'Build succeeded';
+        plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon">${buildIcon}</a> `;
+    } else {
+        plrsContent += `<span class="plr-icon plr-not-run" title="Build not run">⚪</span> `;
     }
 
-    // EC status (ITS) display — text with hyperlink for Pass/Fail
-    const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
-    const ecPipelineUrl = result["ec_pipeline_url"] || "";
-    let ecDisplay;
-    if (ecStatus === "passed" && ecPipelineUrl) {
-        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification passed">Pass</a>`;
-    } else if (ecStatus === "failed" && ecPipelineUrl) {
-        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification failed">Fail</a>`;
+    // ITS pipeline icon
+    if (ecPipelineUrl) {
+        const itsIcon = ecStatus === "failed" ? '🟠' : '🟢';
+        const itsTitle = ecStatus === "failed" ? 'ITS checks failed' : 'ITS checks passed';
+        plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon">${itsIcon}</a> `;
     } else {
-        ecDisplay = "N/A";
+        plrsContent += `<span class="plr-icon plr-not-run" title="ITS not run">⚪</span> `;
+    }
+
+    // Release pipeline icon
+    if (releasePipelineUrl) {
+        const releaseIcon = outcome === "ReleaseError" ? '🟡' : '🟢';
+        const releaseTitle = outcome === "ReleaseError" ? 'Release failed' : 'Release succeeded';
+        plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon">${releaseIcon}</a>`;
+    } else {
+        plrsContent += `<span class="plr-icon plr-not-run" title="Release not run">⚪</span>`;
     }
 
     // Create the row
@@ -572,8 +612,7 @@ function createRow(result) {
         <td data-column="assembly">${result["assembly"]}</td>
         <td data-column="group">${result["group"]}</td>
         <td data-column="time">${buildTimeDisplay}</td>
-        <td data-column="plr">${pipelineRunLink}</td>
-        <td data-column="its" title="EC verification: ${ecStatus}">${ecDisplay}</td>
+        <td data-column="plrs" class="plrs-td">${plrsContent}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
@@ -696,17 +735,25 @@ function filterDuplicatePending(results) {
 
     Object.values(nvrGroups).forEach(group => {
         // Check if there's both a pending and a completed build
-        const hasPending = group.some(r => r.outcome?.toLowerCase() === 'pending');
+        const hasPending = group.some(r => {
+            const outcome = r.outcome;
+            return outcome === 'Pending' || outcome === 'pending';
+        });
         const hasCompleted = group.some(r => {
-            const outcome = r.outcome?.toLowerCase();
-            return outcome === 'success' || outcome === 'failure';
+            const outcome = r.outcome;
+            // Completed outcomes: Success, BuildError, ItsError, ReleaseError, or old success/failure
+            return outcome === 'Success' || outcome === 'BuildError' ||
+                   outcome === 'ItsError' || outcome === 'ReleaseError' ||
+                   outcome === 'success' || outcome === 'failure';
         });
 
         if (hasPending && hasCompleted) {
             // Only include the completed builds
             group.forEach(result => {
-                const outcome = result.outcome?.toLowerCase();
-                if (outcome === 'success' || outcome === 'failure') {
+                const outcome = result.outcome;
+                if (outcome === 'Success' || outcome === 'BuildError' ||
+                    outcome === 'ItsError' || outcome === 'ReleaseError' ||
+                    outcome === 'success' || outcome === 'failure') {
                     filteredResults.push(result);
                 }
             });

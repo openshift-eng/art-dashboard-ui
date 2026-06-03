@@ -171,22 +171,43 @@
     font-weight: 500;
 }
 
+.badge-Success,
 .badge-success {
     background: rgba(76, 175, 80, 0.2);
     color: #4caf50;
     border: 1px solid #4caf50;
 }
 
-.badge-failure {
+.badge-BuildError {
     background: rgba(244, 67, 54, 0.2);
     color: #f44336;
     border: 1px solid #f44336;
 }
 
-.badge-pending {
+.badge-ItsError {
     background: rgba(255, 152, 0, 0.2);
     color: #ff9800;
     border: 1px solid #ff9800;
+}
+
+.badge-ReleaseError {
+    background: rgba(255, 235, 59, 0.2);
+    color: #ffeb3b;
+    border: 1px solid #ffeb3b;
+}
+
+.badge-Pending,
+.badge-pending {
+    background: rgba(158, 158, 158, 0.2);
+    color: #9e9e9e;
+    border: 1px solid #9e9e9e;
+}
+
+/* Backward compatibility */
+.badge-failure {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid #f44336;
 }
 
 .badge-image {

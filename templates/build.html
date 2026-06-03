@@ -246,19 +246,43 @@
             {% endif %}
 
             <!-- Build Links Section -->
-            {% if build.build_pipeline_url or build.art_job_url %}
+            {% if build.build_pipeline_url or build.ec_pipeline_url or build.release_pipeline_url or build.art_job_url %}
             <section class="build-section">
                 <h3>Build Links</h3>
                 <div class="info-grid">
                     {% if build.build_pipeline_url %}
                     <div class="info-item">
-                        <label>Pipeline URL</label>
+                        <label>Build Pipeline URL</label>
                         {% set pipeline_display = build.build_pipeline_url.split('://')[-1] %}
                         {% if '/' in pipeline_display %}
                             {% set pipeline_display = pipeline_display.split('/', 1)[1] %}
                         {% endif %}
                         <a href="{{ build.build_pipeline_url }}" target="_blank" rel="noopener">
                             <i class="fas fa-external-link-alt"></i> {{ pipeline_display }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if build.ec_pipeline_url %}
+                    <div class="info-item">
+                        <label>ITS Pipeline URL</label>
+                        {% set ec_pipeline_display = build.ec_pipeline_url.split('://')[-1] %}
+                        {% if '/' in ec_pipeline_display %}
+                            {% set ec_pipeline_display = ec_pipeline_display.split('/', 1)[1] %}
+                        {% endif %}
+                        <a href="{{ build.ec_pipeline_url }}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> {{ ec_pipeline_display }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if build.release_pipeline_url %}
+                    <div class="info-item">
+                        <label>Release Pipeline URL</label>
+                        {% set release_pipeline_display = build.release_pipeline_url.split('://')[-1] %}
+                        {% if '/' in release_pipeline_display %}
+                            {% set release_pipeline_display = release_pipeline_display.split('/', 1)[1] %}
+                        {% endif %}
+                        <a href="{{ build.release_pipeline_url }}" target="_blank" rel="noopener">
+                            <i class="fas fa-external-link-alt"></i> {{ release_pipeline_display }}
                         </a>
                     </div>
                     {% endif %}
@@ -405,8 +429,8 @@
                                       'outcome', 'engine', 'arches', 'start_time', 'end_time',
                                       'image_pullspec', 'art_images_share_pullspec', 'image_tag',
                                       'source_repo', 'commitish', 'rebase_repo_url', 'rebase_commitish', 'dg_commitish',
-                                      'build_pipeline_url', 'art_job_url', 'parent_images', 'installed_packages', 
-                                      'installed_rpms', 'embargoed'] %}
+                                      'build_pipeline_url', 'ec_pipeline_url', 'release_pipeline_url', 'art_job_url',
+                                      'parent_images', 'installed_packages', 'installed_rpms', 'embargoed'] %}
             {% set other_fields = [] %}
                     {% for key, value in build.items() %}
                 {% if key not in displayed_keys and value is not none %}
