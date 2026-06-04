@@ -37,20 +37,33 @@ FAILURE_TYPES = [
 ]
 
 JENKINS_BASE = 'https://art-jenkins.apps.prod-stable-spoke1-dc-iad2.itup.redhat.com/job/aos-cd-builds'
+KONFLUX_BASE = 'https://console.redhat.com/preview/application-pipeline/workspaces/ocp/applications'
 
 
-def _generate_pipeline_url(failure_type: str) -> str:
+def _generate_pipeline_urls(failure_type: str, component: str) -> tuple[str, str]:
     """
-    Generate a plausible pipeline URL for the given failure type.
+    Generate plausible pipeline URLs for the given failure type.
 
     Arg(s):
         failure_type (str): One of the FAILURE_TYPES values.
+        component (str): Component name for generating Konflux URL.
     Return Value(s):
-        str: A mock Jenkins pipeline URL.
+        tuple[str, str]: (jenkins_url, pipeline_url) where one may be empty.
     """
+    # 70% chance of having a jenkins URL for non-rebase failures
+    # 30% chance of having a konflux pipeline URL instead
+    rand_val = random.random()
+
     if failure_type == 'rebase-failure':
-        return f'{JENKINS_BASE}/job/build%252Frebase/lastBuild/'
-    return f'{JENKINS_BASE}/job/build%252Focp4/lastBuild/'
+        # Rebase failures only have jenkins URLs
+        return (f'{JENKINS_BASE}/job/build%252Frebase/lastBuild/', '')
+    elif rand_val < 0.7:
+        # Jenkins build
+        return (f'{JENKINS_BASE}/job/build%252Focp4/lastBuild/', '')
+    else:
+        # Konflux pipeline run
+        pipeline_run_id = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=8))
+        return ('', f'{KONFLUX_BASE}/{component}/pipelineruns/{component}-build-{pipeline_run_id}')
 
 
 def generate_mock_failures() -> list[dict]:
@@ -59,7 +72,7 @@ def generate_mock_failures() -> list[dict]:
 
     Return Value(s):
         list[dict]: List of failure records with keys:
-            name, group, failure_type, failure_count, pipeline_url
+            name, group, failure_type, failure_count, jenkins_url, pipeline_url
     """
     random.seed(42)
     failures = []
@@ -76,12 +89,15 @@ def generate_mock_failures() -> list[dict]:
                 k=1,
             )[0]
 
+            jenkins_url, pipeline_url = _generate_pipeline_urls(failure_type, component)
+
             failures.append({
                 'name': component,
                 'group': group,
                 'failure_type': failure_type,
                 'failure_count': failure_count,
-                'pipeline_url': _generate_pipeline_url(failure_type),
+                'jenkins_url': jenkins_url,
+                'pipeline_url': pipeline_url,
             })
 
     return failures

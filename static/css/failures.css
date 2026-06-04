@@ -257,14 +257,21 @@ th.sort-active .sort-arrow {
 }
 
 .pipeline-link {
-    color: #4caf50 !important;
+    display: inline-flex;
+    align-items: center;
     text-decoration: none;
-    word-break: break-all;
+    margin: 0 4px;
+    transition: opacity 0.2s;
 }
 
 .pipeline-link:hover {
-    color: #81e886 !important;
-    text-decoration: underline;
+    opacity: 0.7;
+}
+
+.pipeline-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
 }
 
 /* Bubble view */

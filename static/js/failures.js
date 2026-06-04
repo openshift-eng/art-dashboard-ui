@@ -153,9 +153,7 @@ function renderTable() {
     tbody.innerHTML = sorted.map(f => {
         const intensity = Math.min(f.failure_count / maxCount, 1);
         const bgColor = `rgba(244, 67, 54, ${0.1 + intensity * 0.4})`;
-        const pipelineDisplay = f.pipeline_url
-            ? `<a href="${escapeHtml(f.pipeline_url)}" target="_blank" class="pipeline-link" title="${escapeHtml(f.pipeline_url)}">View</a>`
-            : '-';
+        const pipelineDisplay = renderPipelineLinks(f.jenkins_url, f.pipeline_url);
 
         return `<tr>
             <td><strong>${escapeHtml(f.name)}</strong></td>
@@ -335,6 +333,24 @@ function renderBubbles() {
 
 const BUILD_HISTORY_BASE = 'https://art-build-history-art-build-history.apps.artc2023.pc3z.p1.openshiftapps.com';
 
+function renderPipelineLinks(jenkinsUrl, pipelineUrl) {
+    const links = [];
+
+    if (jenkinsUrl) {
+        links.push(`<a href="${escapeHtml(jenkinsUrl)}" target="_blank" class="pipeline-link jenkins-link" title="Jenkins Pipeline">
+            <img src="/static/images/jenkins-icon.png" alt="Jenkins" class="pipeline-icon">
+        </a>`);
+    }
+
+    if (pipelineUrl) {
+        links.push(`<a href="${escapeHtml(pipelineUrl)}" target="_blank" class="pipeline-link konflux-link" title="Konflux Pipeline">
+            <img src="/static/images/konflux-icon.png" alt="Konflux" class="pipeline-icon">
+        </a>`);
+    }
+
+    return links.length > 0 ? links.join(' ') : '-';
+}
+
 function buildHistoryUrl(name, group) {
     const today = new Date();
     const weekAgo = new Date(today);
@@ -346,9 +362,9 @@ function buildHistoryUrl(name, group) {
     params.set('group', group);
     params.set('assembly', 'stream');
     params.set('dateRange', dateRange);
-    params.append('outcome', 'success');
-    params.append('outcome', 'failure');
-    return `${BUILD_HISTORY_BASE}/search?${params}`;
+    params.append('outcome', 'Success');
+    params.append('outcome', 'Failure');
+    return `${BUILD_HISTORY_BASE}/?${params}`;
 }
 
 function formatFailureType(type) {

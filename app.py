@@ -105,7 +105,7 @@ async def _fetch_all_failures() -> list[dict]:
 
     Return Value(s):
         list[dict]: Flat list of failure records with keys:
-            name, group, failure_type, failure_count, pipeline_url
+            name, group, failure_type, failure_count, jenkins_url, pipeline_url
     """
     results = await asyncio.gather(*[_fetch_failures_for_type(ft) for ft in FAILURE_TYPES])
     all_failures = []
@@ -135,11 +135,13 @@ async def _fetch_failures_for_type(failure_type: str) -> list[dict]:
         return []
 
     jenkins_url_keys = [k.rsplit(':', 1)[0] + ':jenkins_url' for k in failure_keys]
+    pipeline_url_keys = [k.rsplit(':', 1)[0] + ':pipeline_url' for k in failure_keys]
 
     try:
-        counts, urls = await asyncio.gather(
+        counts, jenkins_urls, pipeline_urls = await asyncio.gather(
             redis.get_multiple_values(failure_keys),
             redis.get_multiple_values(jenkins_url_keys),
+            redis.get_multiple_values(pipeline_url_keys),
         )
     except Exception as e:
         logger.warning('Failed to batch fetch for %s: %s', failure_type, e)
@@ -160,7 +162,8 @@ async def _fetch_failures_for_type(failure_type: str) -> list[dict]:
             'group': group,
             'failure_type': failure_type,
             'failure_count': int(count_val),
-            'pipeline_url': urls[i] or '',
+            'jenkins_url': jenkins_urls[i] or '',
+            'pipeline_url': pipeline_urls[i] or '',
         })
 
     return failures
