@@ -179,24 +179,14 @@
 }
 
 .badge-BuildError,
-.badge-build_error {
+.badge-build_error,
+.badge-ItsError,
+.badge-its_error,
+.badge-ReleaseError,
+.badge-release_error {
     background: rgba(244, 67, 54, 0.2);
     color: #f44336;
     border: 1px solid #f44336;
-}
-
-.badge-ItsError,
-.badge-its_error {
-    background: rgba(255, 152, 0, 0.2);
-    color: #ff9800;
-    border: 1px solid #ff9800;
-}
-
-.badge-ReleaseError,
-.badge-release_error {
-    background: rgba(255, 235, 59, 0.2);
-    color: #ffeb3b;
-    border: 1px solid #ffeb3b;
 }
 
 .badge-Pending,
