@@ -932,7 +932,7 @@ class KonfluxBuildHistory(Flask):
                 'pipeline URL': b.build_pipeline_url,
                 'ec_status': str(getattr(b, 'ec_status', 'n/a') or 'n/a'),
                 'ec_pipeline_url': getattr(b, 'ec_pipeline_url', '') or '',
-                'release_pipeline_url': getattr(b, 'release_pipeline_url', '') or '',
+                'release_pipeline_url': getattr(b, 'release_pipeline', '') or '',
                 'art-job-url': b.art_job_url,
                 'type': get_build_type(b),
                 'record_id': b.record_id,
