@@ -217,7 +217,7 @@
                             {% set art_job_display = art_job_display.split('/', 1)[1] %}
                         {% endif %}
                         <a href="{{ build.art_job_url }}" target="_blank" rel="noopener">
-                            <i class="fas fa-external-link-alt"></i> {{ art_job_display }}
+                            <img src="{{ url_for('static', filename='images/jenkins-icon.png') }}" alt="Jenkins" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"> {{ art_job_display }}
                         </a>
                     </div>
                     {% endif %}

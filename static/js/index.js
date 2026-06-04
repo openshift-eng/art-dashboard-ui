@@ -724,7 +724,7 @@ function createRow(result) {
         <td data-column="plrs">${plrsContent}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
-            <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
+            <a href="${result["art-job-url"]}" target="_blank" title="ART job URL"><img src="/static/images/jenkins-icon.png" alt="Jenkins" style="width: 20px; height: 20px; vertical-align: middle;"></a>
         </td>
     `;
 
