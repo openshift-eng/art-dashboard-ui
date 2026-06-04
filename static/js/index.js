@@ -106,10 +106,20 @@ function sortResults(results, column, direction) {
                 bVal = b.name || '';
                 break;
             case 'outcome':
-                // Sort order: failure, pending, success
-                const outcomeOrder = { 'failure': 0, 'pending': 1, 'success': 2 };
-                aVal = outcomeOrder[a.outcome] ?? 3;
-                bVal = outcomeOrder[b.outcome] ?? 3;
+                // Sort order: BuildError, ItsError, ReleaseError, Pending, Success
+                const outcomeOrder = {
+                    'BuildError': 0,
+                    'ItsError': 1,
+                    'ReleaseError': 2,
+                    'Pending': 3,
+                    'Success': 4,
+                    // Backward compatibility with old values
+                    'failure': 0,
+                    'pending': 3,
+                    'success': 4
+                };
+                aVal = outcomeOrder[a.outcome] ?? 5;
+                bVal = outcomeOrder[b.outcome] ?? 5;
                 break;
             case 'nvr':
                 aVal = a.nvr || '';
@@ -132,14 +142,17 @@ function sortResults(results, column, direction) {
                 aVal = a.start_time ? new Date(a.start_time).getTime() : 0;
                 bVal = b.start_time ? new Date(b.start_time).getTime() : 0;
                 break;
-            case 'plr':
-                aVal = a['pipeline URL'] || '';
-                bVal = b['pipeline URL'] || '';
-                break;
-            case 'its':
-                const itsOrder = { 'failed': 0, 'n/a': 1, 'passed': 2 };
-                aVal = itsOrder[a['ec_status']] ?? 1;
-                bVal = itsOrder[b['ec_status']] ?? 1;
+            case 'plrs':
+                // Sort by presence of pipeline URLs (more URLs = higher priority)
+                const countPipelines = (r) => {
+                    let count = 0;
+                    if (r['pipeline URL']) count++;
+                    if (r['ec_pipeline_url']) count++;
+                    if (r['release_pipeline_url']) count++;
+                    return count;
+                };
+                aVal = countPipelines(a);
+                bVal = countPipelines(b);
                 break;
             default:
                 return 0;
@@ -286,9 +299,9 @@ document.getElementById("toggleButton").addEventListener("click", function() {
 const multiSelectState = {};
 
 const outcomeLabels = {
-    'success': '✅ Success',
-    'failure': '❌ Failure',
-    'pending': '⏳ Pending'
+    'Success': '🟢 Success',
+    'Failure': '🔴 Failure',
+    'Pending': '⏳ Pending'
 };
 
 function getOutcomeValue(checkbox) {
@@ -309,9 +322,9 @@ function normalizeOutcomeCheckboxValues() {
     const failure = document.getElementById('outcome-failure');
     const pending = document.getElementById('outcome-pending');
 
-    if (success) success.value = success.dataset.value || 'success';
-    if (failure) failure.value = failure.dataset.value || 'failure';
-    if (pending) pending.value = pending.dataset.value || 'pending';
+    if (success) success.value = success.dataset.value || 'Success';
+    if (failure) failure.value = failure.dataset.value || 'Failure';
+    if (pending) pending.value = pending.dataset.value || 'Pending';
 }
 
 // Standalone function to update outcome display text based on current checkbox state
@@ -516,13 +529,21 @@ function createRow(result) {
         return 'just now';
     }
 
-    // Determine the Outcome display value
-    const outcome = result.outcome?.toLowerCase() || "";
-    const outcomeDisplay = {
-        "success": "✅",
-        "failure": "❌",
-        "pending": "⏳",
-    }[outcome] || outcome;
+    // Simple outcome display - just success/failure/pending
+    const outcome = result.outcome || "";
+    const normalizedOutcome = outcome.toLowerCase().replace(/_/g, '');
+
+    let simpleOutcome;
+    if (outcome === "Success" || outcome === "success") {
+        simpleOutcome = "✅";
+    } else if (outcome === "Pending" || outcome === "pending") {
+        simpleOutcome = "⏳";
+    } else if (normalizedOutcome === "builderror" || normalizedOutcome === "itserror" ||
+               normalizedOutcome === "releaseerror" || outcome === "failure") {
+        simpleOutcome = "❌";
+    } else {
+        simpleOutcome = outcome;
+    }
 
     // Build time + relative time
     const buildTime = result["time"];
@@ -534,30 +555,158 @@ function createRow(result) {
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}/tree/${result.commitish}" target="_blank" title="View source tree">${shortCommit}</a>` : '';
 
-    // Extract pipeline run suffix from pipeline URL
-    const pipelineUrl = result["pipeline URL"] || "";
-    let pipelineRunLink = "";
-    if (pipelineUrl) {
-        const urlParts = pipelineUrl.split('/');
-        const lastPart = urlParts[urlParts.length - 1];
-        // Extract the suffix after the last dash (e.g., "tr79m" from "ose-4-13-ose-baremetal-installer-tr79m")
-        const dashIndex = lastPart.lastIndexOf('-');
-        let pipelineRunSuffix = dashIndex !== -1 ? lastPart.substring(dashIndex + 1) : lastPart;
-        // Take only last 6 characters to keep it compact
-        pipelineRunSuffix = pipelineRunSuffix.slice(-6);
-        pipelineRunLink = `<a href="${pipelineUrl}" target="_blank" title="Pipeline run: ${lastPart}">${pipelineRunSuffix}</a>`;
+    // PLRs column: Build, ITS, and Release pipeline icons with status colors
+    const buildPipelineUrl = result["pipeline URL"] || "";
+    const ecPipelineUrl = result["ec_pipeline_url"] || "";
+    const releasePipelineUrl = result["release_pipeline_url"] || result["release_pipeline"] || "";
+
+    let plrsContent = '';
+
+    // Determine pipeline statuses based on outcome and pipeline URL presence
+    // Sequence is always: Build -> ITS -> Release
+    // If a stage fails, subsequent stages are not triggered (no URL)
+
+    let buildStatus, itsStatus, releaseStatus;
+
+    if (outcome === "BuildError" || normalizedOutcome === "builderror") {
+        // Build failed, ITS and Release not triggered
+        buildStatus = 'failed';
+        itsStatus = 'not-run';
+        releaseStatus = 'not-run';
+    } else if (outcome === "ItsError" || normalizedOutcome === "itserror") {
+        // Build succeeded, ITS failed, Release not triggered
+        buildStatus = 'success';
+        itsStatus = 'failed';
+        releaseStatus = 'not-run';
+    } else if (outcome === "ReleaseError" || normalizedOutcome === "releaseerror") {
+        // Release failed - build succeeded, ITS may or may not have run
+        buildStatus = 'success';
+        // ITS status depends on whether we have URL info
+        itsStatus = ecPipelineUrl ? 'success' : 'not-run';
+        // Release failed (outcome tells us this)
+        releaseStatus = 'failed';
+    } else if (outcome === "Success" || outcome === "success") {
+        // All stages that were triggered succeeded
+        buildStatus = 'success';
+        itsStatus = ecPipelineUrl ? 'success' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'success' : 'not-run';
+    } else if (outcome === "failure") {
+        // Legacy failure state: determine what failed based on pipeline URL presence
+        buildStatus = 'success'; // Build must have succeeded to have an NVR
+        if (!ecPipelineUrl) {
+            // ITS not triggered, so build failed
+            buildStatus = 'failed';
+            itsStatus = 'not-run';
+            releaseStatus = 'not-run';
+        } else if (!releasePipelineUrl) {
+            // ITS was triggered but Release wasn't, so ITS failed
+            itsStatus = 'failed';
+            releaseStatus = 'not-run';
+        } else {
+            // Both ITS and Release were triggered, so Release failed
+            itsStatus = 'success';
+            releaseStatus = 'failed';
+        }
+    } else if (outcome === "Pending" || outcome === "pending") {
+        // Pending state: show what we know so far
+        buildStatus = buildPipelineUrl ? 'pending' : 'not-run';
+        itsStatus = ecPipelineUrl ? 'pending' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'pending' : 'not-run';
+    } else {
+        // Unknown outcome, show based on URL presence
+        buildStatus = buildPipelineUrl ? 'unknown' : 'not-run';
+        itsStatus = ecPipelineUrl ? 'unknown' : 'not-run';
+        releaseStatus = releasePipelineUrl ? 'unknown' : 'not-run';
     }
 
-    // EC status (ITS) display — text with hyperlink for Pass/Fail
-    const ecStatus = (result["ec_status"] || "n/a").toLowerCase();
-    const ecPipelineUrl = result["ec_pipeline_url"] || "";
-    let ecDisplay;
-    if (ecStatus === "passed" && ecPipelineUrl) {
-        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification passed">Pass</a>`;
-    } else if (ecStatus === "failed" && ecPipelineUrl) {
-        ecDisplay = `<a href="${ecPipelineUrl}" target="_blank" title="EC verification failed">Fail</a>`;
+    // Build pipeline icon - show status based on outcome
+    let buildIcon, buildTitle, buildClass;
+    if (buildStatus === 'not-run') {
+        buildIcon = '⚪';
+        buildTitle = 'Build not run';
+        buildClass = 'plr-not-run';
+    } else if (buildStatus === 'failed') {
+        buildIcon = '🔴';
+        buildTitle = 'Build failed';
+        buildClass = '';
+    } else if (buildStatus === 'success') {
+        buildIcon = '🟢';
+        buildTitle = 'Build succeeded';
+        buildClass = '';
+    } else if (buildStatus === 'pending') {
+        buildIcon = '⏳';
+        buildTitle = 'Build pending';
+        buildClass = '';
     } else {
-        ecDisplay = "N/A";
+        buildIcon = '❓';
+        buildTitle = 'Build status unknown';
+        buildClass = '';
+    }
+
+    if (buildPipelineUrl && buildStatus !== 'not-run') {
+        plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon ${buildClass}">${buildIcon}</a> `;
+    } else {
+        plrsContent += `<span class="plr-icon plr-no-link ${buildClass}" title="${buildTitle}">${buildIcon}</span> `;
+    }
+
+    // ITS pipeline icon - show status based on outcome
+    let itsIcon, itsTitle, itsClass;
+    if (itsStatus === 'not-run') {
+        itsIcon = '⚪';
+        itsTitle = 'ITS not run';
+        itsClass = 'plr-not-run';
+    } else if (itsStatus === 'failed') {
+        itsIcon = '🔴';
+        itsTitle = 'ITS checks failed';
+        itsClass = '';
+    } else if (itsStatus === 'success') {
+        itsIcon = '🟢';
+        itsTitle = 'ITS checks passed';
+        itsClass = '';
+    } else if (itsStatus === 'pending') {
+        itsIcon = '⏳';
+        itsTitle = 'ITS pending';
+        itsClass = '';
+    } else {
+        itsIcon = '❓';
+        itsTitle = 'ITS status unknown';
+        itsClass = '';
+    }
+
+    if (ecPipelineUrl && itsStatus !== 'not-run') {
+        plrsContent += `<a href="${ecPipelineUrl}" target="_blank" title="${itsTitle}" class="plr-icon ${itsClass}">${itsIcon}</a> `;
+    } else {
+        plrsContent += `<span class="plr-icon plr-no-link ${itsClass}" title="${itsTitle}">${itsIcon}</span> `;
+    }
+
+    // Release pipeline icon - show status based on outcome (even if no URL)
+    let releaseIcon, releaseTitle, releaseClass;
+    if (releaseStatus === 'not-run') {
+        releaseIcon = '⚪';
+        releaseTitle = 'Release not run';
+        releaseClass = 'plr-not-run';
+    } else if (releaseStatus === 'failed') {
+        releaseIcon = '🔴';
+        releaseTitle = 'Release failed';
+        releaseClass = '';
+    } else if (releaseStatus === 'success') {
+        releaseIcon = '🟢';
+        releaseTitle = 'Release succeeded';
+        releaseClass = '';
+    } else if (releaseStatus === 'pending') {
+        releaseIcon = '⏳';
+        releaseTitle = 'Release pending';
+        releaseClass = '';
+    } else {
+        releaseIcon = '❓';
+        releaseTitle = 'Release status unknown';
+        releaseClass = '';
+    }
+
+    if (releasePipelineUrl && releaseStatus !== 'not-run') {
+        plrsContent += `<a href="${releasePipelineUrl}" target="_blank" title="${releaseTitle}" class="plr-icon ${releaseClass}">${releaseIcon}</a>`;
+    } else {
+        plrsContent += `<span class="plr-icon plr-no-link ${releaseClass}" title="${releaseTitle}">${releaseIcon}</span>`;
     }
 
     // Create the row
@@ -566,14 +715,13 @@ function createRow(result) {
     const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
     row.innerHTML = `
         <td data-column="name">${result["name"]}</td>
-        <td data-column="outcome">${outcomeDisplay}</td>
+        <td data-column="outcome">${simpleOutcome}</td>
         <td data-column="nvr" class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td data-column="source">${sourceLink}</td>
         <td data-column="assembly">${result["assembly"]}</td>
         <td data-column="group">${result["group"]}</td>
         <td data-column="time">${buildTimeDisplay}</td>
-        <td data-column="plr">${pipelineRunLink}</td>
-        <td data-column="its" title="EC verification: ${ecStatus}">${ecDisplay}</td>
+        <td data-column="plrs">${plrsContent}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
@@ -696,17 +844,29 @@ function filterDuplicatePending(results) {
 
     Object.values(nvrGroups).forEach(group => {
         // Check if there's both a pending and a completed build
-        const hasPending = group.some(r => r.outcome?.toLowerCase() === 'pending');
+        const hasPending = group.some(r => {
+            const outcome = r.outcome;
+            return outcome === 'Pending' || outcome === 'pending';
+        });
         const hasCompleted = group.some(r => {
-            const outcome = r.outcome?.toLowerCase();
-            return outcome === 'success' || outcome === 'failure';
+            const outcome = r.outcome;
+            // Completed outcomes: Success, BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy failure
+            return outcome === 'Success' || outcome === 'BuildError' ||
+                   outcome === 'ItsError' || outcome === 'ReleaseError' ||
+                   outcome === 'success' || outcome === 'build_error' ||
+                   outcome === 'its_error' || outcome === 'release_error' ||
+                   outcome === 'failure';
         });
 
         if (hasPending && hasCompleted) {
             // Only include the completed builds
             group.forEach(result => {
-                const outcome = result.outcome?.toLowerCase();
-                if (outcome === 'success' || outcome === 'failure') {
+                const outcome = result.outcome;
+                if (outcome === 'Success' || outcome === 'BuildError' ||
+                    outcome === 'ItsError' || outcome === 'ReleaseError' ||
+                    outcome === 'success' || outcome === 'build_error' ||
+                    outcome === 'its_error' || outcome === 'release_error' ||
+                    outcome === 'failure') {
                     filteredResults.push(result);
                 }
             });
@@ -788,9 +948,8 @@ function performSearch(queryParams = null) {
         // Filter to selected outcomes if user specified any
         let resultsToDisplay = deduplicated;
         if (selectedOutcomes.length > 0) {
-            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
             resultsToDisplay = deduplicated.filter(result => {
-                return selectedLower.includes(result.outcome?.toLowerCase());
+                return outcomeMatchesSelection(result.outcome, selectedOutcomes);
             });
         }
 
@@ -879,13 +1038,47 @@ function downloadResults() {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Check if a result's outcome matches any of the selected outcome filters.
+ * Handles mapping of UI selections (Success, Failure, Pending) to actual database values.
+ */
+function outcomeMatchesSelection(resultOutcome, selectedOutcomes) {
+    if (!selectedOutcomes || selectedOutcomes.length === 0) {
+        return true; // No filter selected, match everything
+    }
+
+    for (const selectedOutcome of selectedOutcomes) {
+        if (selectedOutcome === 'Success') {
+            // Match Success or snake_case 'success'
+            if (resultOutcome === 'Success' || resultOutcome === 'success') {
+                return true;
+            }
+        } else if (selectedOutcome === 'Failure') {
+            // Match all failure types: BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
+            if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
+                resultOutcome === 'ReleaseError' || resultOutcome === 'build_error' ||
+                resultOutcome === 'its_error' || resultOutcome === 'release_error' ||
+                resultOutcome === 'failure') {
+                return true;
+            }
+        } else if (selectedOutcome === 'Pending') {
+            // Match Pending or snake_case 'pending'
+            if (resultOutcome === 'Pending' || resultOutcome === 'pending') {
+                return true;
+            }
+        }
+    }
+
+    return false; // No match found
+}
+
 function matchesFilters(result, filterParams) {
     // Collect all selected outcomes first (multi-select)
     const selectedOutcomes = filterParams.getAll('outcome');
 
     // Check outcome filter (must match at least one selected outcome)
     if (selectedOutcomes.length > 0) {
-        if (!selectedOutcomes.includes(result['outcome'])) {
+        if (!outcomeMatchesSelection(result['outcome'], selectedOutcomes)) {
             return false;
         }
     }
@@ -1471,9 +1664,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedOutcomes = urlParams.getAll('outcome');
         let resultsToDisplay = deduplicated;
         if (selectedOutcomes.length > 0) {
-            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
             resultsToDisplay = deduplicated.filter(result => {
-                return selectedLower.includes(result.outcome?.toLowerCase());
+                return outcomeMatchesSelection(result.outcome, selectedOutcomes);
             });
         }
 
@@ -1648,7 +1840,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
     // Reset outcome checkboxes (default: only success checked)
     const outcomeCheckboxes = getOutcomeCheckboxes();
     outcomeCheckboxes.forEach(cb => {
-        cb.checked = getOutcomeValue(cb) === 'success';
+        cb.checked = getOutcomeValue(cb) === 'Success';
     });
     updateOutcomeDisplay();
 

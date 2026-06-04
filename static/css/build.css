@@ -171,22 +171,36 @@
     font-weight: 500;
 }
 
+.badge-Success,
 .badge-success {
     background: rgba(76, 175, 80, 0.2);
     color: #4caf50;
     border: 1px solid #4caf50;
 }
 
-.badge-failure {
+.badge-BuildError,
+.badge-build_error,
+.badge-ItsError,
+.badge-its_error,
+.badge-ReleaseError,
+.badge-release_error {
     background: rgba(244, 67, 54, 0.2);
     color: #f44336;
     border: 1px solid #f44336;
 }
 
+.badge-Pending,
 .badge-pending {
-    background: rgba(255, 152, 0, 0.2);
-    color: #ff9800;
-    border: 1px solid #ff9800;
+    background: rgba(158, 158, 158, 0.2);
+    color: #9e9e9e;
+    border: 1px solid #9e9e9e;
+}
+
+/* Backward compatibility */
+.badge-failure {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid #f44336;
 }
 
 .badge-image {
@@ -202,6 +216,19 @@
 }
 
 .badge-fbc {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid #ffc107;
+}
+
+/* Hermetic badges */
+.badge-hermetic-yes {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+.badge-hermetic-no {
     background: rgba(255, 193, 7, 0.2);
     color: #ffc107;
     border: 1px solid #ffc107;

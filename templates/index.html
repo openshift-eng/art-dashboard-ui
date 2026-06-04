@@ -43,15 +43,15 @@
                         </div>
                         <div class="multiselect-dropdown" id="outcome-dropdown" style="display: none;" autocomplete="off">
                             <label class="multiselect-option">
-                                <input type="checkbox" id="outcome-success" name="outcome" value="success" data-value="success" checked autocomplete="off">
-                                <span>✅ Success</span>
+                                <input type="checkbox" id="outcome-success" name="outcome" value="Success" data-value="Success" checked autocomplete="off">
+                                <span>🟢 Success</span>
                             </label>
                             <label class="multiselect-option">
-                                <input type="checkbox" id="outcome-failure" name="outcome" value="failure" data-value="failure" autocomplete="off">
-                                <span>❌ Failure</span>
+                                <input type="checkbox" id="outcome-failure" name="outcome" value="Failure" data-value="Failure" autocomplete="off">
+                                <span>🔴 Failure</span>
                             </label>
                             <label class="multiselect-option">
-                                <input type="checkbox" id="outcome-pending" name="outcome" value="pending" data-value="pending" autocomplete="off">
+                                <input type="checkbox" id="outcome-pending" name="outcome" value="Pending" data-value="Pending" autocomplete="off">
                                 <span>⏳ Pending</span>
                             </label>
                         </div>
@@ -125,8 +125,7 @@
                     <th data-column="assembly" class="sortable">Assembly <span class="sort-indicator"></span></th>
                     <th data-column="group" class="sortable">Group <span class="sort-indicator"></span></th>
                     <th data-column="time" class="sortable">Time <span class="sort-indicator"></span></th>
-                    <th data-column="plr" class="sortable">PLR <span class="sort-indicator"></span></th>
-                    <th data-column="its" class="sortable">ITS <span class="sort-indicator"></span></th>
+                    <th data-column="plrs" class="sortable">PLRs <span class="sort-indicator"></span></th>
                     <th data-column="links" class="links-th">Links</th>
                 </tr>
             </thead>
@@ -147,6 +146,19 @@
                 <p>2. Hit "Fetch from DB" to query the Konflux DB; results are cached in the browser</p>
                 <p>3. Adjust the filters to limit the results being displayed</p>
                 <p>4. Hit "Filter view" to limit displayed results; cache is preserved</p>
+
+                <h3 style="margin-top: 20px;">Outcome Column Icons</h3>
+                <p style="margin-bottom: 5px;">The Outcome column shows three pipeline stages: Build | ITS | Release</p>
+                <div style="margin-left: 20px;">
+                    <p><span style="font-size: 1.2em;">🟢</span> <strong>Green:</strong> Pipeline stage succeeded</p>
+                    <p><span style="font-size: 1.2em;">🔴</span> <strong>Red:</strong> Pipeline stage failed</p>
+                    <p><span style="font-size: 1.2em; opacity: 0.3;">⚪</span> <strong>Gray:</strong> Pipeline stage not run or no info available</p>
+                    <p><span style="font-size: 1.2em;">⏳</span> <strong>Hourglass:</strong> Pipeline stage pending</p>
+                </div>
+                <p style="margin-top: 10px; font-style: italic; font-size: 0.9em;">
+                    Note: Icons are clickable only when a pipeline URL is available. Non-clickable icons show default cursor on hover.
+                </p>
+
                 <button id="closeDialogButton">Close</button>
             </div>
         </div>
@@ -186,10 +198,6 @@
             <span>Name</span>
         </label>
         <label class="column-visibility-option">
-            <input type="checkbox" data-column="outcome" checked>
-            <span>Outcome</span>
-        </label>
-        <label class="column-visibility-option">
             <input type="checkbox" data-column="nvr" checked>
             <span>NVR</span>
         </label>
@@ -210,12 +218,12 @@
             <span>Time</span>
         </label>
         <label class="column-visibility-option">
-            <input type="checkbox" data-column="plr" checked>
-            <span>PLR</span>
+            <input type="checkbox" data-column="outcome" checked>
+            <span>Outcome</span>
         </label>
         <label class="column-visibility-option">
-            <input type="checkbox" data-column="its" checked>
-            <span>ITS</span>
+            <input type="checkbox" data-column="plrs" checked>
+            <span>PLRs</span>
         </label>
         <label class="column-visibility-option">
             <input type="checkbox" data-column="links" checked>

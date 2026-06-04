@@ -161,10 +161,45 @@ th.links-th {
     min-width: 100px;
 }
 
-th[data-column="plr"],
-td[data-column="plr"] {
-    width: 80px;
-    max-width: 80px;
+th[data-column="outcome"] {
+    width: 90px;
+    max-width: 90px;
+    min-width: 90px;
+    text-align: center;
+}
+
+th[data-column="plrs"],
+td[data-column="plrs"] {
+    width: 140px;
+    max-width: 140px;
+    min-width: 140px;
+    text-align: center;
+    padding: 0;
+    background-color: #2b2b2b;
+}
+
+.plr-icon {
+    font-size: 1.2em;
+    text-decoration: none;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.plr-icon:hover {
+    transform: scale(1.2);
+    transition: transform 0.1s;
+}
+
+.plr-not-run {
+    opacity: 0.3;
+}
+
+.plr-no-link {
+    cursor: default;
+}
+
+.plr-no-link:hover {
+    transform: none;
 }
 
 td a {

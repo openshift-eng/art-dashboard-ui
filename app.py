@@ -115,9 +115,19 @@ class KonfluxBuildHistory(Flask):
             # Handle multi-select outcome values
             request.args.getlist('outcome')
 
-            # Always fetch all outcomes (success, failure, pending)
+            # Always fetch all outcomes (new and legacy values)
             # Frontend will handle deduplication and outcome filtering
-            search_results = await self.query(query_params, outcomes=['success', 'failure', 'pending'])
+            search_results = await self.query(
+                query_params,
+                outcomes=[
+                    # PascalCase (old format)
+                    'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                    # snake_case (new art-tools format)
+                    'success', 'build_error', 'its_error', 'release_error', 'pending',
+                    # Legacy
+                    'failure'
+                ]
+            )
 
             # Check if the request is an AJAX request
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -241,7 +251,12 @@ class KonfluxBuildHistory(Flask):
             record_id = request.args.get('record_id')
             group = request.args.get('group')
             redis_key = self.redis_build_record_key(record_id) if record_id else self.redis_build_key(nvr)
-            search_outcomes = [outcome] if outcome else ['success', 'failure', 'pending']
+            search_outcomes = [outcome] if outcome else [
+                # PascalCase, snake_case, and legacy
+                'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                'success', 'build_error', 'its_error', 'release_error', 'pending',
+                'failure'
+            ]
 
             if not nvr or not record_id:
                 error_message = 'Both nvr and record_id are required to view build details.'
@@ -387,7 +402,11 @@ class KonfluxBuildHistory(Flask):
                     try:
                         db = KonfluxDb()
                         db.bind(record_class)
-                        where = {'outcome': ['success', 'failure', 'pending']}
+                        where = {'outcome': [
+                            'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                            'success', 'build_error', 'its_error', 'release_error', 'pending',
+                            'failure'
+                        ]}
                         if record_id:
                             where['record_id'] = record_id
                         else:
@@ -506,7 +525,11 @@ class KonfluxBuildHistory(Flask):
                 try:
                     db = KonfluxDb()
                     db.bind(record_class)
-                    where = {'record_id': record_id, 'outcome': ['success', 'failure', 'pending']}
+                    where = {'record_id': record_id, 'outcome': [
+                        'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                        'success', 'build_error', 'its_error', 'release_error', 'pending',
+                        'failure'
+                    ]}
                     if group:
                         where['group'] = group
                     builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]
@@ -586,7 +609,7 @@ class KonfluxBuildHistory(Flask):
                     db = KonfluxDb()
                     db.bind(record_class)
                     where = {
-                        'outcome': ['success'],  # Only successful builds have reliable packages
+                        'outcome': ['Success', 'success'],  # Only successful builds have reliable packages
                     }
                     extra_patterns = {'nvr': compare_nvr}
                     if compare_name:
@@ -909,6 +932,7 @@ class KonfluxBuildHistory(Flask):
                 'pipeline URL': b.build_pipeline_url,
                 'ec_status': str(getattr(b, 'ec_status', 'n/a') or 'n/a'),
                 'ec_pipeline_url': getattr(b, 'ec_pipeline_url', '') or '',
+                'release_pipeline_url': getattr(b, 'release_pipeline', '') or '',
                 'art-job-url': b.art_job_url,
                 'type': get_build_type(b),
                 'record_id': b.record_id,
@@ -941,4 +965,5 @@ app = KonfluxBuildHistory()
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(debug=True, host='0.0.0.0', port=port)

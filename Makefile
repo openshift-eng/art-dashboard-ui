@@ -1,8 +1,21 @@
-.PHONY: venv lint fix test test-python test-js docker-base docker-build docker-run deploy deploy-setup deploy-base deploy-all check-namespace check-secrets
+.PHONY: venv lint fix test test-python test-js run docker-base docker-build docker-run deploy deploy-setup deploy-base deploy-all check-namespace check-secrets
 
 venv:
 	uv venv --python 3.11 --clear
 	uv sync --active
+
+run:
+	@PORT=$${PORT:-8000}; \
+	echo "Starting ART Build History Dashboard on http://localhost:$$PORT"; \
+	echo "Press Ctrl+C to stop"; \
+	echo ""; \
+	if [ -z "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
+		echo "Warning: GOOGLE_APPLICATION_CREDENTIALS not set. BigQuery queries will fail."; \
+		echo "To enable BigQuery, set your GCP credentials:"; \
+		echo "  export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json"; \
+		echo ""; \
+	fi; \
+	PORT=$$PORT uv run python app.py
 
 lint:
 	uv run ruff check --select I --output-format concise
