@@ -18,17 +18,24 @@ import asyncio
 import logging
 import os
 import re
+from typing import Optional
 
 from artcommonlib import redis
 from flask import Flask, jsonify, render_template, request
+from jira import JIRA
 from mock_data import generate_mock_failures, get_mock_failure_types, get_mock_groups
+from pyartcd.jira_client import JIRAClient
 
 DEV_MODE = os.environ.get('ART_DASH_DEV', '').lower() in ('1', 'true', 'yes')
 REDIS_AVAILABLE = bool(os.environ.get('REDIS_SERVER_PASSWORD'))
+JIRA_AVAILABLE = bool(os.environ.get('JIRA_TOKEN'))
 
 FAILURE_TYPES = ['build-failure', 'ec-failure', 'release-failure', 'rebase-failure']
 
 logger = logging.getLogger(__name__)
+
+# Global Jira client (initialized lazily)
+_jira_client: Optional[JIRAClient] = None
 
 
 def _create_app() -> Flask:
@@ -59,6 +66,85 @@ def _init_logger():
         logger.warning('Dev mode enabled (ART_DASH_DEV=1)')
     if not REDIS_AVAILABLE:
         logger.warning('REDIS_SERVER_PASSWORD not set — using mock data')
+    if not JIRA_AVAILABLE:
+        logger.warning('JIRA_TOKEN not set — Jira links will not be available')
+
+
+def _get_jira_client() -> Optional[JIRAClient]:
+    """
+    Get or create the global Jira client instance.
+
+    Return Value(s):
+        Optional[JIRAClient]: Jira client if credentials are available, None otherwise.
+    """
+    global _jira_client
+    if not JIRA_AVAILABLE:
+        return None
+    if _jira_client is None:
+        jira_url = os.environ.get('JIRA_URL', 'https://redhat.atlassian.net')
+        jira_email = os.environ.get('JIRA_EMAIL', 'aos-art-automation@redhat.com')
+        jira_token = os.environ['JIRA_TOKEN']
+        try:
+            _jira_client = JIRAClient.from_url(jira_url, basic_auth=(jira_email, jira_token))
+            logger.info('Jira client initialized successfully')
+        except Exception as e:
+            logger.warning('Failed to initialize Jira client: %s', e)
+            return None
+    return _jira_client
+
+
+async def _fetch_jira_tickets_for_failures(failures: list[dict]) -> dict[tuple[str, str], str]:
+    """
+    Fetch Jira tickets for build failures from Jira API.
+    Queries for open tickets with labels art:image-build-failure, art:image-ec-failure,
+    art:image-release-failure to match them with failures.
+
+    Arg(s):
+        failures (list[dict]): List of failure records from Redis.
+    Return Value(s):
+        dict: {(image_name, group): jira_ticket_key}
+    """
+    jira_client = _get_jira_client()
+    if not jira_client:
+        return {}
+
+    # Map failure types to Jira labels
+    label_map = {
+        'build-failure': 'art:image-build-failure',
+        'ec-failure': 'art:image-ec-failure',
+        'release-failure': 'art:image-release-failure',
+        'rebase-failure': 'art:image-rebase-failure',
+    }
+
+    jira_tickets = {}
+
+    try:
+        # Query all open tickets for all failure types in parallel
+        labels = list(label_map.values())
+        jql = f'project = ART AND labels in ({",".join([f'"{l}"' for l in labels])}) AND statusCategory != Done'
+        logger.info('Querying Jira with JQL: %s', jql)
+
+        open_tickets = jira_client.search_issues(jql, maxResults=False)
+        logger.info('Found %d open Jira tickets', len(open_tickets))
+
+        # Index tickets by (image_name, group)
+        for ticket in open_tickets:
+            image_name = None
+            group = None
+            for label in ticket.fields.labels:
+                if label.startswith('art:package:'):
+                    image_name = label[len('art:package:') :]
+                elif label.startswith('art:group:'):
+                    group = label[len('art:group:') :]
+            if image_name and group:
+                jira_tickets[(image_name, group)] = ticket.key
+
+        logger.info('Indexed %d Jira tickets by (image_name, group)', len(jira_tickets))
+
+    except Exception as e:
+        logger.warning('Failed to fetch Jira tickets: %s', e)
+
+    return jira_tickets
 
 
 def _add_routes(app: Flask):
@@ -78,7 +164,15 @@ def _add_routes(app: Flask):
         if not REDIS_AVAILABLE:
             failures = generate_mock_failures()
         else:
-            failures = await _fetch_all_failures()
+            # Fetch failures and Jira tickets in parallel
+            failures, jira_tickets = await asyncio.gather(
+                _fetch_all_failures(), _fetch_jira_tickets_for_failures([])
+            )
+
+            # Add jira_ticket field to each failure
+            for failure in failures:
+                key = (failure['name'], failure['group'])
+                failure['jira_ticket'] = jira_tickets.get(key, '')
 
         failures.sort(key=lambda f: f['failure_count'], reverse=True)
         return jsonify(failures)

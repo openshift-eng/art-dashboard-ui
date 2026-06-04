@@ -154,6 +154,7 @@ function renderTable() {
         const intensity = Math.min(f.failure_count / maxCount, 1);
         const bgColor = `rgba(244, 67, 54, ${0.1 + intensity * 0.4})`;
         const pipelineDisplay = renderPipelineLinks(f.jenkins_url, f.pipeline_url);
+        const jiraDisplay = renderJiraLink(f.jira_ticket);
 
         return `<tr>
             <td><strong>${escapeHtml(f.name)}</strong></td>
@@ -161,6 +162,7 @@ function renderTable() {
             <td><span class="failure-type-badge ${f.failure_type}">${formatFailureType(f.failure_type)}</span></td>
             <td class="failure-count-cell" style="background-color: ${bgColor}">${f.failure_count}</td>
             <td>${pipelineDisplay}</td>
+            <td>${jiraDisplay}</td>
         </tr>`;
     }).join('');
 }
@@ -332,6 +334,7 @@ function renderBubbles() {
 // --- Utilities ---
 
 const BUILD_HISTORY_BASE = 'https://art-build-history-art-build-history.apps.artc2023.pc3z.p1.openshiftapps.com';
+const JIRA_BASE = 'https://redhat.atlassian.net/browse';
 
 function renderPipelineLinks(jenkinsUrl, pipelineUrl) {
     const links = [];
@@ -349,6 +352,14 @@ function renderPipelineLinks(jenkinsUrl, pipelineUrl) {
     }
 
     return links.length > 0 ? links.join(' ') : '-';
+}
+
+function renderJiraLink(jiraTicket) {
+    if (!jiraTicket) {
+        return '-';
+    }
+    const jiraUrl = `${JIRA_BASE}/${escapeHtml(jiraTicket)}`;
+    return `<a href="${jiraUrl}" target="_blank" class="jira-link" title="View Jira ticket">${escapeHtml(jiraTicket)}</a>`;
 }
 
 function buildHistoryUrl(name, group) {

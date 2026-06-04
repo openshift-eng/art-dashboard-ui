@@ -91,6 +91,11 @@ def generate_mock_failures() -> list[dict]:
 
             jenkins_url, pipeline_url = _generate_pipeline_urls(failure_type, component)
 
+            # 30% chance of having a Jira ticket for failures with count > 3
+            jira_ticket = ''
+            if failure_count > 3 and random.random() < 0.3:
+                jira_ticket = f'ART-{random.randint(1000, 9999)}'
+
             failures.append({
                 'name': component,
                 'group': group,
@@ -98,6 +103,7 @@ def generate_mock_failures() -> list[dict]:
                 'failure_count': failure_count,
                 'jenkins_url': jenkins_url,
                 'pipeline_url': pipeline_url,
+                'jira_ticket': jira_ticket,
             })
 
     return failures

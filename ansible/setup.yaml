@@ -6,6 +6,10 @@
     ansible_python_interpreter: /usr/bin/python3
     namespace: "{{ lookup('env', 'OPENSHIFT_NAMESPACE') }}"
     redis_password: "{{ lookup('env', 'REDIS_PASSWORD') }}"
+    jira_email: "{{ lookup('env', 'JIRA_EMAIL') }}"
+    jira_token: "{{ lookup('env', 'JIRA_TOKEN') }}"
+    update_redis_secret: "{{ lookup('env', 'UPDATE_REDIS_SECRET') | default('false') }}"
+    update_jira_secret: "{{ lookup('env', 'UPDATE_JIRA_SECRET') | default('false') }}"
 
   tasks:
     # Validation
@@ -18,13 +22,8 @@
             export OPENSHIFT_NAMESPACE=your-namespace-name
       when: namespace == ""
 
-    - name: Validate REDIS_PASSWORD is set
-      ansible.builtin.fail:
-        msg: "REDIS_PASSWORD environment variable is not set"
-      when: redis_password == ""
-
-    # Secrets
-    - name: Create redis-server-password secret
+    # Secrets (conditional based on available credentials)
+    - name: Create/Update redis-server-password secret
       kubernetes.core.k8s:
         state: present
         namespace: "{{ namespace }}"
@@ -36,6 +35,54 @@
           type: Opaque
           stringData:
             password: "{{ redis_password }}"
+      when: update_redis_secret == "true"
+
+    - name: Check if redis-server-password secret exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: redis-server-password
+        namespace: "{{ namespace }}"
+      register: redis_secret_check
+      when: update_redis_secret == "false"
+
+    - name: Warn if Redis secret missing and credentials not provided
+      ansible.builtin.debug:
+        msg: |
+          WARNING: redis-server-password secret does not exist and REDIS_PASSWORD not provided
+          The deployment may not work without Redis credentials
+      when: update_redis_secret == "false" and (redis_secret_check.resources | length == 0)
+
+    - name: Create/Update jira-credentials secret
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: jira-credentials
+          type: Opaque
+          stringData:
+            email: "{{ jira_email }}"
+            token: "{{ jira_token }}"
+      when: update_jira_secret == "true"
+
+    - name: Check if jira-credentials secret exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: jira-credentials
+        namespace: "{{ namespace }}"
+      register: jira_secret_check
+      when: update_jira_secret == "false"
+
+    - name: Warn if Jira secret missing and credentials not provided
+      ansible.builtin.debug:
+        msg: |
+          WARNING: jira-credentials secret does not exist and Jira credentials not provided
+          Jira integration will not be available
+      when: update_jira_secret == "false" and (jira_secret_check.resources | length == 0)
 
     # ImageStream
     - name: Create ImageStream
@@ -83,8 +130,9 @@
         msg: |
           Setup complete!
 
-          Resources created in namespace: {{ namespace }}
-          - Secret: redis-server-password
+          Resources created/updated in namespace: {{ namespace }}
+          - Secret: redis-server-password ({{ 'updated' if update_redis_secret == 'true' else 'using existing' }})
+          - Secret: jira-credentials ({{ 'updated' if update_jira_secret == 'true' else 'using existing' }})
           - ImageStream: art-build-failures (tags: base, latest)
           - BuildConfigs: art-build-failures-base, art-build-failures
           - Service: art-build-failures

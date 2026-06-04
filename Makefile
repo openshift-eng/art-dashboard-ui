@@ -1,4 +1,4 @@
-.PHONY: venv lint fix run docker-base docker-build docker-run check-namespace check-secrets deploy deploy-setup deploy-base deploy-all
+.PHONY: venv lint fix run docker-base docker-build docker-run check-namespace check-credentials deploy deploy-setup deploy-base deploy-all
 
 venv:
 	uv venv --python 3.11 --clear
@@ -27,17 +27,17 @@ docker-run:
 check-namespace:
 	@test -n "$$OPENSHIFT_NAMESPACE" || (echo "Error: OPENSHIFT_NAMESPACE not set" && exit 1)
 
-check-secrets:
-	@test -n "$$REDIS_PASSWORD" || (echo "Error: REDIS_PASSWORD not set" && exit 1)
+check-credentials:
+	@bash scripts/check-credentials.sh
 
 deploy: check-namespace
 	ansible-playbook ansible/update.yaml
 
-deploy-setup: check-namespace check-secrets
-	ansible-playbook ansible/setup.yaml
+deploy-setup: check-credentials
+	@bash scripts/check-credentials.sh && ansible-playbook ansible/setup.yaml
 
 deploy-base: check-namespace
 	ansible-playbook ansible/build-base.yaml
 
-deploy-all: check-namespace check-secrets
-	ansible-playbook ansible/deploy.yaml
+deploy-all: check-credentials
+	@bash scripts/check-credentials.sh && ansible-playbook ansible/deploy.yaml

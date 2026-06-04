@@ -21,6 +21,16 @@ spec:
                 secretKeyRef:
                   name: redis-server-password
                   key: password
+            - name: JIRA_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: jira-credentials
+                  key: email
+            - name: JIRA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jira-credentials
+                  key: token
           ports:
             - containerPort: 8080
               protocol: TCP

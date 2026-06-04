@@ -174,11 +174,12 @@
     table-layout: fixed;
 }
 
-#failures-table col.col-name       { width: 22%; }
-#failures-table col.col-group      { width: 18%; }
-#failures-table col.col-type       { width: 16%; }
-#failures-table col.col-count      { width: 12%; }
-#failures-table col.col-pipeline   { width: 32%; }
+#failures-table col.col-name       { width: 20%; }
+#failures-table col.col-group      { width: 16%; }
+#failures-table col.col-type       { width: 14%; }
+#failures-table col.col-count      { width: 11%; }
+#failures-table col.col-pipeline   { width: 28%; }
+#failures-table col.col-jira       { width: 11%; }
 
 #failures-table th {
     background-color: #333;
@@ -272,6 +273,19 @@ th.sort-active .sort-arrow {
     width: 24px;
     height: 24px;
     display: block;
+}
+
+/* Jira link */
+.jira-link {
+    color: #4caf50;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+
+.jira-link:hover {
+    color: #81e886;
+    text-decoration: underline;
 }
 
 /* Bubble view */
