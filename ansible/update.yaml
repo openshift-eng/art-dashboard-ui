@@ -16,6 +16,32 @@
             export OPENSHIFT_NAMESPACE=your-namespace-name
       when: namespace == ""
 
+    - name: Check if required secrets exist
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ item }}"
+        namespace: "{{ namespace }}"
+      loop:
+        - redis-server-password
+        - jira-credentials
+      register: secret_check
+
+    - name: Validate required secrets exist
+      ansible.builtin.fail:
+        msg: |
+          Required secret '{{ item.item }}' not found in namespace {{ namespace }}
+
+          Please run 'make deploy-setup' first to create all required secrets.
+
+          For initial setup with credentials:
+            export OPENSHIFT_NAMESPACE={{ namespace }}
+            export REDIS_PASSWORD=your-password
+            # Ensure /tmp/JIRA_EMAIL and /tmp/JIRA_TOKEN exist
+            make deploy-setup
+      when: item.resources | length == 0
+      loop: "{{ secret_check.results }}"
+
     - name: Start app image build
       ansible.builtin.shell: oc start-build art-build-failures -n {{ namespace }} -o name
       register: app_build_result
