@@ -300,7 +300,7 @@ const multiSelectState = {};
 
 const outcomeLabels = {
     'Success': '🟢 Success',
-    'Failure': '🔴 Failure (all types)',
+    'Failure': '🔴 Failure',
     'Pending': '⏳ Pending'
 };
 
@@ -715,13 +715,13 @@ function createRow(result) {
     const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
     row.innerHTML = `
         <td data-column="name">${result["name"]}</td>
+        <td data-column="outcome">${simpleOutcome}</td>
         <td data-column="nvr" class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td data-column="source">${sourceLink}</td>
         <td data-column="assembly">${result["assembly"]}</td>
         <td data-column="group">${result["group"]}</td>
         <td data-column="time">${buildTimeDisplay}</td>
-        <td data-column="outcome">${simpleOutcome}</td>
-        <td data-column="plrs" class="plrs-td">${plrsContent}</td>
+        <td data-column="plrs">${plrsContent}</td>
         <td data-column="links">
             <a href="/logs?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}" target="_blank" title="Build logs">📜️</a>
             <a href="${result["art-job-url"]}" target="_blank" title="ART job URL">🎨</a>
