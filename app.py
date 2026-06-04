@@ -121,7 +121,8 @@ async def _fetch_jira_tickets_for_failures(failures: list[dict]) -> dict[tuple[s
     try:
         # Query all open tickets for all failure types in parallel
         labels = list(label_map.values())
-        jql = f'project = ART AND labels in ({",".join([f'"{l}"' for l in labels])}) AND statusCategory != Done'
+        labels_str = ','.join([f'"{label}"' for label in labels])
+        jql = f'project = ART AND labels in ({labels_str}) AND statusCategory != Done'
         logger.info('Querying Jira with JQL: %s', jql)
 
         open_tickets = jira_client.search_issues(jql, maxResults=False)
