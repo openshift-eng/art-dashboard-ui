@@ -34,10 +34,10 @@ deploy: check-namespace
 	ansible-playbook ansible/update.yaml
 
 deploy-setup: check-credentials
-	@bash scripts/check-credentials.sh && ansible-playbook ansible/setup.yaml
+	@bash -c 'source scripts/check-credentials.sh && ansible-playbook ansible/setup.yaml'
 
 deploy-base: check-namespace
 	ansible-playbook ansible/build-base.yaml
 
 deploy-all: check-credentials
-	@bash scripts/check-credentials.sh && ansible-playbook ansible/deploy.yaml
+	@bash -c 'source scripts/check-credentials.sh && ansible-playbook ansible/deploy.yaml'
