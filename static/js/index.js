@@ -948,9 +948,8 @@ function performSearch(queryParams = null) {
         // Filter to selected outcomes if user specified any
         let resultsToDisplay = deduplicated;
         if (selectedOutcomes.length > 0) {
-            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
             resultsToDisplay = deduplicated.filter(result => {
-                return selectedLower.includes(result.outcome?.toLowerCase());
+                return outcomeMatchesSelection(result.outcome, selectedOutcomes);
             });
         }
 
@@ -1039,41 +1038,47 @@ function downloadResults() {
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Check if a result's outcome matches any of the selected outcome filters.
+ * Handles mapping of UI selections (Success, Failure, Pending) to actual database values.
+ */
+function outcomeMatchesSelection(resultOutcome, selectedOutcomes) {
+    if (!selectedOutcomes || selectedOutcomes.length === 0) {
+        return true; // No filter selected, match everything
+    }
+
+    for (const selectedOutcome of selectedOutcomes) {
+        if (selectedOutcome === 'Success') {
+            // Match Success or snake_case 'success'
+            if (resultOutcome === 'Success' || resultOutcome === 'success') {
+                return true;
+            }
+        } else if (selectedOutcome === 'Failure') {
+            // Match all failure types: BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
+            if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
+                resultOutcome === 'ReleaseError' || resultOutcome === 'build_error' ||
+                resultOutcome === 'its_error' || resultOutcome === 'release_error' ||
+                resultOutcome === 'failure') {
+                return true;
+            }
+        } else if (selectedOutcome === 'Pending') {
+            // Match Pending or snake_case 'pending'
+            if (resultOutcome === 'Pending' || resultOutcome === 'pending') {
+                return true;
+            }
+        }
+    }
+
+    return false; // No match found
+}
+
 function matchesFilters(result, filterParams) {
     // Collect all selected outcomes first (multi-select)
     const selectedOutcomes = filterParams.getAll('outcome');
 
     // Check outcome filter (must match at least one selected outcome)
     if (selectedOutcomes.length > 0) {
-        const resultOutcome = result['outcome'];
-        let outcomeMatches = false;
-
-        for (const selectedOutcome of selectedOutcomes) {
-            if (selectedOutcome === 'Success') {
-                // Match Success or snake_case 'success'
-                if (resultOutcome === 'Success' || resultOutcome === 'success') {
-                    outcomeMatches = true;
-                    break;
-                }
-            } else if (selectedOutcome === 'Failure') {
-                // Match all failure types: BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
-                if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
-                    resultOutcome === 'ReleaseError' || resultOutcome === 'build_error' ||
-                    resultOutcome === 'its_error' || resultOutcome === 'release_error' ||
-                    resultOutcome === 'failure') {
-                    outcomeMatches = true;
-                    break;
-                }
-            } else if (selectedOutcome === 'Pending') {
-                // Match Pending or snake_case 'pending'
-                if (resultOutcome === 'Pending' || resultOutcome === 'pending') {
-                    outcomeMatches = true;
-                    break;
-                }
-            }
-        }
-
-        if (!outcomeMatches) {
+        if (!outcomeMatchesSelection(result['outcome'], selectedOutcomes)) {
             return false;
         }
     }
@@ -1659,9 +1664,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedOutcomes = urlParams.getAll('outcome');
         let resultsToDisplay = deduplicated;
         if (selectedOutcomes.length > 0) {
-            const selectedLower = selectedOutcomes.map(o => o.toLowerCase());
             resultsToDisplay = deduplicated.filter(result => {
-                return selectedLower.includes(result.outcome?.toLowerCase());
+                return outcomeMatchesSelection(result.outcome, selectedOutcomes);
             });
         }
 
