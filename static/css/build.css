@@ -221,6 +221,19 @@
     border: 1px solid #ffc107;
 }
 
+/* Hermetic badges */
+.badge-hermetic-yes {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+}
+
+.badge-hermetic-no {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid #ffc107;
+}
+
 /* Monospace text */
 .monospace {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;

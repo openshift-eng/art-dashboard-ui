@@ -88,14 +88,20 @@
                     {% endif %}
                 </div>
                 <!-- Build Type row -->
-                {% if build_type %}
                 <div class="info-row">
+                    {% if build_type %}
                     <div class="info-item">
                         <label>Build Type</label>
                         <span class="badge badge-{{ build_type }}">{{ build_type }}</span>
                     </div>
+                    {% endif %}
+                    {% if build.hermetic is not none %}
+                    <div class="info-item">
+                        <label>Hermetic</label>
+                        <span class="badge badge-hermetic-{{ 'yes' if build.hermetic else 'no' }}">{{ 'Yes' if build.hermetic else 'No' }}</span>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </section>
 
             <!-- Build Status Section -->
@@ -449,7 +455,7 @@
                                       'image_pullspec', 'art_images_share_pullspec', 'released_pullspec', 'image_tag',
                                       'source_repo', 'commitish', 'rebase_repo_url', 'rebase_commitish', 'dg_commitish',
                                       'build_pipeline_url', 'ec_pipeline_url', 'release_pipeline_url', 'release_pipeline', 'art_job_url',
-                                      'parent_images', 'installed_packages', 'installed_rpms', 'embargoed', 'ec_status'] %}
+                                      'parent_images', 'installed_packages', 'installed_rpms', 'embargoed', 'ec_status', 'hermetic'] %}
             {% set other_fields = [] %}
                     {% for key, value in build.items() %}
                 {% if key not in displayed_keys and value is not none %}
