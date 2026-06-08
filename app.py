@@ -121,12 +121,20 @@ class KonfluxBuildHistory(Flask):
                 query_params,
                 outcomes=[
                     # PascalCase (old format)
-                    'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
+                    'Success',
+                    'BuildError',
+                    'ItsError',
+                    'ReleaseError',
+                    'Pending',
                     # snake_case (new art-tools format)
-                    'success', 'build_error', 'its_error', 'release_error', 'pending',
+                    'success',
+                    'build_error',
+                    'its_error',
+                    'release_error',
+                    'pending',
                     # Legacy
-                    'failure'
-                ]
+                    'failure',
+                ],
             )
 
             # Check if the request is an AJAX request
@@ -251,12 +259,24 @@ class KonfluxBuildHistory(Flask):
             record_id = request.args.get('record_id')
             group = request.args.get('group')
             redis_key = self.redis_build_record_key(record_id) if record_id else self.redis_build_key(nvr)
-            search_outcomes = [outcome] if outcome else [
-                # PascalCase, snake_case, and legacy
-                'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                'success', 'build_error', 'its_error', 'release_error', 'pending',
-                'failure'
-            ]
+            search_outcomes = (
+                [outcome]
+                if outcome
+                else [
+                    # PascalCase, snake_case, and legacy
+                    'Success',
+                    'BuildError',
+                    'ItsError',
+                    'ReleaseError',
+                    'Pending',
+                    'success',
+                    'build_error',
+                    'its_error',
+                    'release_error',
+                    'pending',
+                    'failure',
+                ]
+            )
 
             if not nvr or not record_id:
                 error_message = 'Both nvr and record_id are required to view build details.'
@@ -402,11 +422,21 @@ class KonfluxBuildHistory(Flask):
                     try:
                         db = KonfluxDb()
                         db.bind(record_class)
-                        where = {'outcome': [
-                            'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                            'success', 'build_error', 'its_error', 'release_error', 'pending',
-                            'failure'
-                        ]}
+                        where = {
+                            'outcome': [
+                                'Success',
+                                'BuildError',
+                                'ItsError',
+                                'ReleaseError',
+                                'Pending',
+                                'success',
+                                'build_error',
+                                'its_error',
+                                'release_error',
+                                'pending',
+                                'failure',
+                            ]
+                        }
                         if record_id:
                             where['record_id'] = record_id
                         else:
@@ -525,11 +555,22 @@ class KonfluxBuildHistory(Flask):
                 try:
                     db = KonfluxDb()
                     db.bind(record_class)
-                    where = {'record_id': record_id, 'outcome': [
-                        'Success', 'BuildError', 'ItsError', 'ReleaseError', 'Pending',
-                        'success', 'build_error', 'its_error', 'release_error', 'pending',
-                        'failure'
-                    ]}
+                    where = {
+                        'record_id': record_id,
+                        'outcome': [
+                            'Success',
+                            'BuildError',
+                            'ItsError',
+                            'ReleaseError',
+                            'Pending',
+                            'success',
+                            'build_error',
+                            'its_error',
+                            'release_error',
+                            'pending',
+                            'failure',
+                        ],
+                    }
                     if group:
                         where['group'] = group
                     builds = [build async for build in db.search_builds_by_fields(where=where, limit=1)]

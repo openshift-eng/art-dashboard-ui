@@ -102,11 +102,18 @@ describe('Index Page - Filter Matching Logic', () => {
         }
 
         for (let [key, value] of filterParams.entries()) {
-            if (!value) continue;
-
+            // Skip outcome - already handled above
             if (key === "outcome") {
                 continue;
-            } else if (key == 'group') {
+            }
+
+            if (!value) continue; // Skip empty filter values (but check outcome first since it's handled separately)
+
+            if (key == 'group') {
+                // Support wildcard '*' for group, and treat empty as match-all
+                if (value === '*') {
+                    continue; // Match all groups
+                }
                 if (result['group'] != value) {
                     return false;
                 }
@@ -170,6 +177,31 @@ describe('Index Page - Filter Matching Logic', () => {
         const result = { assembly: 'stream' };
         const filterParams = new URLSearchParams([['assembly', '*']]);
 
+        expect(matchesFilters(result, filterParams)).toBe(true);
+    });
+
+    test('matchesFilters handles group wildcard', () => {
+        const result = { group: 'openshift-4.15' };
+        const filterParams = new URLSearchParams([['group', '*']]);
+
+        expect(matchesFilters(result, filterParams)).toBe(true);
+    });
+
+    test('matchesFilters handles group exact match', () => {
+        const result = { group: 'openshift-4.15' };
+
+        const filterParams1 = new URLSearchParams([['group', 'openshift-4.15']]);
+        const filterParams2 = new URLSearchParams([['group', 'openshift-4.16']]);
+
+        expect(matchesFilters(result, filterParams1)).toBe(true);
+        expect(matchesFilters(result, filterParams2)).toBe(false);
+    });
+
+    test('matchesFilters handles empty group filter', () => {
+        const result = { group: 'openshift-4.15' };
+        const filterParams = new URLSearchParams([['group', '']]);
+
+        // Empty value should be skipped, matching all groups
         expect(matchesFilters(result, filterParams)).toBe(true);
     });
 
