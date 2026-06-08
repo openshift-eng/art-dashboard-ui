@@ -1084,12 +1084,18 @@ function matchesFilters(result, filterParams) {
     }
 
     for (let [key, value] of filterParams.entries()) {
-        if (!value) continue; // Skip empty filter values
-
         // Skip outcome - already handled above
         if (key === "outcome") {
             continue;
-        } else if (key == 'group') {
+        }
+
+        if (!value) continue; // Skip empty filter values (but check outcome first since it's handled separately)
+
+        if (key == 'group') {
+            // Support wildcard '*' for group, and treat empty as match-all
+            if (value === '*') {
+                continue; // Match all groups
+            }
             if (result['group'] != value) {
                 return false;
             }
@@ -1191,6 +1197,8 @@ function setupStaticAutocomplete(input, dropdown, options) {
                 input.value = item;
                 dropdown.style.display = 'none';
                 highlightedIdx = -1;
+                // Trigger change event to update filter button visibility
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             dropdown.appendChild(div);
@@ -1248,6 +1256,8 @@ function setupStaticAutocomplete(input, dropdown, options) {
                 e.preventDefault();
                 if (highlightedIdx >= 0 && items[highlightedIdx]) {
                     input.value = items[highlightedIdx].dataset.value;
+                    // Trigger change event to update filter button visibility
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
                 // If no item is highlighted, keep the user's custom value
                 hideDropdown();
@@ -1293,6 +1303,8 @@ function setupSourceRepoAutocomplete(input, dropdown) {
                 input.value = repo;
                 dropdown.style.display = 'none';
                 highlightedIdx = -1;
+                // Trigger change event to update filter button visibility
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             dropdown.appendChild(item);
@@ -1350,6 +1362,8 @@ function setupSourceRepoAutocomplete(input, dropdown) {
                 e.preventDefault();
                 if (highlightedIdx >= 0 && items[highlightedIdx]) {
                     input.value = items[highlightedIdx].textContent;
+                    // Trigger change event to update filter button visibility
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
                 // If no item is highlighted, keep the user's custom value
                 hideDropdown();
@@ -1396,6 +1410,8 @@ function setupAutocomplete(input, dropdown) {
                 input.value = branch;
                 dropdown.style.display = 'none';
                 highlightedIndex = -1;
+                // Trigger change event to update filter button visibility
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             dropdown.appendChild(item);
@@ -1461,6 +1477,8 @@ function setupAutocomplete(input, dropdown) {
                 if (highlightedIndex >= 0 && items[highlightedIndex]) {
                     // Select the highlighted item
                     input.value = items[highlightedIndex].textContent;
+                    // Trigger change event to update filter button visibility
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
                 // If no item is highlighted, keep the user's custom value
                 hideDropdown();
