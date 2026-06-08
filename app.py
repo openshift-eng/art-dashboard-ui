@@ -783,6 +783,9 @@ class KonfluxBuildHistory(Flask):
         if engine != 'both':
             where_clauses['engine'] = engine
 
+        # Note: hermetic is not a database column, so it's filtered client-side only
+        # The hermetic parameter is still passed through query params for client-side filtering
+
         extra_patterns = {}
         warnings = []
 
@@ -966,6 +969,7 @@ class KonfluxBuildHistory(Flask):
                 if b.end_time
                 else b.start_time.strftime('%B %d, %Y, %I:%M:%S %p'),
                 'engine': str(b.engine),
+                'hermetic': getattr(b, 'hermetic', None),
                 'source': b.source_repo or '',
                 'source_repo': b.source_repo or '',
                 'image_pullspec': getattr(b, 'image_pullspec', '') or '',

@@ -1144,6 +1144,14 @@ function matchesFilters(result, filterParams) {
             if (value != 'both' && result['engine'] != value) {
                 return false;
             }
+        } else if (key == 'hermetic') {
+            if (value != 'both') {
+                // Convert string 'true'/'false' to boolean for comparison
+                const filterValue = value === 'true';
+                if (result['hermetic'] !== filterValue) {
+                    return false;
+                }
+            }
         } else if (key == 'assembly') {
             // '*' matches any assembly
             if (value != '*' && result['assembly'] != value) {
@@ -1864,6 +1872,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
 
     // Reset select dropdowns
     form.querySelector("#engine").value = "konflux";
+    form.querySelector("#hermetic").value = "both";
     form.querySelector("#group").value = "";
 
     // Reset date picker to default (2 days ago)
