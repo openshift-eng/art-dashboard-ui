@@ -783,8 +783,9 @@ class KonfluxBuildHistory(Flask):
         if engine != 'both':
             where_clauses['engine'] = engine
 
-        # Note: hermetic is not a database column, so it's filtered client-side only
-        # The hermetic parameter is still passed through query params for client-side filtering
+        # Note: hermetic filtering happens client-side because search_builds_by_fields()
+        # only supports REGEXP matching on extra_patterns, not Boolean filtering.
+        # The hermetic parameter is passed through query params for client-side filtering.
 
         extra_patterns = {}
         warnings = []

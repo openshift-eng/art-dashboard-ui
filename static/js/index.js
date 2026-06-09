@@ -953,6 +953,11 @@ function performSearch(queryParams = null) {
             });
         }
 
+        // Apply hermetic and other client-side filters (e.g., hermetic, engine)
+        const form = document.getElementById("searchForm");
+        const formData = new FormData(form);
+        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, formData));
+
         // Track what we're displaying from this search
         lastDisplayedResults = resultsToDisplay;
         displayResults(resultsToDisplay);
@@ -1694,6 +1699,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return outcomeMatchesSelection(result.outcome, selectedOutcomes);
             });
         }
+
+        // Apply hermetic and other client-side filters (e.g., hermetic, engine)
+        const formData = new FormData(form);
+        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, formData));
 
         // Track what we're displaying from this search
         lastDisplayedResults = resultsToDisplay;
