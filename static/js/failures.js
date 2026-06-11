@@ -69,8 +69,24 @@ async function refreshData() {
     loading.style.display = 'flex';
 
     try {
-        const response = await fetch('/api/failures');
-        allData = await response.json();
+        // Fetch both failures and groups on refresh
+        const [failuresResponse, groupsResponse] = await Promise.all([
+            fetch('/api/failures'),
+            fetch('/api/groups')
+        ]);
+        allData = await failuresResponse.json();
+        const groups = await groupsResponse.json();
+
+        // Reset and repopulate group dropdown
+        const groupSelect = document.getElementById('group-filter');
+        groupSelect.innerHTML = '<option value="">All groups</option>';
+        groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = g;
+            groupSelect.appendChild(opt);
+        });
+
         applyFilters();
     } catch (err) {
         console.error('Failed to load failures:', err);
@@ -210,7 +226,7 @@ function renderBubbles() {
     const container = document.getElementById('bubble-chart');
     container.innerHTML = '';
 
-    const bubbleData = currentData.filter(f => f.failure_count > 1);
+    const bubbleData = currentData.filter(f => f.failure_count >= 1);
 
     if (bubbleData.length === 0) {
         container.innerHTML = '<p class="no-results-message">No failures found.</p>';
@@ -373,8 +389,8 @@ function buildHistoryUrl(name, group) {
     params.set('group', group);
     params.set('assembly', 'stream');
     params.set('dateRange', dateRange);
-    params.append('outcome', 'Success');
-    params.append('outcome', 'Failure');
+    params.append('outcome', 'success');
+    params.append('outcome', 'failure');
     return `${BUILD_HISTORY_BASE}/?${params}`;
 }
 
