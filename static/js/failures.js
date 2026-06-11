@@ -77,8 +77,11 @@ async function refreshData() {
         allData = await failuresResponse.json();
         const groups = await groupsResponse.json();
 
-        // Reset and repopulate group dropdown
+        // Preserve current selection if it still exists
         const groupSelect = document.getElementById('group-filter');
+        const currentSelection = groupSelect.value;
+
+        // Repopulate group dropdown
         groupSelect.innerHTML = '<option value="">All groups</option>';
         groups.forEach(g => {
             const opt = document.createElement('option');
@@ -86,6 +89,13 @@ async function refreshData() {
             opt.textContent = g;
             groupSelect.appendChild(opt);
         });
+
+        // Restore selection if it still exists, otherwise reset to "All groups"
+        if (currentSelection && groups.includes(currentSelection)) {
+            groupSelect.value = currentSelection;
+        } else {
+            groupSelect.value = '';
+        }
 
         applyFilters();
     } catch (err) {
