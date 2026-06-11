@@ -953,6 +953,11 @@ function performSearch(queryParams = null) {
             });
         }
 
+        // Apply hermetic and other client-side filters (e.g., hermetic, engine)
+        const form = document.getElementById("searchForm");
+        const formData = new FormData(form);
+        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, formData));
+
         // Track what we're displaying from this search
         lastDisplayedResults = resultsToDisplay;
         displayResults(resultsToDisplay);
@@ -1143,6 +1148,14 @@ function matchesFilters(result, filterParams) {
         } else if (key == 'engine') {
             if (value != 'both' && result['engine'] != value) {
                 return false;
+            }
+        } else if (key == 'hermetic') {
+            if (value != 'both') {
+                // Convert string 'true'/'false' to boolean for comparison
+                const filterValue = value === 'true';
+                if (result['hermetic'] !== filterValue) {
+                    return false;
+                }
             }
         } else if (key == 'assembly') {
             // '*' matches any assembly
@@ -1687,6 +1700,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        // Apply hermetic and other client-side filters (e.g., hermetic, engine)
+        const formData = new FormData(form);
+        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, formData));
+
         // Track what we're displaying from this search
         lastDisplayedResults = resultsToDisplay;
         displayResults(resultsToDisplay);
@@ -1864,6 +1881,7 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
 
     // Reset select dropdowns
     form.querySelector("#engine").value = "konflux";
+    form.querySelector("#hermetic").value = "both";
     form.querySelector("#group").value = "";
 
     // Reset date picker to default (2 days ago)

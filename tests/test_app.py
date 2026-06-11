@@ -370,16 +370,18 @@ async def test_query_where_clauses():
                         'group': 'openshift-4.15',
                         'assembly': 'stream',
                         'engine': 'konflux',
+                        'hermetic': 'true',  # Note: hermetic is client-side filtered, not in WHERE clause
                         'record_id': 'abc123',
                         'dateRange': '2024-01-15',
                     }
                     outcomes = ['success', 'failure']
                     await app_instance.query(params, outcomes=outcomes)
 
-                    # Verify where clauses
+                    # Verify where clauses (hermetic is NOT in where clauses - it's client-side filtered)
                     assert captured_where['group'] == 'openshift-4.15'
                     assert captured_where['assembly'] == 'stream'
                     assert captured_where['engine'] == 'konflux'
+                    assert 'hermetic' not in captured_where  # hermetic is not a database column
                     assert captured_where['record_id'] == 'abc123'
                     assert captured_where['outcome'] == ['success', 'failure']
 

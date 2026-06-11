@@ -783,6 +783,10 @@ class KonfluxBuildHistory(Flask):
         if engine != 'both':
             where_clauses['engine'] = engine
 
+        # Note: hermetic filtering happens client-side because search_builds_by_fields()
+        # only supports REGEXP matching on extra_patterns, not Boolean filtering.
+        # The hermetic parameter is passed through query params for client-side filtering.
+
         extra_patterns = {}
         warnings = []
 
@@ -966,6 +970,7 @@ class KonfluxBuildHistory(Flask):
                 if b.end_time
                 else b.start_time.strftime('%B %d, %Y, %I:%M:%S %p'),
                 'engine': str(b.engine),
+                'hermetic': getattr(b, 'hermetic', None),
                 'source': b.source_repo or '',
                 'source_repo': b.source_repo or '',
                 'image_pullspec': getattr(b, 'image_pullspec', '') or '',
