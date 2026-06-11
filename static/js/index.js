@@ -1101,8 +1101,20 @@ function matchesFilters(result, filterParams) {
             if (value === '*') {
                 continue; // Match all groups
             }
-            if (result['group'] != value) {
-                return false;
+            // Support wildcards in group (e.g., "openshift-*", "okd*")
+            if (value.includes('*')) {
+                // Convert shell-style wildcard to regex pattern
+                // Escape special regex chars except *, then replace * with .*
+                const regexPattern = value.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+                const regex = new RegExp('^' + regexPattern + '$');
+                if (!result['group'] || !regex.test(result['group'])) {
+                    return false;
+                }
+            } else {
+                // Exact match for non-wildcard groups
+                if (result['group'] != value) {
+                    return false;
+                }
             }
         } else if (key == 'record_id') {
             if (!result['record_id'] || result['record_id'] !== value) {
@@ -1700,9 +1712,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        // Apply hermetic and other client-side filters (e.g., hermetic, engine)
-        const formData = new FormData(form);
-        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, formData));
+        // Apply hermetic and other client-side filters (e.g., hermetic, engine, group)
+        // Use urlParams here since the form hasn't been populated from URL yet
+        resultsToDisplay = resultsToDisplay.filter(result => matchesFilters(result, urlParams));
 
         // Track what we're displaying from this search
         lastDisplayedResults = resultsToDisplay;

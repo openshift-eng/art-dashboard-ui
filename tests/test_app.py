@@ -425,3 +425,153 @@ async def test_query_extra_patterns():
                     assert captured_patterns['source_repo'] == 'openshift/oc'
                     assert captured_patterns['commitish'] == '^abc123'
                     assert captured_patterns['nvr'] == 'openshift-cli-4.15.0'
+
+
+@pytest.mark.asyncio
+async def test_query_group_exact_match():
+    """
+    Test that group without wildcards uses exact matching.
+    """
+    from app import KonfluxBuildHistory
+
+    with patch('artcommonlib.bigquery.BigQueryClient'):
+        with patch('artcommonlib.redis.get_value', return_value=None):
+            with patch('artcommonlib.redis.set_value'):
+                app_instance = KonfluxBuildHistory()
+
+                captured_where = {}
+                captured_patterns = {}
+
+                async def capture_params(**kwargs):
+                    captured_where.update(kwargs.get('where', {}))
+                    captured_patterns.update(kwargs.get('extra_patterns', {}))
+                    return
+                    yield  # Make this a generator
+
+                with patch('app.KonfluxDb') as mock_db:
+                    mock_instance = MagicMock()
+                    mock_instance.bind = MagicMock()
+                    mock_instance.search_builds_by_fields = MagicMock(side_effect=capture_params)
+                    mock_db.return_value = mock_instance
+
+                    params = {
+                        'group': 'openshift-4.15',
+                        'dateRange': '2024-01-15',
+                    }
+                    await app_instance.query(params)
+
+                    # Exact group should be in where clauses, not extra_patterns
+                    assert captured_where['group'] == 'openshift-4.15'
+                    assert 'group' not in captured_patterns
+
+
+@pytest.mark.asyncio
+async def test_query_group_wildcard_suffix():
+    """
+    Test that group with wildcard suffix (e.g., openshift-*) uses pattern matching.
+    """
+    from app import KonfluxBuildHistory
+
+    with patch('artcommonlib.bigquery.BigQueryClient'):
+        with patch('artcommonlib.redis.get_value', return_value=None):
+            with patch('artcommonlib.redis.set_value'):
+                app_instance = KonfluxBuildHistory()
+
+                captured_where = {}
+                captured_patterns = {}
+
+                async def capture_params(**kwargs):
+                    captured_where.update(kwargs.get('where', {}))
+                    captured_patterns.update(kwargs.get('extra_patterns', {}))
+                    return
+                    yield  # Make this a generator
+
+                with patch('app.KonfluxDb') as mock_db:
+                    mock_instance = MagicMock()
+                    mock_instance.bind = MagicMock()
+                    mock_instance.search_builds_by_fields = MagicMock(side_effect=capture_params)
+                    mock_db.return_value = mock_instance
+
+                    params = {
+                        'group': 'openshift-*',
+                        'dateRange': '2024-01-15',
+                    }
+                    await app_instance.query(params)
+
+                    # Wildcard group should be in extra_patterns as regex, not in where
+                    assert 'group' not in captured_where
+                    assert captured_patterns['group'] == '^openshift-.*$'
+
+
+@pytest.mark.asyncio
+async def test_query_group_wildcard_version():
+    """
+    Test that group with wildcard in version (e.g., openshift-4.*) uses pattern matching.
+    """
+    from app import KonfluxBuildHistory
+
+    with patch('artcommonlib.bigquery.BigQueryClient'):
+        with patch('artcommonlib.redis.get_value', return_value=None):
+            with patch('artcommonlib.redis.set_value'):
+                app_instance = KonfluxBuildHistory()
+
+                captured_where = {}
+                captured_patterns = {}
+
+                async def capture_params(**kwargs):
+                    captured_where.update(kwargs.get('where', {}))
+                    captured_patterns.update(kwargs.get('extra_patterns', {}))
+                    return
+                    yield  # Make this a generator
+
+                with patch('app.KonfluxDb') as mock_db:
+                    mock_instance = MagicMock()
+                    mock_instance.bind = MagicMock()
+                    mock_instance.search_builds_by_fields = MagicMock(side_effect=capture_params)
+                    mock_db.return_value = mock_instance
+
+                    params = {
+                        'group': 'openshift-4.*',
+                        'dateRange': '2024-01-15',
+                    }
+                    await app_instance.query(params)
+
+                    # Wildcard version should be regex pattern
+                    assert 'group' not in captured_where
+                    assert captured_patterns['group'] == r'^openshift-4\..*$'
+
+
+@pytest.mark.asyncio
+async def test_query_group_wildcard_special_chars():
+    """
+    Test that group wildcards with special regex chars are properly escaped.
+    """
+    from app import KonfluxBuildHistory
+
+    with patch('artcommonlib.bigquery.BigQueryClient'):
+        with patch('artcommonlib.redis.get_value', return_value=None):
+            with patch('artcommonlib.redis.set_value'):
+                app_instance = KonfluxBuildHistory()
+
+                captured_patterns = {}
+
+                async def capture_params(**kwargs):
+                    captured_patterns.update(kwargs.get('extra_patterns', {}))
+                    return
+                    yield  # Make this a generator
+
+                with patch('app.KonfluxDb') as mock_db:
+                    mock_instance = MagicMock()
+                    mock_instance.bind = MagicMock()
+                    mock_instance.search_builds_by_fields = MagicMock(side_effect=capture_params)
+                    mock_db.return_value = mock_instance
+
+                    # Test with group containing dots and dashes (common regex special chars)
+                    params = {
+                        'group': 'test-group-*',
+                        'dateRange': '2024-01-15',
+                    }
+                    await app_instance.query(params)
+
+                    # Special chars should be escaped, * should become .*
+                    assert captured_patterns['group'] == r'^test\-group\-.*$'
