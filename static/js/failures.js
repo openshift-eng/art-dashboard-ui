@@ -389,8 +389,7 @@ function buildHistoryUrl(name, group) {
     params.set('group', group);
     params.set('assembly', 'stream');
     params.set('dateRange', dateRange);
-    params.append('outcome', 'success');
-    params.append('outcome', 'failure');
+    params.append('outcome', 'Failure');
     return `${BUILD_HISTORY_BASE}/?${params}`;
 }
 
