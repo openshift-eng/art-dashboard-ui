@@ -765,10 +765,21 @@ class KonfluxBuildHistory(Flask):
         self._logger.info('Search Parameters: %s, Outcomes: %s', params, outcomes)
 
         where_clauses = {}
+        extra_patterns = {}
+        warnings = []
 
-        group = params.get('group', '')
+        group = params.get('group', '').strip()
         if group:
-            where_clauses['group'] = group
+            # Support wildcards in group (e.g., "openshift-*")
+            if '*' in group:
+                # Convert shell-style wildcards to regex pattern
+                # Escape special regex chars except *, then replace * with .*
+                regex_pattern = re.escape(group).replace(r'\*', '.*')
+                # Anchor the pattern to match the full string (^pattern$)
+                extra_patterns['group'] = f'^{regex_pattern}$'
+            else:
+                # Exact match for non-wildcard groups
+                where_clauses['group'] = group
 
         assembly = params.get('assembly', '').strip()
         if assembly and assembly != '*':
@@ -786,9 +797,6 @@ class KonfluxBuildHistory(Flask):
         # Note: hermetic filtering happens client-side because search_builds_by_fields()
         # only supports REGEXP matching on extra_patterns, not Boolean filtering.
         # The hermetic parameter is passed through query params for client-side filtering.
-
-        extra_patterns = {}
-        warnings = []
 
         name = params.get('name', '').strip()
         if name:
