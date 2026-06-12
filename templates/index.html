@@ -74,6 +74,29 @@
                     </select>
                 </div>
                 <div class="input-container">
+                    <label>Build Type</label>
+                    <div class="multiselect-container" id="buildtype-container">
+                        <div class="multiselect-display" id="buildtype-display" tabindex="0">
+                            <span class="multiselect-text">All types</span>
+                            <span class="multiselect-arrow">▼</span>
+                        </div>
+                        <div class="multiselect-dropdown" id="buildtype-dropdown" style="display: none;" autocomplete="off">
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="buildtype-image" name="buildtype" value="image" data-value="image" checked autocomplete="off">
+                                <span>Image</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="buildtype-bundle" name="buildtype" value="bundle" data-value="bundle" checked autocomplete="off">
+                                <span>Bundle</span>
+                            </label>
+                            <label class="multiselect-option">
+                                <input type="checkbox" id="buildtype-fbc" name="buildtype" value="fbc" data-value="fbc" checked autocomplete="off">
+                                <span>FBC</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-container">
                     <label for="dateRange">Date range</label>
                     <div class="date-preset-buttons">
                         <button type="button" class="date-preset-btn" data-preset="24h">Last 24h</button>
@@ -128,6 +151,7 @@
                 <tr>
                     <th data-column="name" class="sortable">Name <span class="sort-indicator"></span></th>
                     <th data-column="outcome" class="sortable">Outcome <span class="sort-indicator"></span></th>
+                    <th data-column="type" class="sortable">Build Type <span class="sort-indicator"></span></th>
                     <th data-column="nvr" class="sortable">NVR <span class="sort-indicator"></span></th>
                     <th data-column="source" class="sortable">Source <span class="sort-indicator"></span></th>
                     <th data-column="assembly" class="sortable">Assembly <span class="sort-indicator"></span></th>
@@ -228,6 +252,10 @@
         <label class="column-visibility-option">
             <input type="checkbox" data-column="outcome" checked>
             <span>Outcome</span>
+        </label>
+        <label class="column-visibility-option">
+            <input type="checkbox" data-column="type" checked>
+            <span>Build Type</span>
         </label>
         <label class="column-visibility-option">
             <input type="checkbox" data-column="plrs" checked>

@@ -500,7 +500,7 @@ async def test_query_group_wildcard_suffix():
 
                     # Wildcard group should be in extra_patterns as regex, not in where
                     assert 'group' not in captured_where
-                    assert captured_patterns['group'] == '^openshift-.*$'
+                    assert captured_patterns['group'] == r'^openshift\-.*$'
 
 
 @pytest.mark.asyncio
@@ -538,7 +538,7 @@ async def test_query_group_wildcard_version():
 
                     # Wildcard version should be regex pattern
                     assert 'group' not in captured_where
-                    assert captured_patterns['group'] == r'^openshift-4\..*$'
+                    assert captured_patterns['group'] == r'^openshift\-4\..*$'
 
 
 @pytest.mark.asyncio
