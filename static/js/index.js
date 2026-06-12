@@ -121,6 +121,16 @@ function sortResults(results, column, direction) {
                 aVal = outcomeOrder[a.outcome] ?? 5;
                 bVal = outcomeOrder[b.outcome] ?? 5;
                 break;
+            case 'type':
+                // Sort order: image, bundle, fbc
+                const typeOrder = {
+                    'image': 0,
+                    'bundle': 1,
+                    'fbc': 2
+                };
+                aVal = typeOrder[a.type] ?? 3;
+                bVal = typeOrder[b.type] ?? 3;
+                break;
             case 'nvr':
                 aVal = a.nvr || '';
                 bVal = b.nvr || '';
@@ -347,10 +357,33 @@ function updateOutcomeDisplay() {
     }
 }
 
-function setupMultiSelect(containerId, displayId, dropdownId) {
+function updateBuildTypeDisplay() {
+    const display = document.getElementById('buildtype-display');
+    if (!display) return;
+
+    const checkboxes = document.querySelectorAll('input[name="buildtype"]');
+    const selected = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value.charAt(0).toUpperCase() + cb.value.slice(1)); // Capitalize first letter
+
+    const textSpan = display.querySelector('.multiselect-text');
+    if (selected.length === 0) {
+        textSpan.textContent = 'Select types...';
+    } else if (selected.length === checkboxes.length) {
+        textSpan.textContent = 'All types';
+    } else {
+        textSpan.textContent = selected.join(', ');
+    }
+}
+
+function setupMultiSelect(containerId, displayId, dropdownId, updateDisplayFunc = null, getCheckboxesFunc = null) {
     const container = document.getElementById(containerId);
     const display = document.getElementById(displayId);
     const dropdown = document.getElementById(dropdownId);
+
+    // Determine which update function to use
+    const updateDisplay = updateDisplayFunc || updateOutcomeDisplay;
+    const getCheckboxes = getCheckboxesFunc || getOutcomeCheckboxes;
 
     // Only add event listeners once
     if (!multiSelectState[containerId]) {
@@ -375,9 +408,9 @@ function setupMultiSelect(containerId, displayId, dropdownId) {
             }
         });
 
-        const checkboxes = getOutcomeCheckboxes();
+        const checkboxes = getCheckboxes();
         checkboxes.forEach(cb => {
-            cb.addEventListener('change', updateOutcomeDisplay);
+            cb.addEventListener('change', updateDisplay);
         });
 
         document.addEventListener('click', (e) => {
@@ -388,11 +421,15 @@ function setupMultiSelect(containerId, displayId, dropdownId) {
     }
 
     // Always update display (for when checkboxes are programmatically changed)
-    updateOutcomeDisplay();
+    updateDisplay();
 }
 
 function getSelectedOutcomes() {
     return getOutcomeCheckboxes().filter(cb => cb.checked).map(cb => getOutcomeValue(cb));
+}
+
+function getBuildTypeCheckboxes() {
+    return Array.from(document.querySelectorAll('input[name="buildtype"]'));
 }
 
 function showLoading() {
@@ -713,9 +750,11 @@ function createRow(result) {
     const groupParam = result["group"] ? `&group=${encodeURIComponent(result["group"])}` : '';
     const outcomeParam = result.outcome ? `&outcome=${encodeURIComponent(result.outcome)}` : '';
     const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
+    const buildType = result.type ? result.type.charAt(0).toUpperCase() + result.type.slice(1) : '';
     row.innerHTML = `
         <td data-column="name">${result["name"]}</td>
         <td data-column="outcome">${simpleOutcome}</td>
+        <td data-column="type">${buildType}</td>
         <td data-column="nvr" class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td data-column="source">${sourceLink}</td>
         <td data-column="assembly">${result["assembly"]}</td>
@@ -1080,6 +1119,7 @@ function outcomeMatchesSelection(resultOutcome, selectedOutcomes) {
 function matchesFilters(result, filterParams) {
     // Collect all selected outcomes first (multi-select)
     const selectedOutcomes = filterParams.getAll('outcome');
+    const selectedBuildTypes = filterParams.getAll('buildtype');
 
     // Check outcome filter (must match at least one selected outcome)
     if (selectedOutcomes.length > 0) {
@@ -1088,9 +1128,16 @@ function matchesFilters(result, filterParams) {
         }
     }
 
+    // Check build type filter (must match at least one selected type)
+    if (selectedBuildTypes.length > 0) {
+        if (!result['type'] || !selectedBuildTypes.includes(result['type'])) {
+            return false;
+        }
+    }
+
     for (let [key, value] of filterParams.entries()) {
-        // Skip outcome - already handled above
-        if (key === "outcome") {
+        // Skip outcome and buildtype - already handled above
+        if (key === "outcome" || key === "buildtype") {
             continue;
         }
 
@@ -1803,6 +1850,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Setup Outcome multi-select
     setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+    setupMultiSelect('buildtype-container', 'buildtype-display', 'buildtype-dropdown', updateBuildTypeDisplay, getBuildTypeCheckboxes);
 
     // Set outcome checkboxes from URL if present
     if (urlParams.has('outcome')) {
@@ -1812,6 +1860,16 @@ document.addEventListener("DOMContentLoaded", () => {
             cb.checked = outcomes.includes(getOutcomeValue(cb));
         });
         updateOutcomeDisplay();
+    }
+
+    // Set buildtype checkboxes from URL if present
+    if (urlParams.has('buildtype')) {
+        const buildtypes = urlParams.getAll('buildtype');
+        const buildtypeCheckboxes = getBuildTypeCheckboxes();
+        buildtypeCheckboxes.forEach(cb => {
+            cb.checked = buildtypes.includes(cb.value);
+        });
+        updateBuildTypeDisplay();
     }
 });
 
@@ -1890,6 +1948,13 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
         cb.checked = getOutcomeValue(cb) === 'Success';
     });
     updateOutcomeDisplay();
+
+    // Reset buildtype checkboxes (default: all checked)
+    const buildtypeCheckboxes = getBuildTypeCheckboxes();
+    buildtypeCheckboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    updateBuildTypeDisplay();
 
     // Reset select dropdowns
     form.querySelector("#engine").value = "konflux";
