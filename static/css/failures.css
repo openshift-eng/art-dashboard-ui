@@ -242,7 +242,9 @@ th.sort-active .sort-arrow {
     color: #ef5350;
 }
 
-.failure-type-badge.ec-failure {
+/* ITS failure styling (database field is still ec-failure for historical reasons) */
+.failure-type-badge.ec-failure,
+.failure-type-badge.its-failure {
     background-color: rgba(255, 152, 0, 0.25);
     color: #ffa726;
 }

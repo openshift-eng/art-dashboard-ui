@@ -30,6 +30,7 @@ DEV_MODE = os.environ.get('ART_DASH_DEV', '').lower() in ('1', 'true', 'yes')
 REDIS_AVAILABLE = bool(os.environ.get('REDIS_SERVER_PASSWORD'))
 JIRA_AVAILABLE = bool(os.environ.get('JIRA_TOKEN'))
 
+# Failure types stored in Redis (ec-failure refers to ITS - Image Test Suite)
 FAILURE_TYPES = ['build-failure', 'ec-failure', 'release-failure', 'rebase-failure']
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ def _get_jira_client() -> Optional[JIRAClient]:
 async def _fetch_jira_tickets_for_failures(failures: list[dict]) -> dict[tuple[str, str], str]:
     """
     Fetch Jira tickets for build failures from Jira API.
-    Queries for open tickets with labels art:image-build-failure, art:image-ec-failure,
+    Queries for open tickets with labels art:image-build-failure, art:image-ec-failure (ITS),
     art:image-release-failure to match them with failures.
 
     Arg(s):
@@ -109,9 +110,10 @@ async def _fetch_jira_tickets_for_failures(failures: list[dict]) -> dict[tuple[s
         return {}
 
     # Map failure types to Jira labels
+    # Note: ec-failure refers to ITS (Image Test Suite) failures, kept as ec-failure in DB for compatibility
     label_map = {
         'build-failure': 'art:image-build-failure',
-        'ec-failure': 'art:image-ec-failure',
+        'ec-failure': 'art:image-ec-failure',  # ITS failures
         'release-failure': 'art:image-release-failure',
         'rebase-failure': 'art:image-rebase-failure',
     }

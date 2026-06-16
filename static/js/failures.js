@@ -1,8 +1,9 @@
 // ART Build Failures Dashboard
 
+// Failure type colors (ec-failure refers to ITS - Image Test Suite)
 const FAILURE_TYPE_COLORS = {
     'build-failure': '#f44336',
-    'ec-failure': '#ff9800',
+    'ec-failure': '#ff9800',  // ITS failures (displayed as "ITS Failure")
     'release-failure': '#9c27b0',
     'rebase-failure': '#2196f3',
 };
@@ -404,6 +405,10 @@ function buildHistoryUrl(name, group) {
 }
 
 function formatFailureType(type) {
+    // Map ec-failure to ITS for display (database still uses ec-failure)
+    if (type === 'ec-failure') {
+        return 'ITS Failure';
+    }
     return type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
