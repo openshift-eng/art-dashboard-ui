@@ -29,9 +29,10 @@ COMPONENTS = [
     'metallb', 'must-gather', 'tests', 'tools',
 ]
 
+# Failure types (ec-failure refers to ITS - Image Test Suite failures)
 FAILURE_TYPES = [
     'build-failure',
-    'ec-failure',
+    'ec-failure',  # ITS failures
     'release-failure',
     'rebase-failure',
 ]
