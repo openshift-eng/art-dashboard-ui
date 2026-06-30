@@ -12,12 +12,13 @@ let allData = [];
 let currentData = [];
 let currentSort = { field: 'failure_count', ascending: false };
 let currentView = 'table';
+let isInitialLoad = true;
 
 // --- Initialization ---
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadFilters();
-    refreshData();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadFilters();
+    await refreshData();
 
     document.getElementById('apply-filters').addEventListener('click', applyFilters);
     document.getElementById('refresh-data').addEventListener('click', refreshData);
@@ -78,9 +79,25 @@ async function refreshData() {
         allData = await failuresResponse.json();
         const groups = await groupsResponse.json();
 
-        // Preserve current selection if it still exists
+        // Get current selections before repopulating
         const groupSelect = document.getElementById('group-filter');
+        const typeSelect = document.getElementById('type-filter');
+        const nameInput = document.getElementById('name-filter');
         const currentSelection = groupSelect.value;
+
+        // On initial load, check URL params; on refresh, preserve current filter state
+        let targetGroup, targetType, targetName;
+        if (isInitialLoad) {
+            const urlParams = new URLSearchParams(window.location.search);
+            targetGroup = urlParams.get('group');
+            targetType = urlParams.get('type');
+            targetName = urlParams.get('name');
+            isInitialLoad = false;
+        } else {
+            targetGroup = currentSelection;
+            targetType = typeSelect.value;
+            targetName = nameInput.value;
+        }
 
         // Repopulate group dropdown
         groupSelect.innerHTML = '<option value="">All groups</option>';
@@ -91,11 +108,21 @@ async function refreshData() {
             groupSelect.appendChild(opt);
         });
 
-        // Restore selection if it still exists, otherwise reset to "All groups"
-        if (currentSelection && groups.includes(currentSelection)) {
-            groupSelect.value = currentSelection;
+        // Restore group selection if valid
+        if (targetGroup && groups.includes(targetGroup)) {
+            groupSelect.value = targetGroup;
         } else {
             groupSelect.value = '';
+        }
+
+        // Restore type filter if valid
+        if (targetType) {
+            typeSelect.value = targetType;
+        }
+
+        // Restore name filter
+        if (targetName) {
+            nameInput.value = targetName;
         }
 
         applyFilters();
@@ -121,6 +148,7 @@ function applyFilters() {
     });
 
     currentData.sort((a, b) => b.failure_count - a.failure_count);
+    updateFiltersInUrl();
     updateStats();
     renderCurrentView();
 }
@@ -356,6 +384,50 @@ function renderBubbles() {
                 .attr('font-size', '12px')
                 .text(formatFailureType(type));
         });
+}
+
+// --- URL Parameter Handling ---
+
+function loadFiltersFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+
+    const group = params.get('group');
+    const type = params.get('type');
+    const name = params.get('name');
+
+    if (group) {
+        document.getElementById('group-filter').value = group;
+    }
+    if (type) {
+        document.getElementById('type-filter').value = type;
+    }
+    if (name) {
+        document.getElementById('name-filter').value = name;
+    }
+}
+
+function updateFiltersInUrl() {
+    const group = document.getElementById('group-filter').value;
+    const type = document.getElementById('type-filter').value;
+    const name = document.getElementById('name-filter').value;
+
+    const params = new URLSearchParams();
+
+    if (group) {
+        params.set('group', group);
+    }
+    if (type) {
+        params.set('type', type);
+    }
+    if (name) {
+        params.set('name', name);
+    }
+
+    const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+
+    window.history.replaceState({}, '', newUrl);
 }
 
 // --- Utilities ---
