@@ -1742,6 +1742,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const form = document.getElementById("searchForm");
 
+    // CRITICAL: Setup checkboxes from URL params BEFORE performing any search
+    // This ensures that URL parameters are properly applied to multi-select fields
+    normalizeOutcomeCheckboxValues();
+
+    // Setup Outcome multi-select
+    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
+    setupMultiSelect('buildtype-container', 'buildtype-display', 'buildtype-dropdown', updateBuildTypeDisplay, getBuildTypeCheckboxes);
+
+    // Set outcome checkboxes from URL if present
+    if (urlParams.has('outcome')) {
+        const outcomes = urlParams.getAll('outcome');
+        const checkboxes = getOutcomeCheckboxes();
+        checkboxes.forEach(cb => {
+            cb.checked = outcomes.includes(getOutcomeValue(cb));
+        });
+        updateOutcomeDisplay();
+    }
+
+    // Set buildtype checkboxes from URL if present
+    if (urlParams.has('buildtype')) {
+        const buildtypes = urlParams.getAll('buildtype');
+        const buildtypeCheckboxes = getBuildTypeCheckboxes();
+        buildtypeCheckboxes.forEach(cb => {
+            cb.checked = buildtypes.includes(cb.value);
+        });
+        updateBuildTypeDisplay();
+    }
+
     // If we have initial results from server, cache raw results and deduplicate for display
     if (isSearchPage && window.initialResults) {
         // Cache raw results from server (all outcomes)
@@ -1775,14 +1803,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Otherwise, if we have search parameters, perform search
     else if (urlParams.size > 0) {
-        // Populate form fields from URL
+        // Populate form fields from URL (non-checkbox fields)
         urlParams.forEach((value, key) => {
+            // Skip checkbox fields - they're already set above
+            if (key === 'outcome' || key === 'buildtype') return;
+
             const input = form.querySelector(`[name="${key}"]`);
             if (input) input.value = value;
         });
 
-        performSearch(urlParams);
-        lastSearchParamsKey = buildParamsKey(urlParams);
+        // Don't pass urlParams directly - let performSearch() read from the form
+        // which now has all fields (including checkboxes) properly set
+        performSearch();
+        lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
     }
     else {
         lastSearchParamsKey = buildParamsKey(getCurrentSearchParams());
@@ -1845,32 +1878,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const assemblyDropdown = document.getElementById("assembly-dropdown");
     const assemblyOptions = ["stream", "test", "*"];
     setupStaticAutocomplete(assemblyInput, assemblyDropdown, assemblyOptions);
-
-    normalizeOutcomeCheckboxValues();
-
-    // Setup Outcome multi-select
-    setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
-    setupMultiSelect('buildtype-container', 'buildtype-display', 'buildtype-dropdown', updateBuildTypeDisplay, getBuildTypeCheckboxes);
-
-    // Set outcome checkboxes from URL if present
-    if (urlParams.has('outcome')) {
-        const outcomes = urlParams.getAll('outcome');
-        const checkboxes = getOutcomeCheckboxes();
-        checkboxes.forEach(cb => {
-            cb.checked = outcomes.includes(getOutcomeValue(cb));
-        });
-        updateOutcomeDisplay();
-    }
-
-    // Set buildtype checkboxes from URL if present
-    if (urlParams.has('buildtype')) {
-        const buildtypes = urlParams.getAll('buildtype');
-        const buildtypeCheckboxes = getBuildTypeCheckboxes();
-        buildtypeCheckboxes.forEach(cb => {
-            cb.checked = buildtypes.includes(cb.value);
-        });
-        updateBuildTypeDisplay();
-    }
 });
 
 document.getElementById("searchButton").addEventListener("click", function (event) {
@@ -1878,7 +1885,14 @@ document.getElementById("searchButton").addEventListener("click", function (even
 
     const form = document.getElementById("searchForm");
     const formData = new FormData(form);
-    const queryParams = new URLSearchParams(formData);
+
+    // Build clean query params - exclude empty values
+    const queryParams = new URLSearchParams();
+    for (const [key, value] of formData.entries()) {
+        if (value && value.trim() !== '') {
+            queryParams.append(key, value);
+        }
+    }
 
     // Update browser URL without reloading
     window.history.pushState({}, '', `/?${queryParams.toString()}`);
