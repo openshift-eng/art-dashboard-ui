@@ -13,6 +13,8 @@ let currentData = [];
 let currentSort = { field: 'failure_count', ascending: false };
 let currentView = 'table';
 let isInitialLoad = true;
+let allGroups = [];
+let highlightedIndex = -1;
 
 // --- Initialization ---
 
@@ -35,6 +37,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('#failures-table th.sortable').forEach(th => {
         th.addEventListener('click', () => handleSort(th.dataset.sort));
     });
+
+    // Setup group autocomplete
+    const groupInput = document.getElementById('group-filter');
+    const groupDropdown = document.getElementById('group-filter-dropdown');
+    setupGroupAutocomplete(groupInput, groupDropdown);
 });
 
 // --- Data Loading ---
@@ -46,13 +53,8 @@ async function loadFilters() {
             fetch('/api/failure-types').then(r => r.json()),
         ]);
 
-        const groupSelect = document.getElementById('group-filter');
-        groups.forEach(g => {
-            const opt = document.createElement('option');
-            opt.value = g;
-            opt.textContent = g;
-            groupSelect.appendChild(opt);
-        });
+        // Store groups for autocomplete
+        allGroups = groups;
 
         const typeSelect = document.getElementById('type-filter');
         types.forEach(t => {
@@ -79,11 +81,14 @@ async function refreshData() {
         allData = await failuresResponse.json();
         const groups = await groupsResponse.json();
 
-        // Get current selections before repopulating
-        const groupSelect = document.getElementById('group-filter');
+        // Store groups for autocomplete
+        allGroups = groups;
+
+        // Get current values before updating
+        const groupInput = document.getElementById('group-filter');
         const typeSelect = document.getElementById('type-filter');
         const nameInput = document.getElementById('name-filter');
-        const currentSelection = groupSelect.value;
+        const currentGroupValue = groupInput.value;
 
         // On initial load, check URL params; on refresh, preserve current filter state
         let targetGroup, targetType, targetName;
@@ -94,25 +99,16 @@ async function refreshData() {
             targetName = urlParams.get('name');
             isInitialLoad = false;
         } else {
-            targetGroup = currentSelection;
+            targetGroup = currentGroupValue;
             targetType = typeSelect.value;
             targetName = nameInput.value;
         }
 
-        // Repopulate group dropdown
-        groupSelect.innerHTML = '<option value="">All groups</option>';
-        groups.forEach(g => {
-            const opt = document.createElement('option');
-            opt.value = g;
-            opt.textContent = g;
-            groupSelect.appendChild(opt);
-        });
-
-        // Restore group selection if valid
-        if (targetGroup && groups.includes(targetGroup)) {
-            groupSelect.value = targetGroup;
+        // Restore group filter value
+        if (targetGroup) {
+            groupInput.value = targetGroup;
         } else {
-            groupSelect.value = '';
+            groupInput.value = '';
         }
 
         // Restore type filter if valid
@@ -136,12 +132,15 @@ async function refreshData() {
 }
 
 function applyFilters() {
-    const group = document.getElementById('group-filter').value;
+    const group = document.getElementById('group-filter').value.trim();
     const type = document.getElementById('type-filter').value;
     const name = document.getElementById('name-filter').value.toLowerCase();
 
     currentData = allData.filter(f => {
-        if (group && f.group !== group) return false;
+        // Support wildcard matching for group filter
+        if (group) {
+            if (!matchesWildcard(f.group, group)) return false;
+        }
         if (type && f.failure_type !== type) return false;
         if (name && !f.name.toLowerCase().includes(name)) return false;
         return true;
@@ -495,4 +494,127 @@ function truncateText(text, radius) {
     const maxChars = Math.floor(radius / 4);
     if (text.length <= maxChars) return text;
     return text.substring(0, maxChars - 1) + '…';
+}
+
+/**
+ * Matches a value against a pattern with wildcard support.
+ * Supports * as a wildcard character.
+ */
+function matchesWildcard(value, pattern) {
+    if (!pattern) return true;
+    if (!value) return false;
+
+    // Escape special regex characters except *
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    // Replace * with .*
+    const regexPattern = '^' + escaped.replace(/\*/g, '.*') + '$';
+    const regex = new RegExp(regexPattern, 'i'); // case-insensitive
+    return regex.test(value);
+}
+
+/**
+ * Setup autocomplete for group filter input.
+ */
+function setupGroupAutocomplete(input, dropdown) {
+    function filterGroups(query) {
+        if (!query) return allGroups;
+
+        const lowercaseQuery = query.toLowerCase();
+
+        // If query contains wildcard, show matching groups
+        if (query.includes('*')) {
+            return allGroups.filter(group => matchesWildcard(group, query));
+        }
+
+        // Otherwise, show groups that contain the query
+        return allGroups.filter(group =>
+            group.toLowerCase().includes(lowercaseQuery)
+        );
+    }
+
+    function showDropdown(groups) {
+        dropdown.innerHTML = '';
+        highlightedIndex = -1;
+
+        if (groups.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        groups.forEach((group, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.textContent = group;
+            item.dataset.index = index;
+
+            item.addEventListener('click', () => {
+                input.value = group;
+                dropdown.style.display = 'none';
+                highlightedIndex = -1;
+            });
+
+            dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        dropdown.style.display = 'none';
+        highlightedIndex = -1;
+    }
+
+    function highlightItem(index) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+
+        // Scroll highlighted item into view
+        if (index >= 0 && index < items.length) {
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('input', () => {
+        const query = input.value;
+        const filtered = filterGroups(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('focus', () => {
+        const query = input.value;
+        const filtered = filterGroups(query);
+        showDropdown(filtered);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+            highlightItem(highlightedIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIndex = Math.max(highlightedIndex - 1, -1);
+            highlightItem(highlightedIndex);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && highlightedIndex < items.length) {
+                items[highlightedIndex].click();
+            } else {
+                // Apply filter with current input value
+                applyFilters();
+            }
+        } else if (e.key === 'Escape') {
+            hideDropdown();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
 }

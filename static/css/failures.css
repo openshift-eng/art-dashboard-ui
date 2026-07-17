@@ -64,6 +64,45 @@
     border-color: #4caf50;
 }
 
+/* Autocomplete */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #333;
+    border: 1px solid #444;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.autocomplete-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #f0f0f0;
+    font-size: 0.9em;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+    background-color: #4caf50;
+    color: #fff;
+}
+
 /* Refresh button */
 .refresh-btn {
     background-color: #555;
