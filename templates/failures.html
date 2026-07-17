@@ -12,9 +12,10 @@
         <div class="filter-section">
             <div class="input-container">
                 <label for="group-filter">Group</label>
-                <select id="group-filter">
-                    <option value="">All groups</option>
-                </select>
+                <div class="autocomplete-container">
+                    <input type="text" id="group-filter" placeholder="Type to search or use wildcards..." autocomplete="off" title="Supports wildcards: openshift-* matches all OpenShift groups, openshift-4.* matches 4.x versions">
+                    <div id="group-filter-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                </div>
             </div>
 
             <div class="input-container">
