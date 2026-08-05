@@ -113,6 +113,17 @@
     background-color: #666;
 }
 
+/* Download button */
+.download-btn {
+    background-color: #f9a825;
+    color: #1a1a1a;
+    margin-top: 5px;
+}
+
+.download-btn:hover {
+    background-color: #fbc02d;
+}
+
 /* View toggle */
 .view-toggle {
     display: flex;

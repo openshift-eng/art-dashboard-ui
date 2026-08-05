@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('apply-filters').addEventListener('click', applyFilters);
     document.getElementById('refresh-data').addEventListener('click', refreshData);
+    document.getElementById('download-json').addEventListener('click', downloadJSON);
     document.getElementById('view-table').addEventListener('click', () => switchView('table'));
     document.getElementById('view-bubbles').addEventListener('click', () => switchView('bubbles'));
 
@@ -383,6 +384,22 @@ function renderBubbles() {
                 .attr('font-size', '12px')
                 .text(formatFailureType(type));
         });
+}
+
+// --- Download JSON ---
+
+function downloadJSON() {
+    const filename = `failures-${new Date().toISOString().slice(0, 10)}.json`;
+    const json = JSON.stringify(currentData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // --- URL Parameter Handling ---
