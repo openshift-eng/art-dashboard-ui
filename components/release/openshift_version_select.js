@@ -9,13 +9,21 @@ function OpenshiftVersionSelect({ onVersionChange, initialVersion, alignment='ri
 
     const setDataFunc = () => {
         getReleaseBranchesFromOcpBuildData().then(loopData => {
+            // Check if response is an error object
+            if (loopData && loopData.detail === 'Request failed') {
+                console.error("Error fetching OCP branches:", loopData);
+                return;
+            }
+
             let selectData = [];
             loopData.forEach((openshiftVersionDetail) => {
                 selectData.push(openshiftVersionDetail["name"]);
             });
 
             setData(selectData);
-        })
+        }).catch(error => {
+            console.error("Failed to fetch OpenShift versions:", error);
+        });
     }
 
     const onChangeFunc = (value) => {
