@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { batch_advisory_details, advisory_ids_for_branch, shipment_status } from "../api_calls/release_calls";
 import { AdvisoryTable } from "../dashboard/AdvisoryTable";
+import { PipelineStatus } from "../dashboard/PipelineStatus";
 import { useRouter } from 'next/router';
 
 function ReleaseBranchDetail(props) {
@@ -11,6 +12,7 @@ function ReleaseBranchDetail(props) {
     const [currentJira, setCurrentJira] = useState(undefined);
     const [shipmentInfo, setShipmentInfo] = useState(null);
     const [shipmentStatusData, setShipmentStatusData] = useState(null);
+    const [pipelineStatus, setPipelineStatus] = useState({});
     const router = useRouter();
     const [currentPage, setCurrentPage] = useState(null);
     const [isRouterReady, setIsRouterReady] = useState(false);
@@ -87,6 +89,9 @@ function ReleaseBranchDetail(props) {
 
         const shipment = data[currentVersionKey][2] || null;
         setShipmentInfo(shipment);
+
+        const status = data[currentVersionKey][3] || {};
+        setPipelineStatus(status);
 
         if (!shipment || !shipment.url) {
             setShipmentLoaded(true);
@@ -259,6 +264,7 @@ function ReleaseBranchDetail(props) {
 
     return (
         <div className="flex-1 overflow-auto px-5 py-4">
+            <PipelineStatus status={pipelineStatus} loading={isLoading} />
             <AdvisoryTable data={tableData} loading={isLoading} />
         </div>
     );
