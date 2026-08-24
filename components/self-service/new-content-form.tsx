@@ -96,9 +96,11 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
     setValue("hasOperatorLabel", !current)
   };
 
+  const [selectedArches, setSelectedArches] = React.useState(new Set(inputs.arches));
+
   const handleChangeArches = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let current = getValues().arches;
-    let arch = event.target.name.toLowerCase()
+    const current = new Set(selectedArches);
+    const arch = event.target.name.toLowerCase()
     if (event.target.checked) {
       current.add(arch)
     } else {
@@ -110,6 +112,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         current.add("aarch64")
       }
     }
+    setSelectedArches(current);
     setValue("arches", current)
   };
 
@@ -372,12 +375,12 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
       <FormControl sx={{ m: 2 }} component="fieldset" variant="standard">
         <FormLabel component="legend">Architectures</FormLabel>
         <FormGroup>
-          <FormControlLabel control={<Checkbox name='all' checked={values.arches.has('all')} onChange={handleChangeArches} />} label="All (follows future architectures)" />
+          <FormControlLabel control={<Checkbox name='all' checked={selectedArches.has('all')} onChange={handleChangeArches} />} label="All (follows future architectures)" />
           <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
-            <FormControlLabel control={<Checkbox name='x86_64' checked={values.arches.has('x86_64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="x86_64 (amd64)" />
-            <FormControlLabel control={<Checkbox name='s390x' checked={values.arches.has('s390x') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="s390x" />
-            <FormControlLabel control={<Checkbox name='ppc64le' checked={values.arches.has('ppc64le') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="ppc64le" />
-            <FormControlLabel control={<Checkbox name='aarch64' checked={values.arches.has('aarch64') || values.arches.has('all')} disabled={values.arches.has('all')} onChange={handleChangeArches} />} label="aarch64 (arm64)" />
+            <FormControlLabel control={<Checkbox name='x86_64' checked={selectedArches.has('x86_64') || selectedArches.has('all')} disabled={selectedArches.has('all')} onChange={handleChangeArches} />} label="x86_64 (amd64)" />
+            <FormControlLabel control={<Checkbox name='s390x' checked={selectedArches.has('s390x') || selectedArches.has('all')} disabled={selectedArches.has('all')} onChange={handleChangeArches} />} label="s390x" />
+            <FormControlLabel control={<Checkbox name='ppc64le' checked={selectedArches.has('ppc64le') || selectedArches.has('all')} disabled={selectedArches.has('all')} onChange={handleChangeArches} />} label="ppc64le" />
+            <FormControlLabel control={<Checkbox name='aarch64' checked={selectedArches.has('aarch64') || selectedArches.has('all')} disabled={selectedArches.has('all')} onChange={handleChangeArches} />} label="aarch64 (arm64)" />
           </Box>
         </FormGroup>
       </FormControl>
@@ -446,7 +449,7 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         >
           {applicationCategories.map((category) => (
             <MenuItem key={category} value={category}>
-              <Checkbox checked={getValues().deliveryRepoApplicationCategories.has(category)} />
+              <Checkbox checked={selectedAppCategories.indexOf(category) > -1} />
               <ListItemText primary={category} />
             </MenuItem>
           ))}

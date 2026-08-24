@@ -31,7 +31,7 @@ export default function NewContentDone() {
 
   const generateImageConfig = () => {
     const imageName = inputs.deliveryRepo?.replace(/^openshift\d+\//, "openshift/");
-    return {
+    const config: Record<string, any> = {
       mode: 'wip',
       name: imageName,
       delivery_repo: inputs.deliveryRepo,
@@ -49,8 +49,12 @@ export default function NewContentDone() {
         }
       },
       owners: owners,
-      arches: !inputs.arches.has('all') ? Array.from(inputs.arches) : undefined,
+    };
+    // Only include arches if not "all"
+    if (!inputs.arches.has('all')) {
+      config.arches = Array.from(inputs.arches);
     }
+    return config;
   };
 
   const generateRpmConfig = () => {
@@ -74,52 +78,61 @@ export default function NewContentDone() {
   };
 
   const generateHBYaml = () => {
-    const result: Record<string, any> = {
-      honey_badger_meta: {
-        "display-name": inputs.deliveryRepoDisplayName,
-        image_type: inputs.deliveryRepoImageType,
-        owner: inputs.deliveryRepoImageOwner,
-        delivery_repo_name: inputs.deliveryRepo,
-        description: inputs.deliveryRepoDescription,
-        doc_owner: inputs.deliveryRepoDocOwner,
-        errata_writer: inputs.deliveryRepoErrataWriter !== undefined ? inputs.deliveryRepoErrataWriter : inputs.deliveryRepoDocOwner,
-        host_level_access: inputs.deliveryRepoHostLevelAccess,
-        product_manager: inputs.deliveryRepoProductManager,
-        program_manager: inputs.deliveryRepoProgramManager,
-        qe_owner: inputs.deliveryRepoQeOwner,
-        release_category: inputs.deliveryRepoReleaseCategory,
-        summary: inputs.deliveryRepoSummary,
-        application_categories: inputs.deliveryRepoApplicationCategories,
-        usage_type: inputs.deliveryRepoImageUsageType,
-        multistream: inputs.deliveryRepoContentStructure === 'multistream',
-        content_stream_tags: inputs.deliveryRepoContentStructure == 'multistream' ? inputs.deliveryRepoContentStreams.split(',').map((version) => 'v' + version.trim()) : ['latest'],
-        use_latest: inputs.deliveryRepoContentStructure !== 'multistream',
-        vendor_label: 'redhat',
-      }
+    const deliveryOwners = inputs.deliveryRepoImageOwner?.split(',').map(s => s.trim());
+    const hbMeta: Record<string, any> = {
+      "display-name": inputs.deliveryRepoDisplayName,
+      owner: deliveryOwners,
+      delivery_repo_name: inputs.deliveryRepo,
+      description: inputs.deliveryRepoDescription,
+      doc_owner: inputs.deliveryRepoDocOwner,
+      host_level_access: inputs.deliveryRepoHostLevelAccess,
+      product_manager: inputs.deliveryRepoProductManager,
+      program_manager: inputs.deliveryRepoProgramManager,
+      qe_owner: inputs.deliveryRepoQeOwner,
+      release_category: inputs.deliveryRepoReleaseCategory,
+      summary: inputs.deliveryRepoSummary,
+      application_categories: Array.from(inputs.deliveryRepoApplicationCategories || []),
+      usage_type: inputs.deliveryRepoImageUsageType,
+      multistream: inputs.deliveryRepoContentStructure === 'multistream',
+      content_stream_tags: inputs.deliveryRepoContentStructure == 'multistream' ? inputs.deliveryRepoContentStreams.split(',').map((version) => 'v' + version.trim()) : ['latest'],
+      use_latest: inputs.deliveryRepoContentStructure !== 'multistream',
+      vendor_label: 'redhat',
     };
-    return YAML.stringify(result);
+
+    // Only include optional fields if they have values
+    if (inputs.deliveryRepoImageType) hbMeta.image_type = inputs.deliveryRepoImageType;
+    if (inputs.deliveryRepoErrataWriter) hbMeta.errata_writer = inputs.deliveryRepoErrataWriter;
+
+    const result: Record<string, any> = {
+      honey_badger_meta: hbMeta
+    };
+    return YAML.stringify(result, { lineWidth: 0 });
   };
 
 
   const generateYaml = () => {
+    const meta: Record<string, any> = {
+      release: inputs.imageReleaseVersion,
+      component_type: inputs.componentType,
+      distgit_repo: `${distgit_ns}/${distgitName}`,
+      product_manager: inputs.productManager,
+      bug_component: inputs.bugComponent,
+      config_file: `${inputs.componentType}s/${distgitName}.yml`,
+    };
+
+    // Only include optional fields if they have values
+    if (inputs.payloadName) meta.payload_name = inputs.payloadName;
+    if (inputs.prodSecReviewJira) meta.prodsec_review_jira = inputs.prodSecReviewJira;
+    if (inputs.specialNote) meta.special_node = inputs.specialNote;
+    if (inputs.componentType === 'image' && inputs.imageType) meta.image_type = inputs.imageType;
+    if (inputs.approvalLink) meta.approval_link = inputs.approvalLink;
+    if (inputs.associatedOperator) meta.associated_operator = inputs.associatedOperator;
+
     const result: Record<string, any> = {
-      meta: {
-        release: inputs.imageReleaseVersion,
-        payload_name: inputs.payloadName,
-        component_type: inputs.componentType,
-        distgit_repo: `${distgit_ns}/${distgitName}`,
-        product_manager: inputs.productManager,
-        prodsec_review_jira: inputs.prodSecReviewJira,
-        bug_component: inputs.bugComponent,
-        special_node: inputs.specialNote,
-        image_type: inputs.componentType === 'image' ? inputs.imageType : undefined,
-        approval_link: inputs.approvalLink,
-        config_file: `${inputs.componentType}s/${inputs.distgit}.yml`,
-        associated_operator: inputs.associatedOperator
-      },
+      meta,
       config_snippet: inputs.componentType === 'image' ? generateImageConfig() : generateRpmConfig(),
     };
-    return YAML.stringify(result);
+    return YAML.stringify(result, { lineWidth: 0 });
   };
 
   const jiraSummary = `[BuildAuto] Add OCP component - ${distgit_ns}/${distgitName}`
@@ -137,6 +150,7 @@ export default function NewContentDone() {
     const component = "Release work";
     const priority = "Normal";
 
+    const ownersYaml = owners?.map(email => `- ${email}`).join('\n') || '';
     const fileContent = `content:
   source:
     dockerfile: ${inputs.dockerfilePath}
@@ -162,10 +176,10 @@ from:
   member: openshift-enterprise-base-rhel9
 name: openshift/${imageName}-rhel9
 owners:
-- ${inputs.deliveryRepoImageOwner}@redhat.com
+${ownersYaml}
 `;
 
-    const params = {
+    const params: Record<string, any> = {
       image_name: imageName,
       release_for_image: inputs.imageReleaseVersion,
       file_content: fileContent,
@@ -176,12 +190,23 @@ owners:
       jira_component: component,
       jira_priority: priority,
       image_type: inputs.imageType,
-      payload_name: inputs.payloadName,
 
       // the default mode is test mode (i.e., create fake PR and Jira) so you can easily
       // test the UI and API and be intentional about actually creating the PR and Jira.
       git_test_mode: "false",
       jira_test_mode: "false"
+    };
+
+    // Backend requires payload_name for all image types
+    // For cvo-payload: use actual payload name
+    // For other/operand: backend only checks for non-None, so use placeholder
+    if (inputs.imageType === 'cvo-payload' && inputs.payloadName) {
+      params.payload_name = inputs.payloadName;
+    } else if (inputs.imageType === 'other' || inputs.imageType === 'operand') {
+      params.payload_name = 'Not needed';
+    } else if (inputs.payloadName) {
+      // olm-managed or future types
+      params.payload_name = inputs.payloadName;
     }
 
     try {
