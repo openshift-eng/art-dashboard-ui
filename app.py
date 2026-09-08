@@ -21,6 +21,7 @@ import re
 from typing import Optional
 
 from artcommonlib import redis
+from artcommonlib.jira_config import DEFAULT_JIRA_EMAIL
 from flask import Flask, jsonify, render_template, request
 from jira import JIRA
 from mock_data import generate_mock_failures, get_mock_failure_types, get_mock_groups
@@ -82,8 +83,8 @@ def _get_jira_client() -> Optional[JIRAClient]:
     if not JIRA_AVAILABLE:
         return None
     if _jira_client is None:
-        jira_url = os.environ.get('JIRA_URL', 'https://redhat.atlassian.net')
-        jira_email = os.environ.get('JIRA_EMAIL', 'aos-art-automation@redhat.com')
+        jira_url = os.environ.get('JIRA_BASE_URL', 'https://redhat.atlassian.net')
+        jira_email = os.environ.get('JIRA_EMAIL', DEFAULT_JIRA_EMAIL)
         jira_token = os.environ['JIRA_TOKEN']
         try:
             _jira_client = JIRAClient.from_url(jira_url, basic_auth=(jira_email, jira_token))

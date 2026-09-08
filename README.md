@@ -93,7 +93,7 @@ make deploy        # Build and deploy app
 - `REDIS_SERVER_PASSWORD` - From `redis-server-password` secret
 - `JIRA_EMAIL` - From `jira-credentials` secret
 - `JIRA_TOKEN` - From `jira-credentials` secret
-- `JIRA_URL` - Jira server URL (defaults to `https://redhat.atlassian.net`)
+- `JIRA_BASE_URL` - Jira server URL (defaults to `https://redhat.atlassian.net`)
 
 ## Deployment Workflow
 

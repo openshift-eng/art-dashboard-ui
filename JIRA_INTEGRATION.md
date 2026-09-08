@@ -27,8 +27,8 @@ The dashboard now fetches and displays Jira tickets that are automatically creat
 
 2. **New Environment Variables**:
    - `JIRA_TOKEN` (required) - Jira API token
-   - `JIRA_EMAIL` (optional, defaults to `aos-art-automation@redhat.com`)
-   - `JIRA_URL` (optional, defaults to `https://redhat.atlassian.net`)
+   - `JIRA_EMAIL` (optional, defaults to `aos-team-art-private+openshift-art-jira-bot@redhat.com`)
+   - `JIRA_BASE_URL` (optional, defaults to `https://redhat.atlassian.net`)
 
 3. **New Functions**:
    - `_get_jira_client()`: Lazily initializes the global Jira client
@@ -88,7 +88,7 @@ env:
         name: art-dashboard-secrets
         key: jira-token
   - name: JIRA_EMAIL
-    value: "aos-art-automation@redhat.com"
+    value: "aos-team-art-private+openshift-art-jira-bot@redhat.com"
   - name: REDIS_SERVER_PASSWORD
     valueFrom:
       secretKeyRef:
@@ -184,7 +184,7 @@ Potential improvements:
 
 ### Jira Links Don't Appear
 - Check that `JIRA_TOKEN` environment variable is set
-- Verify Jira credentials are valid: `curl -u "$JIRA_EMAIL:$JIRA_TOKEN" https://redhat.atlassian.net/rest/api/2/myself`
+- Verify Jira credentials are valid: `curl -u "$JIRA_EMAIL:$JIRA_TOKEN" "$JIRA_BASE_URL/rest/api/2/myself"`
 - Check logs for "Failed to fetch Jira tickets" warnings
 
 ### Wrong Tickets Shown

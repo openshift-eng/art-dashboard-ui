@@ -26,6 +26,8 @@ spec:
                 secretKeyRef:
                   name: jira-credentials
                   key: email
+            - name: JIRA_BASE_URL
+              value: https://redhat.atlassian.net
             - name: JIRA_TOKEN
               valueFrom:
                 secretKeyRef:
