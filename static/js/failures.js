@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('download-json').addEventListener('click', downloadJSON);
     document.getElementById('view-table').addEventListener('click', () => switchView('table'));
     document.getElementById('view-bubbles').addEventListener('click', () => switchView('bubbles'));
+    document.getElementById('type-filter').addEventListener('change', applyFilters);
     document.getElementById('variant-filter').addEventListener('change', applyFilters);
 
     document.getElementById('name-filter').addEventListener('keydown', (e) => {
