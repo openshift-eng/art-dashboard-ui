@@ -16,18 +16,40 @@ GROUPS = [
 ]
 
 COMPONENTS = [
-    'ironic', 'cluster-etcd-operator', 'machine-config-operator',
-    'console', 'oauth-server', 'cluster-authentication-operator',
-    'cluster-monitoring-operator', 'cluster-ingress-operator',
-    'multus-cni', 'sriov-network-operator', 'kuryr-cni',
-    'ovn-kubernetes', 'cloud-credential-operator', 'aws-ebs-csi-driver',
-    'gcp-pd-csi-driver', 'azure-disk-csi-driver', 'vsphere-csi-driver',
-    'oc-mirror', 'installer', 'hyperkube', 'cli',
-    'cluster-node-tuning-operator', 'driver-toolkit',
-    'cluster-storage-operator', 'openstack-cinder-csi-driver',
-    'baremetal-operator', 'cluster-baremetal-operator',
-    'metallb', 'must-gather', 'tests', 'tools',
+    'ironic',
+    'cluster-etcd-operator',
+    'machine-config-operator',
+    'console',
+    'oauth-server',
+    'cluster-authentication-operator',
+    'cluster-monitoring-operator',
+    'cluster-ingress-operator',
+    'multus-cni',
+    'sriov-network-operator',
+    'kuryr-cni',
+    'ovn-kubernetes',
+    'cloud-credential-operator',
+    'aws-ebs-csi-driver',
+    'gcp-pd-csi-driver',
+    'azure-disk-csi-driver',
+    'vsphere-csi-driver',
+    'oc-mirror',
+    'installer',
+    'hyperkube',
+    'cli',
+    'cluster-node-tuning-operator',
+    'driver-toolkit',
+    'cluster-storage-operator',
+    'openstack-cinder-csi-driver',
+    'baremetal-operator',
+    'cluster-baremetal-operator',
+    'metallb',
+    'must-gather',
+    'tests',
+    'tools',
 ]
+
+BUILD_VARIANTS = ['ocp', 'okd', 'logging', 'oadp', 'mtc', 'mta']
 
 # Failure types (ec-failure refers to ITS - Image Test Suite failures)
 FAILURE_TYPES = [
@@ -90,6 +112,7 @@ def generate_mock_failures() -> list[dict]:
                 k=1,
             )[0]
 
+            build_variant = random.choice(BUILD_VARIANTS)
             jenkins_url, pipeline_url = _generate_pipeline_urls(failure_type, component)
 
             # 30% chance of having a Jira ticket for failures with count > 3
@@ -97,15 +120,18 @@ def generate_mock_failures() -> list[dict]:
             if failure_count > 3 and random.random() < 0.3:
                 jira_ticket = f'ART-{random.randint(1000, 9999)}'
 
-            failures.append({
-                'name': component,
-                'group': group,
-                'failure_type': failure_type,
-                'failure_count': failure_count,
-                'jenkins_url': jenkins_url,
-                'pipeline_url': pipeline_url,
-                'jira_ticket': jira_ticket,
-            })
+            failures.append(
+                {
+                    'name': component,
+                    'group': group,
+                    'build_variant': build_variant,
+                    'failure_type': failure_type,
+                    'failure_count': failure_count,
+                    'jenkins_url': jenkins_url,
+                    'pipeline_url': pipeline_url,
+                    'jira_ticket': jira_ticket,
+                }
+            )
 
     return failures
 
@@ -124,3 +150,11 @@ def get_mock_failure_types() -> list[str]:
         list[str]: List of failure type identifiers.
     """
     return list(FAILURE_TYPES)
+
+
+def get_mock_build_variants() -> list[str]:
+    """
+    Return Value(s):
+        list[str]: List of build variant identifiers.
+    """
+    return list(BUILD_VARIANTS)

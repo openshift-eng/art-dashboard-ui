@@ -224,11 +224,12 @@
     table-layout: fixed;
 }
 
-#failures-table col.col-name       { width: 20%; }
-#failures-table col.col-group      { width: 16%; }
-#failures-table col.col-type       { width: 14%; }
-#failures-table col.col-count      { width: 11%; }
-#failures-table col.col-pipeline   { width: 28%; }
+#failures-table col.col-name       { width: 17%; }
+#failures-table col.col-group      { width: 14%; }
+#failures-table col.col-variant    { width: 11%; }
+#failures-table col.col-type       { width: 12%; }
+#failures-table col.col-count      { width: 9%; }
+#failures-table col.col-pipeline   { width: 26%; }
 #failures-table col.col-jira       { width: 11%; }
 
 #failures-table th {

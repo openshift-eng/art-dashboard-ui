@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('download-json').addEventListener('click', downloadJSON);
     document.getElementById('view-table').addEventListener('click', () => switchView('table'));
     document.getElementById('view-bubbles').addEventListener('click', () => switchView('bubbles'));
+    document.getElementById('variant-filter').addEventListener('change', applyFilters);
 
     document.getElementById('name-filter').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -49,9 +50,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadFilters() {
     try {
-        const [groups, types] = await Promise.all([
+        const [groups, types, variants] = await Promise.all([
             fetch('/api/groups').then(r => r.json()),
             fetch('/api/failure-types').then(r => r.json()),
+            fetch('/api/build-variants').then(r => r.json()),
         ]);
 
         // Store groups for autocomplete
@@ -63,6 +65,14 @@ async function loadFilters() {
             opt.value = t;
             opt.textContent = formatFailureType(t);
             typeSelect.appendChild(opt);
+        });
+
+        const variantSelect = document.getElementById('variant-filter');
+        variants.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            variantSelect.appendChild(opt);
         });
     } catch (err) {
         console.error('Failed to load filters:', err);
@@ -88,20 +98,23 @@ async function refreshData() {
         // Get current values before updating
         const groupInput = document.getElementById('group-filter');
         const typeSelect = document.getElementById('type-filter');
+        const variantSelect = document.getElementById('variant-filter');
         const nameInput = document.getElementById('name-filter');
         const currentGroupValue = groupInput.value;
 
         // On initial load, check URL params; on refresh, preserve current filter state
-        let targetGroup, targetType, targetName;
+        let targetGroup, targetType, targetVariant, targetName;
         if (isInitialLoad) {
             const urlParams = new URLSearchParams(window.location.search);
             targetGroup = urlParams.get('group');
             targetType = urlParams.get('type');
+            targetVariant = urlParams.get('variant');
             targetName = urlParams.get('name');
             isInitialLoad = false;
         } else {
             targetGroup = currentGroupValue;
             targetType = typeSelect.value;
+            targetVariant = variantSelect.value;
             targetName = nameInput.value;
         }
 
@@ -115,6 +128,11 @@ async function refreshData() {
         // Restore type filter if valid
         if (targetType) {
             typeSelect.value = targetType;
+        }
+
+        // Restore variant filter if valid
+        if (targetVariant) {
+            variantSelect.value = targetVariant;
         }
 
         // Restore name filter
@@ -135,6 +153,7 @@ async function refreshData() {
 function applyFilters() {
     const group = document.getElementById('group-filter').value.trim();
     const type = document.getElementById('type-filter').value;
+    const variant = document.getElementById('variant-filter').value;
     const name = document.getElementById('name-filter').value.toLowerCase();
 
     currentData = allData.filter(f => {
@@ -143,6 +162,7 @@ function applyFilters() {
             if (!matchesWildcard(f.group, group)) return false;
         }
         if (type && f.failure_type !== type) return false;
+        if (variant && f.build_variant !== variant) return false;
         if (name && !f.name.toLowerCase().includes(name)) return false;
         return true;
     });
@@ -214,6 +234,7 @@ function renderTable() {
         return `<tr>
             <td><strong>${escapeHtml(f.name)}</strong></td>
             <td>${escapeHtml(f.group)}</td>
+            <td>${escapeHtml(f.build_variant || '')}</td>
             <td><span class="failure-type-badge ${f.failure_type}">${formatFailureType(f.failure_type)}</span></td>
             <td class="failure-count-cell" style="background-color: ${bgColor}">${f.failure_count}</td>
             <td>${pipelineDisplay}</td>
@@ -321,6 +342,7 @@ function renderBubbles() {
             tooltip.innerHTML = `
                 <div class="tooltip-name">${escapeHtml(d.data.name)}</div>
                 <div class="tooltip-detail">Group: ${escapeHtml(d.data.group)}</div>
+                <div class="tooltip-detail">Variant: ${escapeHtml(d.data.build_variant || '')}</div>
                 <div class="tooltip-detail">Type: ${formatFailureType(d.data.failure_type)}</div>
                 <div class="tooltip-detail">Failures: <span class="tooltip-count">${d.data.failure_count}</span></div>
             `;
@@ -409,6 +431,7 @@ function loadFiltersFromUrl() {
 
     const group = params.get('group');
     const type = params.get('type');
+    const variant = params.get('variant');
     const name = params.get('name');
 
     if (group) {
@@ -416,6 +439,9 @@ function loadFiltersFromUrl() {
     }
     if (type) {
         document.getElementById('type-filter').value = type;
+    }
+    if (variant) {
+        document.getElementById('variant-filter').value = variant;
     }
     if (name) {
         document.getElementById('name-filter').value = name;
@@ -425,6 +451,7 @@ function loadFiltersFromUrl() {
 function updateFiltersInUrl() {
     const group = document.getElementById('group-filter').value;
     const type = document.getElementById('type-filter').value;
+    const variant = document.getElementById('variant-filter').value;
     const name = document.getElementById('name-filter').value;
 
     const params = new URLSearchParams();
@@ -434,6 +461,9 @@ function updateFiltersInUrl() {
     }
     if (type) {
         params.set('type', type);
+    }
+    if (variant) {
+        params.set('variant', variant);
     }
     if (name) {
         params.set('name', name);

@@ -26,6 +26,13 @@
             </div>
 
             <div class="input-container">
+                <label for="variant-filter">Build Variant</label>
+                <select id="variant-filter">
+                    <option value="">All Variants</option>
+                </select>
+            </div>
+
+            <div class="input-container">
                 <label for="name-filter">Component Name</label>
                 <input type="text" id="name-filter" placeholder="Filter by name...">
             </div>
@@ -65,6 +72,7 @@
                 <colgroup>
                     <col class="col-name">
                     <col class="col-group">
+                    <col class="col-variant">
                     <col class="col-type">
                     <col class="col-count">
                     <col class="col-pipeline">
@@ -74,6 +82,7 @@
                     <tr>
                         <th data-sort="name" class="sortable">Name <span class="sort-arrow"></span></th>
                         <th data-sort="group" class="sortable">Group <span class="sort-arrow"></span></th>
+                        <th data-sort="build_variant" class="sortable">Build Variant <span class="sort-arrow"></span></th>
                         <th data-sort="failure_type" class="sortable">Failure Type <span class="sort-arrow"></span></th>
                         <th data-sort="failure_count" class="sortable sort-active sort-desc">
                             # Failures <span class="sort-arrow">&#9660;</span>
