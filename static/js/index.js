@@ -131,6 +131,10 @@ function sortResults(results, column, direction) {
                 aVal = typeOrder[a.type] ?? 3;
                 bVal = typeOrder[b.type] ?? 3;
                 break;
+            case 'build_variant':
+                aVal = a.build_variant || '';
+                bVal = b.build_variant || '';
+                break;
             case 'nvr':
                 aVal = a.nvr || '';
                 bVal = b.nvr || '';
@@ -430,6 +434,65 @@ function getSelectedOutcomes() {
 
 function getBuildTypeCheckboxes() {
     return Array.from(document.querySelectorAll('input[name="buildtype"]'));
+}
+
+function updateBuildVariantDisplay() {
+    const display = document.getElementById('buildvariant-display');
+    if (!display) return;
+
+    const checkboxes = document.querySelectorAll('input[name="buildvariant"]');
+    const selected = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+    const textSpan = display.querySelector('.multiselect-text');
+    if (selected.length === 0) {
+        textSpan.textContent = 'Select variants...';
+    } else if (selected.length === checkboxes.length) {
+        textSpan.textContent = 'All variants';
+    } else {
+        textSpan.textContent = selected.join(', ');
+    }
+}
+
+function getBuildVariantCheckboxes() {
+    return Array.from(document.querySelectorAll('input[name="buildvariant"]'));
+}
+
+function populateBuildVariantCheckboxes(results) {
+    const dropdown = document.getElementById('buildvariant-dropdown');
+    if (!dropdown) return;
+
+    // Collect unique build_variant values from results
+    const variants = [...new Set(results.map(r => r.build_variant).filter(Boolean))].sort();
+
+    // Preserve currently selected variants (if any)
+    const currentlySelected = getBuildVariantCheckboxes()
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+    dropdown.innerHTML = '';
+    variants.forEach(variant => {
+        const label = document.createElement('label');
+        label.className = 'multiselect-option';
+        const checked = currentlySelected.length === 0 || currentlySelected.includes(variant) ? 'checked' : '';
+        label.innerHTML = `
+            <input type="checkbox" name="buildvariant" value="${variant}" data-value="${variant}" ${checked} autocomplete="off">
+            <span>${variant}</span>
+        `;
+        dropdown.appendChild(label);
+    });
+
+    // Re-setup event listeners for the new checkboxes
+    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateBuildVariantDisplay();
+            updateFilterPreview();
+        });
+    });
+
+    updateBuildVariantDisplay();
 }
 
 function showLoading() {
@@ -751,10 +814,12 @@ function createRow(result) {
     const outcomeParam = result.outcome ? `&outcome=${encodeURIComponent(result.outcome)}` : '';
     const typeParam = result.type ? `&type=${encodeURIComponent(result.type)}` : '';
     const buildType = result.type ? result.type.charAt(0).toUpperCase() + result.type.slice(1) : '';
+    const buildVariant = result.build_variant || '';
     row.innerHTML = `
         <td data-column="name">${result["name"]}</td>
         <td data-column="outcome">${simpleOutcome}</td>
         <td data-column="type">${buildType}</td>
+        <td data-column="build_variant">${buildVariant}</td>
         <td data-column="nvr" class="nvr-td"><a href="/build?nvr=${result.nvr}&record_id=${result.record_id}${groupParam}${outcomeParam}${typeParam}" target="_blank" title="Build details">${result.nvr}</a></td>
         <td data-column="source">${sourceLink}</td>
         <td data-column="assembly">${result["assembly"]}</td>
@@ -938,6 +1003,10 @@ function performSearch(queryParams = null) {
             // Skip outcome filter - we'll apply it on frontend after deduplication
             continue;
         }
+        if (key === 'buildvariant') {
+            // Skip build variant filter - we'll apply it on frontend after results arrive
+            continue;
+        }
         backendFormData.append(key, value);
     }
 
@@ -980,6 +1049,9 @@ function performSearch(queryParams = null) {
 
         // Cache the raw results from backend (all outcomes)
         cachedResults = builds;
+
+        // Populate build variant checkboxes from results
+        populateBuildVariantCheckboxes(builds);
 
         // Deduplicate and filter for display
         const deduplicated = filterDuplicatePending(builds);
@@ -1120,6 +1192,7 @@ function matchesFilters(result, filterParams) {
     // Collect all selected outcomes first (multi-select)
     const selectedOutcomes = filterParams.getAll('outcome');
     const selectedBuildTypes = filterParams.getAll('buildtype');
+    const selectedBuildVariants = filterParams.getAll('buildvariant');
 
     // Check outcome filter (must match at least one selected outcome)
     if (selectedOutcomes.length > 0) {
@@ -1135,9 +1208,16 @@ function matchesFilters(result, filterParams) {
         }
     }
 
+    // Check build variant filter (must match at least one selected variant)
+    if (selectedBuildVariants.length > 0) {
+        if (!result['build_variant'] || !selectedBuildVariants.includes(result['build_variant'])) {
+            return false;
+        }
+    }
+
     for (let [key, value] of filterParams.entries()) {
-        // Skip outcome and buildtype - already handled above
-        if (key === "outcome" || key === "buildtype") {
+        // Skip outcome, buildtype, and buildvariant - already handled above
+        if (key === "outcome" || key === "buildtype" || key === "buildvariant") {
             continue;
         }
 
@@ -1749,6 +1829,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Setup Outcome multi-select
     setupMultiSelect('outcome-container', 'outcome-display', 'outcome-dropdown');
     setupMultiSelect('buildtype-container', 'buildtype-display', 'buildtype-dropdown', updateBuildTypeDisplay, getBuildTypeCheckboxes);
+    setupMultiSelect('buildvariant-container', 'buildvariant-display', 'buildvariant-dropdown', updateBuildVariantDisplay, getBuildVariantCheckboxes);
 
     // Set outcome checkboxes from URL if present
     if (urlParams.has('outcome')) {
@@ -1770,10 +1851,33 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBuildTypeDisplay();
     }
 
+    // Set buildvariant checkboxes from URL if present
+    if (urlParams.has('buildvariant')) {
+        const buildvariants = urlParams.getAll('buildvariant');
+        const buildvariantCheckboxes = getBuildVariantCheckboxes();
+        buildvariantCheckboxes.forEach(cb => {
+            cb.checked = buildvariants.includes(cb.value);
+        });
+        updateBuildVariantDisplay();
+    }
+
     // If we have initial results from server, cache raw results and deduplicate for display
     if (isSearchPage && window.initialResults) {
         // Cache raw results from server (all outcomes)
         cachedResults = window.initialResults;
+
+        // Populate build variant checkboxes from initial results
+        populateBuildVariantCheckboxes(window.initialResults);
+
+        // Restore buildvariant selections from URL after populating checkboxes
+        if (urlParams.has('buildvariant')) {
+            const buildvariants = urlParams.getAll('buildvariant');
+            const buildvariantCheckboxes = getBuildVariantCheckboxes();
+            buildvariantCheckboxes.forEach(cb => {
+                cb.checked = buildvariants.includes(cb.value);
+            });
+            updateBuildVariantDisplay();
+        }
 
         // Deduplicate for display
         const deduplicated = filterDuplicatePending(window.initialResults);
@@ -1806,7 +1910,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Populate form fields from URL (non-checkbox fields)
         urlParams.forEach((value, key) => {
             // Skip checkbox fields - they're already set above
-            if (key === 'outcome' || key === 'buildtype') return;
+            if (key === 'outcome' || key === 'buildtype' || key === 'buildvariant') return;
 
             const input = form.querySelector(`[name="${key}"]`);
             if (input) input.value = value;
@@ -1969,6 +2073,13 @@ document.querySelector(".sidebar-title a").addEventListener("click", function(e)
         cb.checked = true;
     });
     updateBuildTypeDisplay();
+
+    // Reset buildvariant checkboxes (default: all checked)
+    const buildvariantCheckboxes = getBuildVariantCheckboxes();
+    buildvariantCheckboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    updateBuildVariantDisplay();
 
     // Reset select dropdowns
     form.querySelector("#engine").value = "konflux";
