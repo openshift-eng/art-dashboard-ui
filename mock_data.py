@@ -49,7 +49,7 @@ COMPONENTS = [
     'tools',
 ]
 
-BUILD_VARIANTS = ['ocp', 'okd', 'logging', 'oadp', 'mtc', 'mta']
+BUILD_VARIANTS = ['ocp', 'okd', 'openshift-logging', 'oadp', 'rhmtc', 'mta']
 
 # Failure types (ec-failure refers to ITS - Image Test Suite failures)
 FAILURE_TYPES = [
