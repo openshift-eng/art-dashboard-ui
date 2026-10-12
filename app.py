@@ -794,10 +794,6 @@ class KonfluxBuildHistory(Flask):
         if engine != 'both':
             where_clauses['engine'] = engine
 
-        build_variant = params.get('build_variant', '').strip()
-        if build_variant:
-            where_clauses['build_variant'] = build_variant
-
         # Note: hermetic filtering happens client-side because search_builds_by_fields()
         # only supports REGEXP matching on extra_patterns, not Boolean filtering.
         # The hermetic parameter is passed through query params for client-side filtering.
@@ -993,7 +989,6 @@ class KonfluxBuildHistory(Flask):
                 'release_pipeline_url': getattr(b, 'release_pipeline', '') or '',
                 'art-job-url': b.art_job_url,
                 'type': get_build_type(b),
-                'build_variant': b.build_variant.value if hasattr(b, 'build_variant') and b.build_variant else '',
                 'record_id': b.record_id,
                 'start_time': b.start_time,
             }
