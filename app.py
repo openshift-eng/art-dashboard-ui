@@ -22,10 +22,10 @@ from typing import Optional
 
 from artcommonlib import redis
 from artcommonlib.jira_config import DEFAULT_JIRA_EMAIL
-from flask import Flask, jsonify, render_template, request
-from jira import JIRA
-from mock_data import generate_mock_failures, get_mock_failure_types, get_mock_groups
+from flask import Flask, jsonify, render_template
 from pyartcd.jira_client import JIRAClient
+
+from mock_data import generate_mock_failures, get_mock_build_variants, get_mock_failure_types, get_mock_groups
 
 DEV_MODE = os.environ.get('ART_DASH_DEV', '').lower() in ('1', 'true', 'yes')
 REDIS_AVAILABLE = bool(os.environ.get('REDIS_SERVER_PASSWORD'))
@@ -169,9 +169,7 @@ def _add_routes(app: Flask):
             failures = generate_mock_failures()
         else:
             # Fetch failures and Jira tickets in parallel
-            failures, jira_tickets = await asyncio.gather(
-                _fetch_all_failures(), _fetch_jira_tickets_for_failures([])
-            )
+            failures, jira_tickets = await asyncio.gather(_fetch_all_failures(), _fetch_jira_tickets_for_failures([]))
 
             # Add jira_ticket field to each failure
             for failure in failures:
@@ -194,6 +192,14 @@ def _add_routes(app: Flask):
         if not REDIS_AVAILABLE:
             return jsonify(get_mock_failure_types())
         return jsonify(FAILURE_TYPES)
+
+    @app.route('/api/build-variants', methods=['GET'])
+    async def api_build_variants():
+        if not REDIS_AVAILABLE:
+            return jsonify(get_mock_build_variants())
+
+        variants = await _discover_build_variants()
+        return jsonify(variants)
 
 
 async def _fetch_all_failures() -> list[dict]:
@@ -253,16 +259,20 @@ async def _fetch_failures_for_type(failure_type: str) -> list[dict]:
 
         entity_name = parts[-2]
         group = parts[-3]
+        build_variant = parts[2] if len(parts) > 2 else ''
         count_val = counts[i] if counts[i] else '0'
 
-        failures.append({
-            'name': entity_name,
-            'group': group,
-            'failure_type': failure_type,
-            'failure_count': int(count_val),
-            'jenkins_url': jenkins_urls[i] or '',
-            'pipeline_url': pipeline_urls[i] or '',
-        })
+        failures.append(
+            {
+                'name': entity_name,
+                'group': group,
+                'build_variant': build_variant,
+                'failure_type': failure_type,
+                'failure_count': int(count_val),
+                'jenkins_url': jenkins_urls[i] or '',
+                'pipeline_url': pipeline_urls[i] or '',
+            }
+        )
 
     return failures
 
@@ -294,6 +304,28 @@ async def _discover_failure_groups() -> list[str]:
         return (1, group.lower())
 
     return sorted(groups, key=_sort_key)
+
+
+async def _discover_build_variants() -> list[str]:
+    """
+    Discover distinct build variants by scanning Redis failure key patterns.
+
+    Return Value(s):
+        list[str]: Sorted list of unique build variant values.
+    """
+    variants = set()
+    pattern = 'count:*-failure:*:*:*:failure'
+
+    try:
+        keys = await redis.get_keys(pattern)
+        for key in keys:
+            parts = key.split(':')
+            if len(parts) >= 6:
+                variants.add(parts[2])
+    except Exception as e:
+        logger.warning('Failed to discover build variants: %s', e)
+
+    return sorted(variants)
 
 
 app = _create_app()
