@@ -234,7 +234,6 @@ function renderTable() {
         return `<tr>
             <td><strong>${escapeHtml(f.name)}</strong></td>
             <td>${escapeHtml(f.group)}</td>
-            <td>${escapeHtml(f.build_variant || '')}</td>
             <td><span class="failure-type-badge ${f.failure_type}">${formatFailureType(f.failure_type)}</span></td>
             <td class="failure-count-cell" style="background-color: ${bgColor}">${f.failure_count}</td>
             <td>${pipelineDisplay}</td>

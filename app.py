@@ -240,12 +240,14 @@ async def _fetch_failures_for_type(failure_type: str) -> list[dict]:
 
     jenkins_url_keys = [k.rsplit(':', 1)[0] + ':jenkins_url' for k in failure_keys]
     pipeline_url_keys = [k.rsplit(':', 1)[0] + ':pipeline_url' for k in failure_keys]
+    build_variant_keys = [k.rsplit(':', 1)[0] + ':build_variant' for k in failure_keys]
 
     try:
-        counts, jenkins_urls, pipeline_urls = await asyncio.gather(
+        counts, jenkins_urls, pipeline_urls, build_variants = await asyncio.gather(
             redis.get_multiple_values(failure_keys),
             redis.get_multiple_values(jenkins_url_keys),
             redis.get_multiple_values(pipeline_url_keys),
+            redis.get_multiple_values(build_variant_keys),
         )
     except Exception as e:
         logger.warning('Failed to batch fetch for %s: %s', failure_type, e)
@@ -259,14 +261,13 @@ async def _fetch_failures_for_type(failure_type: str) -> list[dict]:
 
         entity_name = parts[-2]
         group = parts[-3]
-        build_variant = parts[2] if len(parts) > 2 else ''
         count_val = counts[i] if counts[i] else '0'
 
         failures.append(
             {
                 'name': entity_name,
                 'group': group,
-                'build_variant': build_variant,
+                'build_variant': build_variants[i] or '',
                 'failure_type': failure_type,
                 'failure_count': int(count_val),
                 'jenkins_url': jenkins_urls[i] or '',
@@ -318,10 +319,10 @@ async def _discover_build_variants() -> list[str]:
 
     try:
         keys = await redis.get_keys(pattern)
-        for key in keys:
-            parts = key.split(':')
-            if len(parts) >= 6:
-                variants.add(parts[2])
+        if keys:
+            build_variant_keys = [key.rsplit(':', 1)[0] + ':build_variant' for key in keys]
+            build_variant_values = await redis.get_multiple_values(build_variant_keys)
+            variants.update(variant for variant in build_variant_values if variant)
     except Exception as e:
         logger.warning('Failed to discover build variants: %s', e)
 
