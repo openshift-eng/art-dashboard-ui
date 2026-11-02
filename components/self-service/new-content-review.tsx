@@ -23,10 +23,6 @@ export default function NewContentReview() {
           <TableCell>{inputs.productManager}</TableCell>
         </TableRow>
         <TableRow>
-          <TableCell>Product Security Review Jira</TableCell>
-          <TableCell>{inputs.prodSecReviewJira}</TableCell>
-        </TableRow>
-        <TableRow>
           <TableCell>Source Repository</TableCell>
           <TableCell>{inputs.sourceRepo}</TableCell>
         </TableRow>

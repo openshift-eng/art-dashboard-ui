@@ -122,7 +122,6 @@ export default function NewContentDone() {
 
     // Only include optional fields if they have values
     if (inputs.payloadName) meta.payload_name = inputs.payloadName;
-    if (inputs.prodSecReviewJira) meta.prodsec_review_jira = inputs.prodSecReviewJira;
     if (inputs.specialNote) meta.special_node = inputs.specialNote;
     if (inputs.componentType === 'image' && inputs.imageType) meta.image_type = inputs.imageType;
     if (inputs.approvalLink) meta.approval_link = inputs.approvalLink;

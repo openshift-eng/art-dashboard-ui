@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box'
+import Alert from '@mui/material/Alert'
 import FormControl from '@mui/material/FormControl'
 import RadioGroup from '@mui/material/RadioGroup'
 import FormLabel from '@mui/material/FormLabel'
@@ -242,12 +243,10 @@ export default function NewContentForm({ onSubmit, defaultValues }: { onSubmit?:
         error={errors.productManager !== undefined}
         helperText="Who is the product manager that approved adding this image to the OCP product?" />
     </Box>
-    <Box>
-      <TextField fullWidth label="ProdSec Review Jira" variant="outlined"
-        {...register("prodSecReviewJira")}
-        error={errors.prodSecReviewJira !== undefined}
-        helperText="Reach out to the ProdSec OpenShift SME (currently Hardik Vyas <hvyas@redhat.com>) to determine what audit/review process is necessary. What is the ProdSec review Jira you filed?" />
-    </Box>
+    <Alert severity="info">
+      Required build and release checks are run and enforced by Konflux. A separate ProdSec review Jira is not required
+      for new image or RPM additions to an existing product.
+    </Alert>
     <Box>
       <TextField fullWidth label="Source GitHub Repository" variant="outlined"
         required

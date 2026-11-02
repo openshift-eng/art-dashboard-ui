@@ -5,7 +5,6 @@ export type Inputs = {
   componentType?: string,
   distgit?: string,
   productManager?: string,
-  prodSecReviewJira?: string,
   sourceRepo?: string,
   owners?: string,
   bugComponent?: string,
@@ -120,8 +119,7 @@ export function NewContentStateProvider({ children }: { children: ReactNode }) {
       deliveryRepoProgramManager: "Fake Program Manager",
       deliveryRepoQeOwner: "fake-repo-qe-owner@redhat.com",
       deliveryRepoDocOwner: "fake-repo-doc-owner@redhat.com",
-      deliveryRepoErrataWriter: "fake-repo-errata-writer@redhat.com",
-      prodSecReviewJira: "PRODSEC-9991"
+      deliveryRepoErrataWriter: "fake-repo-errata-writer@redhat.com"
     }
   } else {
     initialValues = {

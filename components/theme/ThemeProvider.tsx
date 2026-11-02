@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
+import darkThemeOptions from "../../styles/theme/darkThemeOptions";
+import lightThemeOptions from "../../styles/theme/lightThemeOptions";
 
 type Theme = "light" | "dark";
 
@@ -14,6 +17,10 @@ const STORAGE_KEY = "art-dashboard-theme";
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
+  const muiTheme = useMemo(
+    () => createTheme(theme === "dark" ? darkThemeOptions : lightThemeOptions),
+    [theme]
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
@@ -42,7 +49,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
+      <MuiThemeProvider theme={muiTheme}>{children}</MuiThemeProvider>
     </ThemeContext.Provider>
   );
 }
