@@ -3,6 +3,7 @@
 // Failure type colors (ec-failure refers to ITS - Image Test Suite)
 const FAILURE_TYPE_COLORS = {
     'build-failure': '#f44336',
+    'post-build-failure': '#00bcd4',  // Konflux post-build callback failures
     'ec-failure': '#ff9800',  // ITS failures (displayed as "ITS Failure")
     'release-failure': '#9c27b0',
     'rebase-failure': '#2196f3',
@@ -526,6 +527,9 @@ function formatFailureType(type) {
     // Map ec-failure to ITS for display (database still uses ec-failure)
     if (type === 'ec-failure') {
         return 'ITS Failure';
+    }
+    if (type === 'post-build-failure') {
+        return 'Post-Build Failure';
     }
     return type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

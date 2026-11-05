@@ -54,6 +54,7 @@ BUILD_VARIANTS = ['ocp', 'okd', 'openshift-logging', 'oadp', 'rhmtc', 'mta']
 # Failure types (ec-failure refers to ITS - Image Test Suite failures)
 FAILURE_TYPES = [
     'build-failure',
+    'post-build-failure',  # Konflux post-build callback failures
     'ec-failure',  # ITS failures
     'release-failure',
     'rebase-failure',
@@ -80,6 +81,9 @@ def _generate_pipeline_urls(failure_type: str, component: str) -> tuple[str, str
     if failure_type == 'rebase-failure':
         # Rebase failures only have jenkins URLs
         return (f'{JENKINS_BASE}/job/build%252Frebase/lastBuild/', '')
+    elif failure_type == 'post-build-failure':
+        # Post-build callbacks are driven by a Jenkins job (post_build_pipeline is a Jenkins URL)
+        return (f'{JENKINS_BASE}/job/build%252Fpost-build/lastBuild/', '')
     elif rand_val < 0.7:
         # Jenkins build
         return (f'{JENKINS_BASE}/job/build%252Focp4/lastBuild/', '')
