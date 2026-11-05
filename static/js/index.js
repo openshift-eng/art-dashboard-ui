@@ -114,11 +114,8 @@ function sortResults(results, column, direction) {
                     'ReleaseError': 3,
                     'Pending': 4,
                     'Success': 5,
-                    // snake_case equivalents
-                    'build_error': 0,
+                    // snake_case equivalent for the new post-build outcome
                     'post_build_error': 1,
-                    'its_error': 2,
-                    'release_error': 3,
                     // Backward compatibility with old values
                     'failure': 0,
                     'pending': 4,
@@ -719,7 +716,7 @@ function createRow(result) {
         let postBuildIcon, postBuildTitle, postBuildClass;
         if (postBuildStatus === 'not-run') {
             postBuildIcon = '⚪';
-            postBuildTitle = 'Post-Build not run';
+            postBuildTitle = 'Post-Build did not run (earlier stage failed)';
             postBuildClass = 'plr-not-run';
         } else if (postBuildStatus === 'failed') {
             postBuildIcon = '🔴';
