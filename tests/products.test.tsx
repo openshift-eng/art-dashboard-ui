@@ -20,6 +20,7 @@ const router = {
   isReady: true,
   query: {} as Record<string, any>,
   push: jest.fn(),
+  replace: jest.fn(),
 };
 jest.mock("next/router", () => ({ useRouter: () => router }));
 const api = makeApiCall as jest.Mock;
@@ -70,20 +71,30 @@ function route(id = "acm", group = "acm-2.17", version = "2.17.4") {
 }
 
 function respond(url: string) {
-  if (url.endsWith("ga-version")) return { payload: "4.21" };
+  if (url.includes("/ga/")) {
+    const id = url.includes("openshift")
+      ? "openshift"
+      : url.includes("mce")
+        ? "mce"
+        : "acm";
+    const version = id === "openshift" ? "4.21" : "5.0";
+    return { version, group: `${id}-${version}`, source: "test" };
+  }
   if (url.endsWith("products/")) return products;
   if (url.includes("/groups/"))
     return url.includes("mce")
-      ? ["mce-2.17", "mce-5.1"]
+      ? ["mce-5.1", "mce-5.0", "mce-2.17"]
       : url.includes("openshift")
         ? ["openshift-4.21"]
-        : ["acm-5.0", "acm-2.17"];
+        : ["acm-5.1", "acm-5.0", "acm-2.17"];
   if (url.includes("/releases/"))
-    return url.includes("mce-5.1")
+    return url.includes("-5.1")
       ? []
       : url.includes("openshift")
         ? [release("4.21.42"), release("4.21.41")]
-        : [release()];
+        : url.includes("-5.0")
+          ? [release("5.0.0")]
+          : [release()];
   if (url.includes("/release/"))
     return detail(url.includes("4.21.41") ? "4.21.41" : "2.17.4");
   throw new Error(`Unexpected test endpoint: ${url}`);
@@ -101,6 +112,7 @@ beforeEach(() => {
   localStorage.clear();
   document.documentElement.classList.remove("dark");
   router.push.mockClear();
+  router.replace.mockClear();
   api.mockReset();
   api.mockImplementation(async (url: string) => respond(url));
   route();
@@ -131,6 +143,103 @@ test("switching product and group uses stable URLs", async () => {
     target: { value: "acm-5.0" },
   });
   expect(router.push).toHaveBeenCalledWith("/dashboard/products/acm/acm-5.0");
+});
+
+test.each(["openshift", "acm", "mce"])(
+  "%s opens its GA group and shows a linked GA footer",
+  async (id) => {
+    router.query = { selection: [id] };
+    render(dashboard());
+    const version = id === "openshift" ? "4.21" : "5.0";
+    const path = `/dashboard/products/${id}/${id}-${version}`;
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith(path));
+    expect(screen.getByLabelText("Product group")).toHaveValue(
+      `${id}-${version}`,
+    );
+    expect(
+      await screen.findByRole("link", { name: `v${version}` }),
+    ).toHaveAttribute("href", path);
+    expect(screen.getByText("Latest GA Version")).toBeInTheDocument();
+    expect(await screen.findByText("GA")).toBeInTheDocument();
+    expect(
+      api.mock.calls.some(([url]) => url.includes(`group=${id}-5.1`)),
+    ).toBe(false);
+    expect(
+      screen.getByRole("link", { name: /Build history/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Build failures/i }),
+    ).toBeInTheDocument();
+  },
+);
+
+test("an explicit older release stays selected while the footer links to latest GA", async () => {
+  render(dashboard());
+  await screen.findByRole("heading", { name: "ACM 2.17.4" });
+  expect(await screen.findByRole("link", { name: "v5.0" })).toHaveAttribute(
+    "href",
+    "/dashboard/products/acm/acm-5.0",
+  );
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(screen.queryByText("GA")).not.toBeInTheDocument();
+});
+
+test("a product without GA lets users select a group without guessing a default", async () => {
+  router.query = { selection: ["acm"] };
+  api.mockImplementation(async (url: string) =>
+    url.includes("/ga/")
+      ? { version: null, group: null, source: "build-data-releases" }
+      : respond(url),
+  );
+  render(dashboard());
+  await screen.findByText(/No GA version was found for ACM/);
+  expect(screen.getByText("Not determined")).toBeInTheDocument();
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(api.mock.calls.some(([url]) => url.includes("/releases/"))).toBe(
+    false,
+  );
+  fireEvent.change(screen.getByLabelText("Product group"), {
+    target: { value: "acm-5.1" },
+  });
+  expect(router.push).toHaveBeenCalledWith("/dashboard/products/acm/acm-5.1");
+});
+
+test("GA errors can be retried and do not choose the newest group", async () => {
+  router.query = { selection: ["mce"] };
+  api.mockImplementation(async (url: string) =>
+    url.includes("/ga/") ? { error: "Build data unavailable" } : respond(url),
+  );
+  render(dashboard());
+  await screen.findByText(/Could not determine the latest GA version/);
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(api.mock.calls.some(([url]) => url.includes("/releases/"))).toBe(
+    false,
+  );
+  api.mockImplementation(async (url: string) => respond(url));
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith(
+      "/dashboard/products/mce/mce-5.0",
+    ),
+  );
+});
+
+test("explicit release links remain usable when GA lookup fails", async () => {
+  api.mockImplementation(async (url: string) =>
+    url.includes("/ga/") ? { error: "Build data unavailable" } : respond(url),
+  );
+  render(dashboard());
+  await screen.findByRole("heading", { name: "ACM 2.17.4" });
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+test("dashboard entry resolves OpenShift GA at runtime", async () => {
+  const config = require("../next.config");
+  expect(await config.redirects()).toContainEqual({
+    source: "/dashboard",
+    destination: "/dashboard/products/openshift",
+    permanent: false,
+  });
 });
 
 test("late responses from a previous product cannot replace the selected release", async () => {
@@ -193,6 +302,7 @@ test("legacy OpenShift URLs preserve page selection and release stream links", a
     {},
     expect.anything(),
   );
+  expect(router.replace).not.toHaveBeenCalled();
 });
 
 test("approved dark theme retains a persisted light-mode preference", async () => {
@@ -208,16 +318,37 @@ test("approved dark theme retains a persisted light-mode preference", async () =
 test("ErrataTool advisories remain visible when the shipment lookup fails", async () => {
   router.query = { releaseVersion: "openshift-4.21" };
   api.mockImplementation(async (url: string) => {
-    if (url.includes("/releases/")) return [{ ...release("4.21.42"), advisories: { rpm: 176621 } }];
-    if (url.includes("/release/")) return { error: "Shipment service unavailable" };
-    if (url.includes("errata/advisory/batch/")) return { data: { "176621": { status: "success", data: {
-      advisory_details: [{ id: 176621, status: "SHIPPED_LIVE", advisory_type: "RHBA", doc_complete: "Approved" }], bug_summary: [],
-    } } } };
+    if (url.includes("/releases/"))
+      return [{ ...release("4.21.42"), advisories: { rpm: 176621 } }];
+    if (url.includes("/release/"))
+      return { error: "Shipment service unavailable" };
+    if (url.includes("errata/advisory/batch/"))
+      return {
+        data: {
+          "176621": {
+            status: "success",
+            data: {
+              advisory_details: [
+                {
+                  id: 176621,
+                  status: "SHIPPED_LIVE",
+                  advisory_type: "RHBA",
+                  doc_complete: "Approved",
+                },
+              ],
+              bug_summary: [],
+            },
+          },
+        },
+      };
     return respond(url);
   });
   render(dashboard(true));
   await screen.findByText("Shipment service unavailable");
-  expect(await screen.findByRole("link", { name: "176621" })).toHaveAttribute("href", "https://errata.devel.redhat.com/advisory/176621");
+  expect(await screen.findByRole("link", { name: "176621" })).toHaveAttribute(
+    "href",
+    "https://errata.devel.redhat.com/advisory/176621",
+  );
   expect(screen.getByText("SHIPPED_LIVE")).toBeInTheDocument();
 });
 

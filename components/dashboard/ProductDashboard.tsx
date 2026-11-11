@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -9,6 +9,7 @@ import ReleaseContent, { ErrorState, Loading } from "./ReleaseContent";
 import { useDashboardResource } from "../api_calls/product_calls";
 import {
   Product,
+  ProductGA,
   ProductOverview,
   Release,
   environmentSummary,
@@ -22,7 +23,7 @@ function Overview() {
     <>
       <h1 className="text-2xl font-semibold tracking-tight">All products</h1>
       <p className="mb-7 mt-2 text-sm text-muted-foreground">
-        Latest recorded release in the newest group with release entries.
+        Latest recorded release in each product&apos;s GA group.
       </p>
       {resource.loading && <Loading />}
       {resource.error && (
@@ -83,7 +84,7 @@ function Overview() {
                   ) : (
                     <>
                       <td className="px-4 py-5 font-mono">
-                        {row.release?.version || "No releases"}
+                        {row.release?.version || "GA not determined"}
                       </td>
                       <td className="px-4 py-5">
                         <StatusBadge
@@ -93,7 +94,9 @@ function Overview() {
                                   row.release.shipments,
                                   "stage",
                                 )
-                              : row.release ? "No shipment MR" : "—"
+                              : row.release
+                                ? "No shipment MR"
+                                : "—"
                           }
                           className="whitespace-nowrap text-xs"
                         />
@@ -106,7 +109,9 @@ function Overview() {
                                   row.release.shipments,
                                   "prod",
                                 )
-                              : row.release ? "No shipment MR" : "—"
+                              : row.release
+                                ? "No shipment MR"
+                                : "—"
                           }
                           className="whitespace-nowrap text-xs"
                         />
@@ -148,13 +153,21 @@ export default function ProductDashboard({
     router.isReady ? "products/" : null,
   );
   const product = catalog.data?.find((item) => item.id === productId);
-  const ga = useDashboardResource<{ payload: string }>(
-    product?.id === "openshift" ? "ga-version" : null,
+  const ga = useDashboardResource<ProductGA>(
+    product ? `products/${product.id}/ga/` : null,
   );
   const groups = useDashboardResource<string[]>(
     router.isReady && product ? `products/${product.id}/groups/` : null,
   );
-  const group = legacy ? legacyGroup : selection[1] || groups.data?.[0];
+  const group = legacy
+    ? legacyGroup
+    : selection[1] || ga.data?.group || undefined;
+  const defaultProduct = !legacy && selection.length === 1;
+  useEffect(() => {
+    if (defaultProduct && product && ga.data?.group) {
+      void router.replace(releasePath(product.id, ga.data.group));
+    }
+  }, [defaultProduct, product, ga.data?.group, router]);
   const listing = useDashboardResource<Release[]>(
     product && group
       ? `products/${product.id}/releases/?group=${encodeURIComponent(group)}`
@@ -182,7 +195,13 @@ export default function ProductDashboard({
       <DashboardLayout
         products={catalog.data || []}
         productId={product?.id}
-        gaVersion={ga.data?.payload}
+        gaVersion={ga.data?.version}
+        gaLoading={ga.loading}
+        gaHref={
+          product && ga.data?.group
+            ? releasePath(product.id, ga.data.group)
+            : undefined
+        }
         onProductChange={(id) => navigate(id)}
         overview={overview}
         releaseHref={
@@ -211,6 +230,11 @@ export default function ProductDashboard({
                 onChange={(event) => navigate(product.id, event.target.value)}
                 className="min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
               >
+                {!group && (
+                  <option value="" disabled>
+                    Select group
+                  </option>
+                )}
                 {group && !groups.data.includes(group) && (
                   <option value={group}>{group}</option>
                 )}
@@ -235,7 +259,21 @@ export default function ProductDashboard({
           {overview && catalog.data && <Overview />}
           {!overview && product && (
             <>
-              {(groups.loading || listing.loading) && <Loading />}
+              {(groups.loading ||
+                listing.loading ||
+                (defaultProduct && ga.loading)) && <Loading />}
+              {ga.error && (
+                <ErrorState
+                  message={`Could not determine the latest GA version: ${ga.error}`}
+                  retry={ga.retry}
+                />
+              )}
+              {defaultProduct && ga.data && !ga.data.group && (
+                <p className="py-8 text-sm text-muted-foreground">
+                  No GA version was found for {product.name}. Select a group to
+                  browse its releases.
+                </p>
+              )}
               {groups.error && (
                 <ErrorState message={groups.error} retry={groups.retry} />
               )}
@@ -268,7 +306,7 @@ export default function ProductDashboard({
                   product={product}
                   group={group}
                   release={release}
-                  gaVersion={ga.data?.payload}
+                  gaGroup={ga.data?.group || undefined}
                 />
               )}
             </>
