@@ -4,4 +4,18 @@ Built using `React` and `NextJS` and deployed at http://art-dash.engineering.red
 
 Uses [art-dashboard-server](https://github.com/openshift-eng/art-dashboard-server) as backend.
 
+The release workspace supports OpenShift, ACM, and MCE at `/dashboard/products`.
+Select a product and group, then a release. Release links include the assembly
+name, for example `/dashboard/products/acm/acm-2.17/2.17.4`. Existing
+`/dashboard/release/openshift-4.21?page=2` links remain supported.
+
+The server's product API must be deployed before this UI. Product identities and
+group discovery are configured by the server; the UI does not maintain a second
+product registry. Shipment and approval views preserve separate FBC targets and
+per-shipment stage/production results. The theme toggle retains the user's saved
+light/dark preference.
+
+Run the dashboard regression tests with `npm test -- --runInBand` and the
+production build with `npm run build`.
+
 For directions on building and setting up a development environment, visit the container [README](/container/README.md).

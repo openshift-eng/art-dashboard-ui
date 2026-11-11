@@ -4,38 +4,38 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --background: 0 0% 100%;
+    --foreground: 235 16% 15%;
+    --card: 240 60% 99%;
+    --card-foreground: 235 16% 15%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 239 84% 67%;
+    --accent: 246 76% 63%;
     --accent-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 239 84% 67%;
+    --border: 240 21% 93%;
+    --input: 240 21% 93%;
+    --ring: 246 76% 63%;
     --destructive: 0 84% 60%;
-    --success: 142 71% 45%;
-    --warning: 32 95% 44%;
+    --success: 150 68% 27%;
+    --warning: 38 85% 29%;
     --info: 217 91% 60%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 235 80% 73%;
-    --accent-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 235 80% 73%;
-    --destructive: 0 72% 71%;
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
+    --background: 240 13% 9.4%;
+    --foreground: 248 29% 94.5%;
+    --card: 240 14% 12.4%;
+    --card-foreground: 248 29% 94.5%;
+    --muted: 240 14% 16%;
+    --muted-foreground: 240 12% 68.4%;
+    --accent: 247 100% 80%;
+    --accent-foreground: 250 38% 10%;
+    --border: 240 11% 22.5%;
+    --input: 240 11% 22.5%;
+    --ring: 247 100% 80%;
+    --destructive: 353 80% 80%;
+    --success: 145 53% 70%;
+    --warning: 39 82% 72%;
     --info: 217 91% 60%;
   }
 
@@ -49,6 +49,9 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  :root { color-scheme: light; }
+  .dark { color-scheme: dark; }
 }
 
 @keyframes shimmer {
