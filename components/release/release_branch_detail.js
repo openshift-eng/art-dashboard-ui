@@ -174,11 +174,14 @@ function ReleaseBranchDetail(props) {
             const branch = props.branch;
             shipment_status(shipmentInfo.url, branch, current)
                 .then(data => {
+                    if (!data || data.error || data.detail || data.status === "error") {
+                        throw new Error(data?.error || data?.message || data?.detail || "Failed to load shipment data");
+                    }
                     setShipmentStatusData(data);
                 })
                 .catch(err => {
                     console.error('Error fetching shipment status:', err);
-                    setShipmentStatusData(null);
+                    setShipmentStatusData({ error: err.message || "Failed to load shipment data" });
                 })
                 .finally(() => {
                     setShipmentLoaded(true);
@@ -203,6 +206,7 @@ function ReleaseBranchDetail(props) {
                 rows.push({
                     advisory_type: adv.kind,
                     errata_id: fileData.live_id || adv.live_id,
+                    error: shipmentStatusData?.error,
                     advisory_type_main: fileData.type || "",
                     status: status,
                     publish_date: shipmentInfo.release_date || "",
