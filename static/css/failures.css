@@ -292,6 +292,12 @@ th.sort-active .sort-arrow {
     color: #ef5350;
 }
 
+/* Konflux post-build callback failures */
+.failure-type-badge.post-build-failure {
+    background-color: rgba(0, 188, 212, 0.25);
+    color: #4dd0e1;
+}
+
 /* ITS failure styling (database field is still ec-failure for historical reasons) */
 .failure-type-badge.ec-failure,
 .failure-type-badge.its-failure {
