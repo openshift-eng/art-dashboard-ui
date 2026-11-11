@@ -106,17 +106,20 @@ function sortResults(results, column, direction) {
                 bVal = b.name || '';
                 break;
             case 'outcome':
-                // Sort order: BuildError, ItsError, ReleaseError, Pending, Success
+                // Sort order: BuildError, PostBuildError, ItsError, ReleaseError, Pending, Success
                 const outcomeOrder = {
                     'BuildError': 0,
-                    'ItsError': 1,
-                    'ReleaseError': 2,
-                    'Pending': 3,
-                    'Success': 4,
+                    'PostBuildError': 1,
+                    'ItsError': 2,
+                    'ReleaseError': 3,
+                    'Pending': 4,
+                    'Success': 5,
+                    // snake_case equivalent for the new post-build outcome
+                    'post_build_error': 1,
                     // Backward compatibility with old values
                     'failure': 0,
-                    'pending': 3,
-                    'success': 4
+                    'pending': 4,
+                    'success': 5
                 };
                 aVal = outcomeOrder[a.outcome] ?? 5;
                 bVal = outcomeOrder[b.outcome] ?? 5;
@@ -157,6 +160,7 @@ function sortResults(results, column, direction) {
                 const countPipelines = (r) => {
                     let count = 0;
                     if (r['pipeline URL']) count++;
+                    if (r['post_build_pipeline_url']) count++;
                     if (r['ec_pipeline_url']) count++;
                     if (r['release_pipeline_url']) count++;
                     return count;
@@ -575,7 +579,8 @@ function createRow(result) {
         simpleOutcome = "✅";
     } else if (outcome === "Pending" || outcome === "pending") {
         simpleOutcome = "⏳";
-    } else if (normalizedOutcome === "builderror" || normalizedOutcome === "itserror" ||
+    } else if (normalizedOutcome === "builderror" || normalizedOutcome === "postbuilderror" ||
+               normalizedOutcome === "itserror" ||
                normalizedOutcome === "releaseerror" || outcome === "failure") {
         simpleOutcome = "❌";
     } else {
@@ -592,32 +597,46 @@ function createRow(result) {
     const shortCommit = result.commitish ? result.commitish.substring(0, 7) : '';
     const sourceLink = result.source && shortCommit ? `<a href="${result.source}/tree/${result.commitish}" target="_blank" title="View source tree">${shortCommit}</a>` : '';
 
-    // PLRs column: Build, ITS, and Release pipeline icons with status colors
+    // PLRs column: Build, Post-Build, ITS, and Release pipeline icons with status colors
     const buildPipelineUrl = result["pipeline URL"] || "";
+    const postBuildPipelineUrl = result["post_build_pipeline_url"] || "";
     const ecPipelineUrl = result["ec_pipeline_url"] || "";
     const releasePipelineUrl = result["release_pipeline_url"] || result["release_pipeline"] || "";
+
+    // Post-build only applies when the image configured a post-build step, i.e. there is a
+    // post_build_pipeline on the record (or the build failed specifically at post-build).
+    const postBuildConfigured = !!postBuildPipelineUrl || normalizedOutcome === "postbuilderror";
 
     let plrsContent = '';
 
     // Determine pipeline statuses based on outcome and pipeline URL presence
-    // Sequence is always: Build -> ITS -> Release
+    // Sequence is always: Build -> Post-Build -> ITS -> Release
     // If a stage fails, subsequent stages are not triggered (no URL)
 
-    let buildStatus, itsStatus, releaseStatus;
+    let buildStatus, postBuildStatus, itsStatus, releaseStatus;
 
     if (outcome === "BuildError" || normalizedOutcome === "builderror") {
-        // Build failed, ITS and Release not triggered
+        // Build failed, Post-Build/ITS/Release not triggered
         buildStatus = 'failed';
+        postBuildStatus = 'not-run';
+        itsStatus = 'not-run';
+        releaseStatus = 'not-run';
+    } else if (outcome === "PostBuildError" || normalizedOutcome === "postbuilderror") {
+        // Build succeeded, Post-Build failed, ITS and Release not triggered
+        buildStatus = 'success';
+        postBuildStatus = 'failed';
         itsStatus = 'not-run';
         releaseStatus = 'not-run';
     } else if (outcome === "ItsError" || normalizedOutcome === "itserror") {
-        // Build succeeded, ITS failed, Release not triggered
+        // Build succeeded, Post-Build (if configured) succeeded, ITS failed, Release not triggered
         buildStatus = 'success';
+        postBuildStatus = 'success';
         itsStatus = 'failed';
         releaseStatus = 'not-run';
     } else if (outcome === "ReleaseError" || normalizedOutcome === "releaseerror") {
-        // Release failed - build succeeded, ITS may or may not have run
+        // Release failed - build succeeded, Post-Build (if configured) succeeded, ITS may or may not have run
         buildStatus = 'success';
+        postBuildStatus = 'success';
         // ITS status depends on whether we have URL info
         itsStatus = ecPipelineUrl ? 'success' : 'not-run';
         // Release failed (outcome tells us this)
@@ -625,14 +644,17 @@ function createRow(result) {
     } else if (outcome === "Success" || outcome === "success") {
         // All stages that were triggered succeeded
         buildStatus = 'success';
+        postBuildStatus = 'success';
         itsStatus = ecPipelineUrl ? 'success' : 'not-run';
         releaseStatus = releasePipelineUrl ? 'success' : 'not-run';
     } else if (outcome === "failure") {
         // Legacy failure state: determine what failed based on pipeline URL presence
         buildStatus = 'success'; // Build must have succeeded to have an NVR
+        postBuildStatus = 'success';
         if (!ecPipelineUrl) {
             // ITS not triggered, so build failed
             buildStatus = 'failed';
+            postBuildStatus = 'not-run';
             itsStatus = 'not-run';
             releaseStatus = 'not-run';
         } else if (!releasePipelineUrl) {
@@ -647,11 +669,13 @@ function createRow(result) {
     } else if (outcome === "Pending" || outcome === "pending") {
         // Pending state: show what we know so far
         buildStatus = buildPipelineUrl ? 'pending' : 'not-run';
+        postBuildStatus = postBuildPipelineUrl ? 'pending' : 'not-run';
         itsStatus = ecPipelineUrl ? 'pending' : 'not-run';
         releaseStatus = releasePipelineUrl ? 'pending' : 'not-run';
     } else {
         // Unknown outcome, show based on URL presence
         buildStatus = buildPipelineUrl ? 'unknown' : 'not-run';
+        postBuildStatus = postBuildPipelineUrl ? 'unknown' : 'not-run';
         itsStatus = ecPipelineUrl ? 'unknown' : 'not-run';
         releaseStatus = releasePipelineUrl ? 'unknown' : 'not-run';
     }
@@ -684,6 +708,39 @@ function createRow(result) {
         plrsContent += `<a href="${buildPipelineUrl}" target="_blank" title="${buildTitle}" class="plr-icon ${buildClass}">${buildIcon}</a> `;
     } else {
         plrsContent += `<span class="plr-icon plr-no-link ${buildClass}" title="${buildTitle}">${buildIcon}</span> `;
+    }
+
+    // Post-Build pipeline icon - only shown when the image configured a post-build step
+    // (no post_build_pipeline on the record means post-build was not configured, so omit it)
+    if (postBuildConfigured) {
+        let postBuildIcon, postBuildTitle, postBuildClass;
+        if (postBuildStatus === 'not-run') {
+            postBuildIcon = '⚪';
+            postBuildTitle = 'Post-Build did not run (earlier stage failed)';
+            postBuildClass = 'plr-not-run';
+        } else if (postBuildStatus === 'failed') {
+            postBuildIcon = '🔴';
+            postBuildTitle = 'Post-Build failed';
+            postBuildClass = '';
+        } else if (postBuildStatus === 'success') {
+            postBuildIcon = '🟢';
+            postBuildTitle = 'Post-Build succeeded';
+            postBuildClass = '';
+        } else if (postBuildStatus === 'pending') {
+            postBuildIcon = '⏳';
+            postBuildTitle = 'Post-Build pending';
+            postBuildClass = '';
+        } else {
+            postBuildIcon = '❓';
+            postBuildTitle = 'Post-Build status unknown';
+            postBuildClass = '';
+        }
+
+        if (postBuildPipelineUrl && postBuildStatus !== 'not-run') {
+            plrsContent += `<a href="${postBuildPipelineUrl}" target="_blank" title="${postBuildTitle}" class="plr-icon ${postBuildClass}">${postBuildIcon}</a> `;
+        } else {
+            plrsContent += `<span class="plr-icon plr-no-link ${postBuildClass}" title="${postBuildTitle}">${postBuildIcon}</span> `;
+        }
     }
 
     // ITS pipeline icon - show status based on outcome
@@ -889,10 +946,12 @@ function filterDuplicatePending(results) {
         });
         const hasCompleted = group.some(r => {
             const outcome = r.outcome;
-            // Completed outcomes: Success, BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy failure
+            // Completed outcomes: Success, BuildError, PostBuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy failure
             return outcome === 'Success' || outcome === 'BuildError' ||
+                   outcome === 'PostBuildError' ||
                    outcome === 'ItsError' || outcome === 'ReleaseError' ||
                    outcome === 'success' || outcome === 'build_error' ||
+                   outcome === 'post_build_error' ||
                    outcome === 'its_error' || outcome === 'release_error' ||
                    outcome === 'failure';
         });
@@ -902,8 +961,10 @@ function filterDuplicatePending(results) {
             group.forEach(result => {
                 const outcome = result.outcome;
                 if (outcome === 'Success' || outcome === 'BuildError' ||
+                    outcome === 'PostBuildError' ||
                     outcome === 'ItsError' || outcome === 'ReleaseError' ||
                     outcome === 'success' || outcome === 'build_error' ||
+                    outcome === 'post_build_error' ||
                     outcome === 'its_error' || outcome === 'release_error' ||
                     outcome === 'failure') {
                     filteredResults.push(result);
@@ -1098,9 +1159,11 @@ function outcomeMatchesSelection(resultOutcome, selectedOutcomes) {
                 return true;
             }
         } else if (selectedOutcome === 'Failure') {
-            // Match all failure types: BuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
-            if (resultOutcome === 'BuildError' || resultOutcome === 'ItsError' ||
+            // Match all failure types: BuildError, PostBuildError, ItsError, ReleaseError (PascalCase and snake_case), or legacy 'failure'
+            if (resultOutcome === 'BuildError' || resultOutcome === 'PostBuildError' ||
+                resultOutcome === 'ItsError' ||
                 resultOutcome === 'ReleaseError' || resultOutcome === 'build_error' ||
+                resultOutcome === 'post_build_error' ||
                 resultOutcome === 'its_error' || resultOutcome === 'release_error' ||
                 resultOutcome === 'failure') {
                 return true;
