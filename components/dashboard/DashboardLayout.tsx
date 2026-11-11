@@ -204,46 +204,42 @@ export function DashboardLayout({
               {!compact && <span>All products</span>}
             </Link>
           )}
-          {(!products || productId === "openshift") && (
-            <>
-              <a
-                href={buildHistoryLink}
-                aria-label="OpenShift build history"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  "flex items-center rounded-md py-2 text-sm text-muted-foreground transition-colors duration-100 hover:text-foreground",
-                  compact ? "justify-center px-1" : "gap-2 px-2",
-                )}
-              >
-                <History className="h-5 w-5 shrink-0" />
-                {!compact && (
-                  <>
-                    <span>Build History</span>
-                    <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
-                  </>
-                )}
-              </a>
-              <a
-                href={buildFailuresLink}
-                aria-label="OpenShift build failures"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  "flex items-center rounded-md py-2 text-sm text-muted-foreground transition-colors duration-100 hover:text-foreground",
-                  compact ? "justify-center px-1" : "gap-2 px-2",
-                )}
-              >
-                <AlertTriangle className="h-5 w-5 shrink-0" />
-                {!compact && (
-                  <>
-                    <span>Build Failures</span>
-                    <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
-                  </>
-                )}
-              </a>
-            </>
-          )}
+          <a
+            href={buildHistoryLink}
+            aria-label="Build history"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center rounded-md py-2 text-sm text-muted-foreground transition-colors duration-100 hover:text-foreground",
+              compact ? "justify-center px-1" : "gap-2 px-2",
+            )}
+          >
+            <History className="h-5 w-5 shrink-0" />
+            {!compact && (
+              <>
+                <span>Build History</span>
+                <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+              </>
+            )}
+          </a>
+          <a
+            href={buildFailuresLink}
+            aria-label="Build failures"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center rounded-md py-2 text-sm text-muted-foreground transition-colors duration-100 hover:text-foreground",
+              compact ? "justify-center px-1" : "gap-2 px-2",
+            )}
+          >
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            {!compact && (
+              <>
+                <span>Build Failures</span>
+                <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+              </>
+            )}
+          </a>
         </nav>
 
         {/* Version list */}
