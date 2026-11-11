@@ -268,12 +268,12 @@ export default function ReleaseContent({
   product,
   group,
   release,
-  gaVersion,
+  gaGroup,
 }: {
   product: Product;
   group: string;
   release: Release;
-  gaVersion?: string;
+  gaGroup?: string;
 }) {
   const [tab, setTab] = useState("shipments");
   const resource = useDashboardResource<ReleaseDetail>(
@@ -292,12 +292,11 @@ export default function ReleaseContent({
             <h1 className="text-2xl font-semibold tracking-tight">
               {product.name} {release.version}
             </h1>
-            {product.id === "openshift" &&
-              group === `openshift-${gaVersion}` && (
-                <span className="rounded bg-success/10 px-2 py-1 text-xs text-success">
-                  GA
-                </span>
-              )}
+            {group === gaGroup && (
+              <span className="rounded bg-success/10 px-2 py-1 text-xs text-success">
+                GA
+              </span>
+            )}
             {detail?.status && (
               <StatusBadge
                 status={

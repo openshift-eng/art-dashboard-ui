@@ -52,6 +52,13 @@ export interface ProductOverview {
   group?: string;
   release?: ReleaseDetail;
   error?: string;
+  ga?: ProductGA;
+}
+
+export interface ProductGA {
+  version: string | null;
+  group: string | null;
+  source: string;
 }
 
 export function releasePath(product: string, group?: string, version?: string) {

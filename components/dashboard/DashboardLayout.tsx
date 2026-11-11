@@ -22,6 +22,8 @@ const SIDEBAR_KEY = "art-dashboard-sidebar";
 interface DashboardLayoutProps {
   children: React.ReactNode;
   gaVersion?: string | null;
+  gaHref?: string;
+  gaLoading?: boolean;
   versionList?: string[];
   currentVersion?: string;
   onVersionSelect?: (version: string) => void;
@@ -35,6 +37,8 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
   children,
   gaVersion,
+  gaHref,
+  gaLoading = false,
   versionList,
   currentVersion,
   onVersionSelect,
@@ -273,12 +277,30 @@ export function DashboardLayout({
 
         {/* Footer */}
         <div className="mt-auto border-t border-border px-3 py-3">
-          {!compact && gaVersion && (
+          {!compact && (gaVersion || productId) && (
             <div className="mb-3">
               <div className="text-sm text-muted-foreground">
                 Latest GA Version
               </div>
-              <div className="text-base">v{gaVersion}</div>
+              <div className="text-base">
+                {gaVersion ? (
+                  gaHref ? (
+                    <Link
+                      href={gaHref}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-accent hover:underline"
+                    >
+                      v{gaVersion}
+                    </Link>
+                  ) : (
+                    `v${gaVersion}`
+                  )
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {gaLoading ? "Loading…" : "Not determined"}
+                  </span>
+                )}
+              </div>
             </div>
           )}
           <button
