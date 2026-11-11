@@ -45,6 +45,7 @@
     "yaml": "^2.9.0"
   },
   "scripts": {
+    "test": "jest",
     "start": "next dev",
     "build": "next build",
     "deploy": "next start"
@@ -66,5 +67,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/jest": "^27.5.2",
+    "jest": "^27.5.1",
+    "jest-environment-jsdom": "^27.5.1"
   }
 }

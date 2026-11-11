@@ -8,13 +8,10 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-muted text-muted-foreground",
-        success:
-          "bg-green-950 text-green-400 dark:bg-green-950 dark:text-green-400 bg-green-50 text-green-700 ring-1 ring-inset ring-green-200 dark:ring-0",
-        info: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:ring-0 dark:bg-blue-950 dark:text-blue-400",
-        destructive:
-          "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 dark:ring-0 dark:bg-red-950 dark:text-red-400",
-        warning:
-          "bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-200 dark:ring-0 dark:bg-yellow-950 dark:text-yellow-500",
+        success: "bg-success/10 text-success",
+        info: "bg-info/10 text-info",
+        destructive: "bg-destructive/10 text-destructive",
+        warning: "bg-warning/10 text-warning",
       },
     },
     defaultVariants: {
