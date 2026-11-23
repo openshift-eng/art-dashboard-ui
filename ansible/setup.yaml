@@ -48,7 +48,7 @@
             name: redis-server-password
           type: Opaque
           stringData:
-            password: "{{ redis_password }}"
+            REDIS_SERVER_PASSWORD: "{{ redis_password }}"
 
     - name: Create gcp-credentials secret
       kubernetes.core.k8s:
@@ -62,6 +62,35 @@
           type: Opaque
           data:
             gcp-credentials.json: "{{ gcp_credentials_content }}"
+
+    - name: Check OAuth cookie secret
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        namespace: "{{ namespace }}"
+        name: art-build-history-oauth-cookie
+      register: oauth_cookie_secret
+
+    - name: Create OAuth cookie secret
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: art-build-history-oauth-cookie
+          type: Opaque
+          stringData:
+            cookie-secret: "{{ lookup('ansible.builtin.password', '/dev/null length=32 chars=ascii_letters,digits') }}"
+      when: oauth_cookie_secret.resources | length == 0
+      no_log: true
+
+    - name: Create OAuth proxy service account
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        src: "{{ playbook_dir }}/../openshift/serviceaccount-oauth.yaml"
 
     # ImageStream
     - name: Create ImageStream
@@ -97,6 +126,37 @@
         namespace: "{{ namespace }}"
         src: "{{ playbook_dir }}/../openshift/route.yaml"
 
+    - name: Read dashboard Route host
+      kubernetes.core.k8s_info:
+        api_version: route.openshift.io/v1
+        kind: Route
+        namespace: "{{ namespace }}"
+        name: art-build-history
+      register: dashboard_route
+
+    - name: Create rate-limited search Route
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ namespace }}"
+        definition:
+          apiVersion: route.openshift.io/v1
+          kind: Route
+          metadata:
+            name: art-build-history-search
+            annotations:
+              haproxy.router.openshift.io/rate-limit-connections: "true"
+              haproxy.router.openshift.io/rate-limit-connections.rate-http: "2"
+          spec:
+            host: "{{ dashboard_route.resources[0].spec.host }}"
+            path: /search
+            port:
+              targetPort: 4180
+            tls:
+              termination: edge
+            to:
+              kind: Service
+              name: art-build-history
+
     # DeploymentConfig
     - name: Create DeploymentConfig
       kubernetes.core.k8s:
@@ -110,11 +170,13 @@
           Setup complete!
 
           Resources created in namespace: {{ namespace }}
-          - Secrets: redis-server-password, gcp-credentials
+          - Secrets: redis-server-password, gcp-credentials, art-build-history-oauth-cookie
+          - ServiceAccount: art-build-history-oauth
           - ImageStream: art-build-history (tags: base, latest)
           - BuildConfigs: art-build-history-base, art-build-history
           - Service: art-build-history
           - Route: art-build-history
+          - Search Route: art-build-history-search
           - DeploymentConfig: art-build-history
 
           Next steps:

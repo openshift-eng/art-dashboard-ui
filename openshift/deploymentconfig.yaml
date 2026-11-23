@@ -11,17 +11,31 @@ spec:
       labels:
         app: art-build-history
     spec:
+      serviceAccountName: art-build-history-oauth
       containers:
         - name: art-build-history
           image: art-build-history:latest
           imagePullPolicy: Always
+          command:
+            - .venv/bin/gunicorn
+          args:
+            - app:app
+            - --workers
+            - "4"
+            - --bind
+            - 127.0.0.1:8000
           env:
             - name: GUNICORN_CMD_ARGS
               value: >-
                 --access-logfile -
-                --access-logformat 'time=%(t)s peer=%(h)s xff="%({x-forwarded-for}i)s" method=%(m)s path=%(U)s status=%(s)s duration_ms=%(M)s ua="%(a)s"'
+                --access-logformat 'time=%(t)s peer=%(h)s xff="%({x-forwarded-for}i)s" user="%({x-forwarded-user}i)s" method=%(m)s path=%(U)s status=%(s)s duration_ms=%(M)s ua="%(a)s"'
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/gcp/gcp-credentials.json
+            - name: REDIS_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-server-password
+                  key: REDIS_SERVER_PASSWORD
             # The mounted user ADC has no quota project; filter only its repeated warning.
             - name: PYTHONWARNINGS
               value: >-
@@ -34,10 +48,37 @@ spec:
             - name: gcp-credentials
               mountPath: /etc/secrets/gcp
               readOnly: true
+        - name: oauth-proxy
+          image: registry.redhat.io/openshift4/ose-oauth-proxy-rhel9:v4.22
+          imagePullPolicy: Always
+          args:
+            - --provider=openshift
+            - --openshift-service-account=art-build-history-oauth
+            - --skip-provider-button=true
+            - --http-address=:4180
+            - --https-address=
+            - --upstream=http://127.0.0.1:8000
+            - --cookie-secret-file=/etc/oauth-cookie/cookie-secret
+            - --cookie-expire=8h
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /oauth/healthz
+              port: 4180
+            periodSeconds: 5
+          volumeMounts:
+            - name: oauth-cookie
+              mountPath: /etc/oauth-cookie
+              readOnly: true
       volumes:
         - name: gcp-credentials
           secret:
             secretName: gcp-credentials
+        - name: oauth-cookie
+          secret:
+            secretName: art-build-history-oauth-cookie
   triggers:
     - type: ConfigChange
     - type: ImageChange

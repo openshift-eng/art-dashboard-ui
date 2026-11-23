@@ -51,6 +51,42 @@ This approach ensures that dependency builds (slow, ~2-3 minutes) only happen wh
    ansible-galaxy collection install kubernetes.core
    ```
 
+## Dashboard SSO
+
+The cluster's OpenShift OAuth server provides login through RH-Internal-SSO. The dashboard's
+`oauth-proxy` sidecar requires a cluster login before forwarding requests to Flask. The proxy
+uses the `art-build-history-oauth` ServiceAccount as its OAuth client; its redirect URI follows
+the `art-build-history` Route. The setup playbook creates a random cookie secret if one does not
+already exist and preserves it on later runs. Keep that Secret out of Git.
+
+The Service keeps port 8000 but targets the proxy on pod port 4180. Both the main and `/search`
+Routes target pod port 4180. Flask listens on `127.0.0.1:8000` inside the pod. The `/search`
+Route rate limit still runs before authentication. By default, any user who can authenticate
+to this OpenShift cluster can use the dashboard. To restrict access to a team, configure the
+proxy's `--openshift-sar` option and bind the corresponding Role to the approved group.
+
+The proxy issues a signed dashboard cookie that expires after eight hours. Closing the browser
+does not clear it. The Sign out link clears the dashboard cookie and displays the proxy's login
+page; it does not end the cluster or RH-Internal-SSO session, so signing in again may be automatic.
+SSO authenticates users but does not stop an authenticated user from scripting requests.
+Flask's access log records the username supplied by the proxy so scripted dashboard traffic can
+be traced to an authenticated account.
+
+The proxy uses Red Hat's `registry.redhat.io/openshift4/ose-oauth-proxy-rhel9:v4.22` floating tag.
+`imagePullPolicy: Always` resolves it when a new pod starts. A tag update does not restart an
+existing pod; roll out the DeploymentConfig to pick up a newer image.
+
+For an existing deployment, update in stages: create the cookie Secret and ServiceAccount,
+start the proxy sidecar while Flask still listens on `0.0.0.0:8000`, and wait for the new pod
+to be ready. Add a temporary Service port targeting 4180, switch both Routes to target 4180,
+then remove the temporary port and change the existing Service target port to 4180. Finally,
+bind Flask to `127.0.0.1:8000` in a second rollout. Applying the final Service and Routes
+independently can briefly leave a Route without endpoints. No image rebuild is required.
+
+After the switch, an unauthenticated request to the main Route should redirect to the cluster
+login, and a signed-in browser should load the dashboard. Authentication does not replace the
+rate limit or a BigQuery cost ceiling.
+
 ## Initial Deployment
 
 ### 1. Create/Select Namespace

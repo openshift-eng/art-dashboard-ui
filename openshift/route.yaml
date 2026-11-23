@@ -8,7 +8,7 @@ metadata:
   name: art-build-history
 spec:
   port:
-    targetPort: 8000
+    targetPort: 4180
   tls:
     termination: edge
   to:
