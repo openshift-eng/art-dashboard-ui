@@ -50,6 +50,9 @@ class KonfluxBuildHistory(Flask):
         self._logger.propagate = False
         self._logger.level = logging.INFO
 
+        # art-tools logs ignored BigQuery fields at DEBUG; keep them out of dashboard logs.
+        logging.getLogger('artcommonlib.konflux.konflux_db').setLevel(logging.INFO)
+
     async def safe_redis_get(self, key: str):
         """Get value from Redis, falling back to memory cache if unavailable.
 
