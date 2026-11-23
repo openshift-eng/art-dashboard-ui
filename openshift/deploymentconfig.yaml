@@ -22,6 +22,11 @@ spec:
                 --access-logformat 'time=%(t)s peer=%(h)s xff="%({x-forwarded-for}i)s" method=%(m)s path=%(U)s status=%(s)s duration_ms=%(M)s ua="%(a)s"'
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/secrets/gcp/gcp-credentials.json
+            # The mounted user ADC has no quota project; filter only its repeated warning.
+            - name: PYTHONWARNINGS
+              value: >-
+                ignore:Your application has authenticated using end user credentials
+                from Google Cloud SDK without a quota project:UserWarning:google.auth._default
           ports:
             - containerPort: 8000
               protocol: TCP
