@@ -18,6 +18,34 @@ body {
     width: 100%;
 }
 
+.sign-out-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    color: #f0f0f0;
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.sign-out-link:hover {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.results-container a.sign-out-link {
+    color: #f0f0f0;
+}
+
+.results-container a.sign-out-link:hover {
+    color: #fff !important;
+    text-decoration: none;
+}
+
 button {
     width: 100%;
     padding: 5px 10px;
