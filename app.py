@@ -773,7 +773,7 @@ class KonfluxBuildHistory(Flask):
             )
 
     async def query(self, params: dict, outcomes: list = None):
-        self._logger.info('Search Parameters: %s, Outcomes: %s', params, outcomes)
+        self._logger.debug('Search Parameters: %s, Outcomes: %s', params, outcomes)
 
         where_clauses = {}
         extra_patterns = {}
